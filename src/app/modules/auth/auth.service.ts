@@ -305,7 +305,6 @@ async register(body: IRegister) {
 
   if (!user) throw new Error("User not found with this phone number");
 
-  // STEP 2 → এখন user.id দিয়ে safe update
   await prisma.user.update({
     where: { id: user.id },
     data: { phoneVerified: true },

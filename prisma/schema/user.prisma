@@ -14,12 +14,15 @@ model User {
   
   profile       UserProfile?
   loginAttempt  LoginAttempt?
+  
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   
   @@map("users")
 }
+
+
 
 
 
