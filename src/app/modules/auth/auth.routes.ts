@@ -2,6 +2,8 @@
 
 import express from "express";
 import { AuthController } from "./auth.controller";
+import auth from "../../middlewares/auth";
+import { UserRole } from "@prisma/client";
 
 
 export const authRouter = express.Router();
@@ -36,7 +38,7 @@ authRouter.post("/forgot-password", AuthController.forgotPassword);
 authRouter.post("/reset-password", AuthController.resetPassword);
 
 // GET CURRENT USER
-authRouter.get("/me", AuthController.getMe);
+authRouter.get("/me", auth(UserRole.ADMIN, UserRole.CUSTOMER), AuthController.getMe);
 
 // USER CRUD
 authRouter.get("/users",  AuthController.getAllUsers);
