@@ -1,92 +1,60 @@
-// import { NextFunction, Request, Response } from "express"
-// import { jwtHelper } from "../helper/jwtHelper";
-// import ApiError from "../errors/ApiError";
-// import httpStatus from "http-status"
-// import config from "../../config";
-// import { Secret } from "jsonwebtoken";
-
-// const auth = (...roles: string[]) => {
-//     return async (req: Request & { user?: any }, res: Response, next: NextFunction) => {
-//         try {
-//             const token = req.cookies.accessToken ;
-
-//             if (!token) {
-//                 throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!")
-//             }
-
-//             const verifyUser = jwtHelper.verifyToken(token, process.env.JWT_ACCESS_SECRET!);
-
-
-//             req.user = verifyUser;
-
-//             if (roles.length && !roles.includes(verifyUser.role)) {
-//                 throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!")
-//             }
-
-//             next();
-//         }
-//         catch (err) {
-//             next(err)
-//         }
-//     }
-// }
-
-// export default auth;
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-import { NextFunction, Request, Response } from "express";
+import { Request, Response, NextFunction, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
-import { UserRole } from "@prisma/client";
-import ApiError from "../errors/ApiError";
-import httpStatus from "http-status";
 
-const auth = (...roles: UserRole[]) => {
-  return async (
-    req: Request & { user?: any },
-    res: Response,
-    next: NextFunction
-  ) => {
+export type JwtPayload = {
+  id: string;
+  role: string;
+};
+
+export const authGuard =
+  (...allowedRoles: string[]): RequestHandler =>
+  (req: Request & { user?: JwtPayload }, res: Response, next: NextFunction) => {
     try {
-      const token = req.cookies.accessToken;
+      let token: string | undefined;
+
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      }
+
+   
+      if (!token && req.cookies?.accessToken) {
+        token = req.cookies.accessToken;
+      }
 
       if (!token) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, "No access token provided");
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
       }
 
       const decoded = jwt.verify(
         token,
-        process.env.JWT_ACCESS_SECRET as string
-      ) as any;
+        process.env.JWT_ACCESS_SECRET!
+      ) as JwtPayload;
 
-      req.user = decoded;
-
-      if (roles.length && !roles.includes(decoded.role)) {
-        throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: Access denied");
+   
+      if (
+        allowedRoles.length &&
+        !allowedRoles.includes(decoded.role)
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Forbidden",
+        });
       }
 
+      req.user = decoded;
       next();
-    } catch (err: any) {
-      next(
-        new ApiError(
-          httpStatus.UNAUTHORIZED,
-          err.message || "Invalid or expired token"
-        )
-      );
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
     }
   };
-};
-
-export default auth;

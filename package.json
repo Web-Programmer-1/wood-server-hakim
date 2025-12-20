@@ -11,9 +11,10 @@
     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-     "postinstall": "prisma generate"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.954.0",
     "@prisma/client": "^6.16.3",
     "@types/nodemailer": "^7.0.2",
     "axios": "^1.13.2",
@@ -29,6 +30,7 @@
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "multer-s3": "^3.0.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.9",
     "openai": "^6.3.0",
@@ -44,6 +46,7 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
+    "@types/multer-s3": "^3.0.3",
     "@types/node": "^24.5.0",
     "prisma": "^6.16.3",
     "ts-node-dev": "^2.0.0",

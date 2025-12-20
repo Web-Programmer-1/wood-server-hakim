@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from "@prisma/client";
+import { UserRole, UserStatus, VerificationStatus } from "@prisma/client";
 // add
 export interface RegisterInput {
   name: string;
@@ -23,6 +23,7 @@ export interface GoogleLoginInput {
 export interface IEmailVerify{
   email:string
   otp:string
+  verificationStatus:VerificationStatus
 }
 
 

@@ -1,9 +1,10 @@
 
 
 import express from "express";
-import { AuthController } from "./auth.controller";
-import auth from "../../middlewares/auth";
+import { AuthController, updateUserCon } from "./auth.controller";
+
 import { UserRole } from "@prisma/client";
+import { authGuard } from "../../middlewares/auth";
 
 
 export const authRouter = express.Router();
@@ -38,10 +39,23 @@ authRouter.post("/forgot-password", AuthController.forgotPassword);
 authRouter.post("/reset-password", AuthController.resetPassword);
 
 // GET CURRENT USER
-authRouter.get("/me", auth(UserRole.ADMIN, UserRole.CUSTOMER), AuthController.getMe);
+authRouter.get("/me", authGuard( UserRole.ADMIN, UserRole.CUSTOMER), AuthController.getMe);
 
 // USER CRUD
-authRouter.get("/users",  AuthController.getAllUsers);
-authRouter.get("/users/:id", AuthController.getUserById);
-authRouter.patch("/users/:id", AuthController.updateUser);
-authRouter.delete("/users/:id", AuthController.deleteUser);
+authRouter.get("/users", authGuard(UserRole.ADMIN),  AuthController.getAllUsers);
+authRouter.get("/users/:id", authGuard(UserRole.ADMIN),  AuthController.getUserById);
+// authRouter.patch("/users/:id",authGuard(UserRole.ADMIN, UserRole.CUSTOMER), AuthController.updateUserCon);
+
+
+authRouter.patch(
+  "/users/:id",
+  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  updateUserCon
+);
+
+
+
+
+
+
+authRouter.delete("/users/:id",authGuard(UserRole.ADMIN),  AuthController.deleteUser);

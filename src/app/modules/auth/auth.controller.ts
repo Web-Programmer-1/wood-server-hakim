@@ -1,6 +1,9 @@
 import { NextFunction, Request, response, Response } from "express";
 import { AuthService } from "./auth.service";
 
+// auth.controller.ts
+import { RequestHandler } from "express";
+
 export const AuthController = {
   async register(req:Request, res:Response) {
     try {
@@ -129,14 +132,24 @@ async getUserById(req: Request, res: Response) {
   }
 },
 
-async updateUser(req: Request, res: Response) {
-  try {
-    const data = await AuthService.updateUser(req.params.id, req.body);
-    res.json(data);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
-  }
-},
+// async updateUser(req: Request, res: Response) {
+//   try {
+//     const data = await AuthService.updateUser(req.params.id, req.body);
+//     res.json(data);
+//   } catch (err: any) {
+//     res.status(400).json({ message: err.message });
+//   }
+// },
+
+
+
+
+
+
+
+
+
+
 
 async deleteUser(req: Request, res: Response) {
   try {
@@ -159,3 +172,36 @@ async deleteUser(req: Request, res: Response) {
 
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+ export const updateUserCon: RequestHandler = async (req:Request & { user?: any }, res:Response) => {
+  try {
+    const result = await AuthService.updateUser(
+      req.params.id,
+      req.body,
+      req.user!.id,     // authGuard guarantee করে
+      req.user!.role
+    );
+
+    console.log(result)
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(403).json({ message: error.message });
+  }
+};
+

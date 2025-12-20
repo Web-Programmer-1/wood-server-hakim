@@ -1,0 +1,67 @@
+model Machine {
+
+  id             String          @id @default(uuid())
+  title          String
+
+  slug           String          @unique
+
+  description    String?
+
+
+  categoryId     String
+
+  category       Category       @relation(fields: [categoryId], references: [id])
+
+  brand          String?
+
+  model         String?
+
+
+  features       Json?
+
+  techSpecs      Json?
+
+  dynamicButtons Json?
+
+
+  images         MachineImage[]
+
+  videos         MachineVideo[]
+
+
+
+  visibility     Boolean         @default(true)
+
+
+  createdAt      DateTime        @default(now())
+
+  updatedAt      DateTime        @updatedAt
+
+}
+
+
+model MachineImage {
+
+  id        String   @id @default(uuid())
+
+  machineId String
+
+  url       String
+
+  isPrimary Boolean  @default(false)
+
+
+  machine   Machine @relation(fields: [machineId], references: [id])
+
+}
+
+
+model MachineVideo {
+
+  id        String   @id @default(uuid())
+  machineId String
+  url       String
+
+  machine   Machine @relation(fields: [machineId], references: [id])
+
+}

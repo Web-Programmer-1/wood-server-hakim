@@ -9,6 +9,8 @@ import { prisma } from "../../shared/prisma";
 import redis from "../../../utils/redis";
 import { IEmailVerify, IRegister, RegisterBody } from "./auth.interface";
 import {  Request, Response } from "express";
+import { UserRole } from "@prisma/client";
+import { calculateProfileCompleted } from "../../../utils/profileCompleted";
 
 
 
@@ -280,6 +282,15 @@ async register(body: IRegister) {
     data: { emailVerified: true },
   });
 
+
+  await prisma.userProfile.update({
+  where: { userId: user.id },
+  data: {
+    verificationStatus: "VERIFIED",
+  },
+});
+
+
   return { message: "Email verified successfully." };
 },
 
@@ -309,6 +320,14 @@ async register(body: IRegister) {
     where: { id: user.id },
     data: { phoneVerified: true },
   });
+
+  await prisma.userProfile.update({
+  where: { userId: user.id },
+  data: {
+    verificationStatus: "VERIFIED",
+  },
+});
+
 
   return { message: "Phone verified." };
 },
@@ -382,14 +401,6 @@ async login(body: any, res: Response) {
   }
 
   await this.resetLoginAttempt(user.id);
-
-  // const accessToken = jwt.sign({ id: user.id }, process.env.JWT_ACCESS_SECRET!, {
-  //   expiresIn: "15m",
-  // });
-
-  // const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET!, {
-  //   expiresIn: "70d",
-  // });
 
 
   const accessToken = jwt.sign(
@@ -510,40 +521,6 @@ async sendOTP(body: { identifier: string }) {
 
 
 
-// async resetPassword(body: any) {
-//   const { identifier, otp, newPassword } = body;
-
-//   let key = identifier.includes("@")
-//     ? `RESET:EMAIL:${identifier}`
-//     : `RESET:PHONE:${identifier}`;
-
-//   const stored = await this.getOTP(key);
-//   if (stored !== otp) throw new Error("Invalid OTP");
-
-//   const user = await prisma.user.findFirst({
-//     where: {
-//       OR: [{ email: identifier }, { phone: identifier }],
-//     },
-//   });
-
-//   if (!user) throw new Error("User not found");
-
-//   const hash = await bcrypt.hash(newPassword, 10);
-
-//   await prisma.user.update({
-//     where: { id: user.id },
-//     data: { passwordHash: hash },
-//   });
-
-//   return { message: "Password reset successful" };
-// },
-
-
-    // ------------GetMe Profile --------
-
-
-
-
     async resetPassword(identifier: string, otp: string, newPassword: string) {
   const user = await prisma.user.findFirst({
     where: {
@@ -627,35 +604,65 @@ async getUserById(id: string) {
 
 
 
-//  User Update --------------------
-
-async updateUser(id: string, body: any) {
-  return await prisma.user.update({
-    where: { id },
-    data: {
-      name: body.name,
-      email: body.email,
-      phone: body.phone,
-
-      profile: body.profile
-        ? {
-            update: {
-              bio: body.profile.bio,
-              avatarUri: body.profile.avatarUri,
-              gender: body.profile.gender,
-              profession: body.profile.profession,
-              occupationType: body.profile.occupationType,
-              socialLinks: body.profile.socialLinks,
-            },
-          }
-        : undefined,
-    },
-    include: { profile: true },
-  });
-},
 
 
+async updateUser(
+    targetUserId: string,
+    body: any,
+    requesterId: string,
+    requesterRole: UserRole
+  ) {
+    // 🔐 OWNERSHIP CHECK
+    if (
+      requesterRole === UserRole.CUSTOMER &&
+      requesterId !== targetUserId
+    ) {
+      throw new Error("You can only update your own profile");
+    }
 
+    // 🔒 OPTIONAL: prevent CUSTOMER from updating role/status
+    if (requesterRole === UserRole.CUSTOMER) {
+      delete body.role;
+      delete body.status;
+    }
+
+
+    const completed = body.profile
+  ? calculateProfileCompleted(body.profile)
+  : undefined;
+
+  console.log(body.profile);
+
+
+    return prisma.user.update({
+      where: { id: targetUserId },
+      data: {
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+
+
+        profile: body.profile
+  ? {
+      upsert: {
+        create: {
+          ...body.profile,
+          profileCompleted: completed ?? 0,
+        },
+        update: {
+          ...body.profile,
+          profileCompleted: completed,
+        },
+      },
+    }
+  : undefined,
+
+      },
+      include: { profile: true },
+    });
+
+    
+  },
 
 
 
