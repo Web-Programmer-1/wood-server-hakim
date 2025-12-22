@@ -1,162 +1,158 @@
 import { Request, Response } from "express";
-import * as MachineService from "./machine.service";
+import httpStatus from "http-status";
+import { MachineService } from "./machine.service";
+
+const getMachines = async (req: Request, res: Response) => {
+  const result = await MachineService.getMachines();
+  res.status(httpStatus.OK).json({
+    success: true,
+    data: result,
+  });
+};
+
+/**
+ * Get all featured machines
+ * @returns {Promise<Response>} A promise that resolves a response containing the featured machines
+ */
+const getFeaturedMachines = async (req: Request, res: Response) => {
+  const result = await MachineService.getFeaturedMachines();
+  res.status(httpStatus.OK).json({
+    success: true,
+    data: result,
+  });
+};
+
+const searchMachines = async (req: Request, res: Response) => {
+  const { keyword } = req.query;
+  const result = await MachineService.searchMachines(keyword as string);
+  res.status(httpStatus.OK).json({
+    success: true,
+    data: result,
+  });
+};
+
+const getMachineBySlug = async (req: Request, res: Response) => {
+  const { slug } = req.params;
+  const result = await MachineService.getMachineBySlug(slug);
+  res.status(httpStatus.OK).json({
+    success: true,
+    data: result,
+  });
+};
+
+const getRelatedMachines = async (req: Request, res: Response) => {
+  const { slug } = req.params;
+  const result = await MachineService.getRelatedMachines(slug);
+  res.status(httpStatus.OK).json({
+    success: true,
+    data: result,
+  });
+};
 
 
-export const createMachine = async (req: Request, res: Response) => {
-  const data = await MachineService.createMachineService(req.body);
 
-  console.log("From Controller", data)
+
+const createMachine = async (req: Request, res: Response) => {
+  const body = JSON.parse(req.body.data);
+
+  const files = req.files as {
+    thumbnail?: Express.MulterS3.File[];
+    banner?: Express.MulterS3.File[];
+  };
+
+  const payload = {
+    ...body,
+    thumbnailImage: files?.thumbnail?.[0]?.location,
+    bannerImage: files?.banner?.[0]?.location,
+  };
+
+  const result = await MachineService.createMachine(payload);
+
   res.status(201).json({
     success: true,
-    message: "Machine created successfully",
-    data,
+    data: result,
   });
 };
 
-/* ================= LIST ================= */
-export const getMachineList = async (req: Request, res: Response) => {
-  const data = await MachineService.getMachineListService(req.query);
-  res.json({
+
+
+
+
+
+
+
+
+
+
+const updateMachine = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await MachineService.updateMachine(id, req.body);
+  res.status(httpStatus.OK).json({
     success: true,
-    message: "Machine list fetched",
-    data,
+    data: result,
   });
 };
 
-/* ================= SINGLE ================= */
-export const getSingleMachine = async (req: Request, res: Response) => {
-  const data = await MachineService.getSingleMachineService(req.params.id);
-  res.json({
+const updateMachineStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await MachineService.updateMachineStatus(id, req.body);
+  res.status(httpStatus.OK).json({
     success: true,
-    message: "Machine details fetched",
-    data,
+    data: result,
   });
 };
 
-/* ================= UPDATE ================= */
-// export const updateMachine = async (req: Request, res: Response) => {
-//   const data = await MachineService.updateMachineService(
-//     req.params.id,
-//     req.body
-//   );
-//   res.json({
-//     success: true,
-//     message: "Machine updated successfully",
-//     data,
-//   });
-// };
-
-
-
-
-export const updateMachine = async (req: Request, res: Response) => {
-  const result = await MachineService.updateMachineService(
-    req.params.id,
-    req.body
-  );
-
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-
-  res.json(result);
-};
-
-
-
-
-
-
-
-
-
-
-/* ================= DELETE ================= */
-export const deleteMachine = async (req: Request, res: Response) => {
-  await MachineService.deleteMachineService(req.params.id);
-  res.json({
+const deleteMachine = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await MachineService.deleteMachine(id);
+  res.status(httpStatus.OK).json({
     success: true,
     message: "Machine deleted successfully",
+    data: result,
   });
 };
 
-/* ================= IMAGE ================= */
-export const addMachineImage = async (req: Request, res: Response) => {
-  const file = (req.files as any)?.image?.[0];
-  const data = await MachineService.addMachineImageService(
-    req.params.id,
-    file.location
-  );
-  res.json({
+const uploadMachineImages = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const files = req.files as Express.MulterS3.File[];
+  const result = await MachineService.uploadMachineImages(id, files);
+  res.status(httpStatus.OK).json({
     success: true,
-    message: "Image added",
-    data,
+    data: result,
   });
 };
 
-export const deleteMachineImage = async (req: Request, res: Response) => {
-  await MachineService.deleteMachineImageService(req.params.id);
-  res.json({
+const uploadMachineVideo = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const file = req.file as Express.MulterS3.File;
+  const result = await MachineService.uploadMachineVideo(id, file);
+  res.status(httpStatus.OK).json({
     success: true,
-    message: "Image deleted",
+    data: result,
   });
 };
 
-/* ================= VIDEO ================= */
-// export const addMachineVideo = async (req: Request, res: Response) => {
-//   const data = await MachineService.addMachineVideoService(
-//     req.params.id,
-//     req.body.url
-//   );
-//   res.json({
-//     success: true,
-//     message: "Video added",
-//     data,
-//   });
-// };
-
-
-
-export const addMachineVideo = async (req: Request, res: Response) => {
-  let videoUrl: string | undefined;
-
-  // CASE 1: Video File Upload (S3)
-  if (req.file) {
-    videoUrl = (req.file as any).location;
-  }
-
-  // CASE 2: YouTube URL
-  if (!videoUrl && req.body?.url) {
-    videoUrl = req.body.url;
-  }
-
-  // ❌ No input
-  if (!videoUrl) {
-    return res.status(400).json({
-      success: false,
-      message: "Provide either a YouTube URL or upload a video file",
-    });
-  }
-
-  const result = await MachineService.addMachineVideoService(
-    req.params.id,
-    videoUrl
-  );
-
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-
-  res.json(result);
-};
-
-
-
-
-export const deleteMachineVideo = async (req: Request, res: Response) => {
-  await MachineService.deleteMachineVideoService(req.params.id);
-  res.json({
+const deleteMachineImage = async (req: Request, res: Response) => {
+  const { id, imageId } = req.params;
+  const result = await MachineService.deleteMachineImage(id, imageId);
+  res.status(httpStatus.OK).json({
     success: true,
-    message: "Video deleted",
+    message: "Image deleted successfully",
+    data: result,
   });
+};
+
+export const MachineController = {
+  getMachines,
+  getFeaturedMachines,
+  searchMachines,
+  getMachineBySlug,
+  getRelatedMachines,
+  createMachine,
+  updateMachine,
+  updateMachineStatus,
+  deleteMachine,
+  uploadMachineImages,
+  uploadMachineVideo,
+  deleteMachineImage,
 };

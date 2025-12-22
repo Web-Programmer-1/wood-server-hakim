@@ -1,448 +1,401 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import httpStatus from "http-status";
+import { ApiError } from "../../errors/ApiError";
 import { prisma } from "../../shared/prisma";
 
+const getMachines = async () => {
+  return prisma.machine.findMany({
+    where: {
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      thumbnailImage: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
 
+const getFeaturedMachines = async () => {
+  return prisma.machine.findMany({
+    where: {
+      isFeatured: true,
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      thumbnailImage: true,
+    },
+  });
+};
 
-
-
-export const createMachineService = async (payload: any) => {
-  const errors: Record<string, string> = {};
-
-  /* ================= REQUIRED FIELD CHECK ================= */
-  if (!payload?.title || payload.title.trim() === "") {
-    errors.title = "Title is required";
+const searchMachines = async (keyword: string) => {
+  if (!keyword) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Search keyword is required");
   }
 
-  if (!payload?.slug || payload.slug.trim() === "") {
-    errors.slug = "Slug is required";
+  return prisma.machine.findMany({
+    where: {
+      isActive: true,
+      name: {
+        contains: keyword,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      thumbnailImage: true,
+    },
+  });
+};
+
+const getMachineBySlug = async (slug: string) => {
+  if (!slug) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Machine slug is required");
   }
 
-  if (!payload?.categoryId || payload.categoryId.trim() === "") {
-    errors.categoryId = "Category is required";
-  }
-
-  /* ================= VALIDATION FAIL ================= */
-  if (Object.keys(errors).length > 0) {
-    return {
-      success: false,
-      message: "Validation failed",
-      errors,
-    };
-  }
-
-  /* ================= CATEGORY EXISTENCE CHECK ================= */
-  const category = await prisma.category.findUnique({
-    where: { id: payload.categoryId },
+  const machine = await prisma.machine.findUnique({
+    where: { slug },
+    include: {
+      images: {
+        select: {
+          id: true,
+          url: true,
+          isPrimary: true,
+        },
+      },
+      videos: {
+        select: {
+          id: true,
+          url: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
   });
 
-  if (!category) {
-    return {
-      success: false,
-      message: "Invalid categoryId",
-      errors: {
-        categoryId: "Category does not exist",
-      },
-    };
+  if (!machine || !machine.isActive) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
   }
 
-  /* ================= SLUG UNIQUE CHECK ================= */
-  const existingSlug = await prisma.machine.findUnique({
+  return machine;
+};
+
+const getRelatedMachines = async (slug: string) => {
+  const machine = await prisma.machine.findUnique({
+    where: { slug },
+  });
+
+  if (!machine) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
+  }
+
+  return prisma.machine.findMany({
+    where: {
+      categoryId: machine.categoryId,
+      id: {
+        not: machine.id,
+      },
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      thumbnailImage: true,
+    },
+    take: 6,
+  });
+};
+
+const createMachine = async (payload: any) => {
+  if (!payload.name || !payload.slug || !payload.categoryId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Name, slug and categoryId are required"
+    );
+  }
+
+  const exist = await prisma.machine.findUnique({
     where: { slug: payload.slug },
   });
 
-  if (existingSlug) {
-    return {
-      success: false,
-      message: "Slug already exists",
-      errors: {
-        slug: "Slug must be unique",
-      },
-    };
+  if (exist) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      "Machine with this slug already exists"
+    );
   }
 
-  /* ================= CREATE MACHINE ================= */
-  const machine = await prisma.machine.create({
+  return prisma.machine.create({
     data: {
-      title: payload.title,
+      name: payload.name,
       slug: payload.slug,
+      shortDesc: payload.shortDesc,
       description: payload.description,
       categoryId: payload.categoryId,
+      thumbnailImage: payload.thumbnailImage,
+      bannerImage: payload.bannerImage,
       brand: payload.brand,
       model: payload.model,
-      features: payload.features,
-      techSpecs: payload.techSpecs,
-      dynamicButtons: payload.dynamicButtons,
-      visibility: payload.visibility ?? true,
-    },
-  });
-
-  return {
-    success: true,
-    message: "Machine created successfully",
-    data: machine,
-  };
-};
-
-
-
-
-
-
-
-
-
-/* ================= LIST ================= */
-// export const getMachineListService = async (query: any) => {
-//   const { categoryId, search } = query;
-
-//   return prisma.machine.findMany({
-//     where: {
-//       visibility: true,
-//       categoryId: categoryId || undefined,
-//       OR: search
-//         ? [
-//             { title: { contains: search, mode: "insensitive" } },
-//             { slug: { contains: search, mode: "insensitive" } },
-//           ]
-//         : undefined,
-//     },
-//     include: {
-//       images: true,
-//       videos: true,
-//       category: true,
-//     },
-//     orderBy: { createdAt: "desc" },
-//   });
-// };
-
-
-
-
-export const getMachineListService = async (query: any) => {
-  const {
-    search,
-    categorySlug,
-    subCategorySlug,
-    brand,
-    model,
-    visibility,
-    hasImage,
-    hasVideo,
-    automation,
-    sortBy,
-    order,
-    page = 1,
-    limit = 10,
-  } = query;
-
-  /* ================= WHERE CONDITION (SAFE & OPTIONAL) ================= */
-  const where: any = {
-    // visibility (only if provided)
-    visibility:
-      visibility !== undefined
-        ? visibility === "true"
-        : undefined,
-
-    // brand filter
-    brand: brand
-      ? { contains: brand, mode: "insensitive" }
-      : undefined,
-
-    // model filter
-    model: model
-      ? { contains: model, mode: "insensitive" }
-      : undefined,
-
-    
-    OR: search
-      ? [
-          { title: { contains: search, mode: "insensitive" } },
-          { slug: { contains: search, mode: "insensitive" } },
-          { brand: { contains: search, mode: "insensitive" } },
-        ]
-      : undefined,
-
-    // has image
-    images:
-      hasImage === "true"
-        ? { some: {} }
-        : undefined,
-
-    // has video
-    videos:
-      hasVideo === "true"
-        ? { some: {} }
-        : undefined,
-
-    // automation (JSON filter)
-    features:
-      automation !== undefined
-        ? {
-            path: ["automation"],
-            equals: automation === "true",
-          }
-        : undefined,
-  };
-
-  /* ================= CATEGORY / SUBCATEGORY ================= */
-  if (subCategorySlug) {
-    // exact subcategory
-    where.category = {
-      slug: subCategorySlug,
-    };
-  } else if (categorySlug) {
-    // parent category + its subcategories
-    where.category = {
-      OR: [
-        { slug: categorySlug },
-        { parent: { slug: categorySlug } },
-      ],
-    };
-  }
-
-  /* ================= SORTING (SAFE) ================= */
-  const allowedSortFields = ["createdAt", "title"];
-  const sortField = allowedSortFields.includes(sortBy)
-    ? sortBy
-    : "createdAt";
-
-  const sortOrder = order === "asc" ? "asc" : "desc";
-
-  /* ================= PAGINATION ================= */
-  const pageNumber = Math.max(Number(page), 1);
-  const pageSize = Math.min(Number(limit), 50);
-
-  /* ================= QUERY ================= */
-  return prisma.machine.findMany({
-    where,
-    include: {
-      images: true,
-      videos: true,
-      category: true,
-    },
-    orderBy: {
-      [sortField]: sortOrder,
-    },
-    skip: (pageNumber - 1) * pageSize,
-    take: pageSize,
-  });
-};
-
-
-
-
-
-
-
-
-
-
-/* ================= SINGLE ================= */
-export const getSingleMachineService = async (id: string) => {
-  return prisma.machine.findUnique({
-    where: { id },
-    include: {
-      images: true,
-      videos: true,
-      category: true,
+      features: payload.features || {},
+      specifications: payload.specifications || {},
+      workSections: payload.workSections || [],
+      dynamicButtons: payload.dynamicButtons || [],
+      isFeatured: payload.isFeatured || false,
+      isActive: payload.isActive ?? true,
     },
   });
 };
 
-/* ================= UPDATE ================= */
-// export const updateMachineService = async (
-//   id: string,
-//   payload: any
-// ) => {
-//   return prisma.machine.update({
-//     where: { id },
-//     data: payload,
-//   });
-// };
-
-
-
-
-
-
-
-export const updateMachineService = async (
-  id: string,
-  payload: any
-) => {
-  /* ================= FIND MACHINE ================= */
-  const existingMachine = await prisma.machine.findUnique({
+const updateMachine = async (id: string, payload: any) => {
+  const machine = await prisma.machine.findUnique({
     where: { id },
   });
 
-  if (!existingMachine) {
-    return {
-      success: false,
-      message: "Machine not found",
-    };
+  if (!machine) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
   }
 
-  const errors: Record<string, string> = {};
-
-  /* ================= EMPTY STRING CHECK ================= */
-  if (payload.title !== undefined && payload.title.trim() === "") {
-    errors.title = "Title cannot be empty";
-  }
-
-  if (payload.slug !== undefined && payload.slug.trim() === "") {
-    errors.slug = "Slug cannot be empty";
-  }
-
-  if (payload.categoryId !== undefined && payload.categoryId.trim() === "") {
-    errors.categoryId = "Category cannot be empty";
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return {
-      success: false,
-      message: "Validation failed",
-      errors,
-    };
-  }
-
-  /* ================= SLUG UNIQUE CHECK ================= */
-  if (payload.slug) {
-    const slugExists = await prisma.machine.findFirst({
-      where: {
-        slug: payload.slug,
-        NOT: { id },
-      },
+  if (payload.slug && payload.slug !== machine.slug) {
+    const slugExist = await prisma.machine.findUnique({
+      where: { slug: payload.slug },
     });
 
-    if (slugExists) {
-      return {
-        success: false,
-        message: "Slug already exists",
-        errors: {
-          slug: "Slug must be unique",
-        },
-      };
+    if (slugExist) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        "Machine slug already in use"
+      );
     }
   }
 
-  /* ================= CATEGORY CHECK ================= */
-  if (payload.categoryId) {
-    const categoryExists = await prisma.category.findUnique({
-      where: { id: payload.categoryId },
-    });
-
-    if (!categoryExists) {
-      return {
-        success: false,
-        message: "Invalid categoryId",
-        errors: {
-          categoryId: "Category does not exist",
-        },
-      };
-    }
-  }
-
-  /* ================= UPDATE MACHINE ================= */
-  const updatedMachine = await prisma.machine.update({
+  return prisma.machine.update({
     where: { id },
     data: payload,
   });
-
-  return {
-    success: true,
-    message: "Machine updated successfully",
-    data: updatedMachine,
-  };
 };
 
+const updateMachineStatus = async (id: string, payload: any) => {
+  if (typeof payload.isActive !== "boolean") {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "isActive boolean value required"
+    );
+  }
 
+  return prisma.machine.update({
+    where: { id },
+    data: {
+      isActive: payload.isActive,
+      isFeatured: payload.isFeatured,
+    },
+  });
+};
 
+const deleteMachine = async (id: string) => {
+  const machine = await prisma.machine.findUnique({
+    where: { id },
+  });
 
+  if (!machine) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
+  }
 
-
-
-
-
-
-
-
-
-/* ================= DELETE ================= */
-export const deleteMachineService = async (id: string) => {
   return prisma.machine.delete({
     where: { id },
   });
 };
 
-/* ================= IMAGE ================= */
-export const addMachineImageService = async (
+const uploadMachineImages = async (
   machineId: string,
-  url: string,
-  isPrimary = false
+  files: Express.MulterS3.File[]
 ) => {
-  return prisma.machineImage.create({
-    data: {
-      machineId,
-      url,
-      isPrimary,
-    },
-  });
-};
+  if (!files || files.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "No images uploaded");
+  }
 
-export const deleteMachineImageService = async (id: string) => {
-  return prisma.machineImage.delete({
-    where: { id },
-  });
-};
-
-/* ================= VIDEO ================= */
-// export const addMachineVideoService = async (
-//   machineId: string,
-//   url: string
-// ) => {
-//   return prisma.machineVideo.create({
-//     data: {
-//       machineId,
-//       url,
-//     },
-//   });
-// };
-
-
-export const addMachineVideoService = async (
-  machineId: string,
-  url: string
-) => {
-  // Machine exists?
   const machine = await prisma.machine.findUnique({
     where: { id: machineId },
   });
 
   if (!machine) {
-    return {
-      success: false,
-      message: "Machine not found",
-    };
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
   }
 
-  // Save video
-  const video = await prisma.machineVideo.create({
+  const data = files.map(file => ({
+    machineId,
+    url: file.location,
+  }));
+
+  return prisma.machineImage.createMany({
+    data,
+  });
+};
+
+const uploadMachineVideo = async (
+  machineId: string,
+  file: Express.MulterS3.File
+) => {
+  if (!file) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Video file required");
+  }
+
+  return prisma.machineVideo.create({
     data: {
       machineId,
-      url,
+      url: file.location,
     },
   });
-
-  return {
-    success: true,
-    message: "Video added successfully",
-    data: video,
-  };
 };
 
+const deleteMachineImage = async (machineId: string, imageId: string) => {
+  const image = await prisma.machineImage.findUnique({
+    where: { id: imageId },
+  });
 
+  if (!image || image.machineId !== machineId) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Image not found");
+  }
 
-export const deleteMachineVideoService = async (id: string) => {
-  return prisma.machineVideo.delete({
-    where: { id },
+  return prisma.machineImage.delete({
+    where: { id: imageId },
   });
 };
+
+export const MachineService = {
+  getMachines,
+  getFeaturedMachines,
+  searchMachines,
+  getMachineBySlug,
+  getRelatedMachines,
+  createMachine,
+  updateMachine,
+  updateMachineStatus,
+  deleteMachine,
+  uploadMachineImages,
+  uploadMachineVideo,
+  deleteMachineImage,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

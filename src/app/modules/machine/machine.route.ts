@@ -1,44 +1,67 @@
 import { Router } from "express";
-import * as MachineController from "./machine.controller";
-import { uploadCategoryImages } from "../../../utils/multer";
-import { uploadMachineVideo } from "../../middlewares/uploadMachineVideo";
-
-import { UserRole } from "@prisma/client";
+import { MachineController } from "./machine.controller";
 import { authGuard } from "../../middlewares/auth";
-
+import { UserRole } from "@prisma/client";
+import { uploadMachineVideo } from "../../middlewares/uploadMachineVideo";
+import { uploadProductImages } from "../../middlewares/uploadProductImage";
+import { uploadMachineCreate } from "../../middlewares/UploadMachineImage";
 
 const router = Router();
 
-router.post("/",  authGuard(UserRole.ADMIN),  MachineController.createMachine);
-router.get("/", MachineController.getMachineList);
-router.get("/:id",  MachineController.getSingleMachine);
-router.put("/:id", authGuard(UserRole.ADMIN), MachineController.updateMachine);
-router.delete("/:id", authGuard(UserRole.ADMIN), MachineController.deleteMachine);
+router.get("/", MachineController.getMachines);
+router.get("/featured", MachineController.getFeaturedMachines);
+router.get("/search", MachineController.searchMachines);
+router.get("/:slug", MachineController.getMachineBySlug);
+router.get("/:slug/related", MachineController.getRelatedMachines);
+
 
 
 router.post(
-  "/:id/images",  authGuard(UserRole.ADMIN),
-  uploadCategoryImages,
-  MachineController.addMachineImage
+  "/admin",
+  uploadMachineCreate,
+  MachineController.createMachine
 );
+
+
+
+
+
+router.patch(
+  "/admin/:id",
+//   authGuard(UserRole.ADMIN),
+  MachineController.updateMachine
+);
+
+router.patch(
+  "/admin/:id/status",
+//   authGuard(UserRole.ADMIN),
+  MachineController.updateMachineStatus
+);
+
 router.delete(
-  "/images/:id",  authGuard(UserRole.ADMIN),
+  "/admin/:id",
+//   authGuard(UserRole.ADMIN),
+  MachineController.deleteMachine
+);
+
+router.post(
+  "/admin/:id/images",
+//   authGuard(UserRole.ADMIN),
+  uploadProductImages.array("images", 10),
+  MachineController.uploadMachineImages
+);
+
+router.post(
+  "/admin/:id/video",
+//   authGuard(UserRole.ADMIN),
+  uploadMachineVideo,
+  MachineController.uploadMachineVideo
+);
+
+router.delete(
+  "/admin/:id/images/:imageId",
+//   authGuard(UserRole.ADMIN),
   MachineController.deleteMachineImage
 );
 
-
-
-router.post(
-  "/:id/videos",
-  uploadMachineVideo,  authGuard(UserRole.ADMIN),
-  MachineController.addMachineVideo
-);
-
-
-
-router.delete(
-  "/videos/:id", authGuard(UserRole.ADMIN),
-  MachineController.deleteMachineVideo
-);
-
-export const machineRoutes = router;
+export const MachineRoutes = router;

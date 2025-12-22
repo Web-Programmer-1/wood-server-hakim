@@ -1,200 +1,181 @@
+import httpStatus from "http-status";
 import { prisma } from "../../shared/prisma";
+import { ApiError } from "../../errors/ApiError";
 
+const getCategories = async () => {
+  return prisma.category.findMany({
+    where: {
+      parentId: null,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
 
-class CategoryService {
-  async createCategory(payload: any) {
-    const exists = await prisma.category.findUnique({
+const getCategoryTree = async () => {
+  return prisma.category.findMany({
+    where: {
+      parentId: null,
+    },
+    include: {
+      children: {
+        include: {
+          children: true,
+        },
+      },
+    },
+  });
+};
+
+const getMachinesByCategory = async (slug: string) => {
+  if (!slug) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Category slug is required");
+  }
+
+  const category = await prisma.category.findUnique({
+    where: { slug },
+  });
+
+  if (!category) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Category not found");
+  }
+
+  return prisma.machine.findMany({
+    where: {
+      categoryId: category.id,
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      thumbnailImage: true,
+    },
+  });
+};
+
+const createCategory = async (payload: any) => {
+  if (!payload?.name || !payload?.slug) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Category name and slug are required"
+    );
+  }
+
+  const isExist = await prisma.category.findUnique({
+    where: { slug: payload.slug },
+  });
+
+  if (isExist) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      "Category with this slug already exists"
+    );
+  }
+
+  return prisma.category.create({
+    data: {
+      name: payload.name,
+      slug: payload.slug,
+      parentId: payload.parentId || null,
+    },
+  });
+};
+
+const updateCategory = async (id: string, payload: any) => {
+  if (!id) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Category id is required");
+  }
+
+  const category = await prisma.category.findUnique({
+    where: { id },
+  });
+
+  if (!category) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Category not found");
+  }
+
+  if (payload.slug && payload.slug !== category.slug) {
+    const slugExist = await prisma.category.findUnique({
       where: { slug: payload.slug },
     });
 
-    if (exists) {
-      throw new Error("Slug must be unique!");
+    if (slugExist) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        "Category slug already in use"
+      );
     }
-
-    const category = await prisma.category.create({
-      data: {
-        name: payload.name,
-        slug: payload.slug,
-        description: payload.description,
-        icon: payload.icon,
-        image: payload.image,
-        showOnHome: payload.showOnHome ?? false,
-        parentId: payload.parentId ?? null,
-      },
-    });
-
-    return category;
   }
 
-
-  async getAllCategories () {
-
-    const category = await prisma.category.findMany({
-      where:{
-        parentId:null
-      },
-      include:{
-        children:true
-      },
-      orderBy:{
-        createdAt:"desc"
-      }
-    })
-
-    return category;
-
-
-  }
-
-
-  async getCategoryById (id:string){
-
-    const category = await prisma.category.findUnique({
-      where:{
-        id:id
-      },
-      include:{
-        children:true
-      }
-    })
-
-    return category;
-
-  }
-
-
-  async updateCategory(id: string, payload: any) {
-  const exists = await prisma.category.findUnique({ where: { id } });
-
-  if (!exists) throw new Error("Category not found");
-
-
-  if (payload.slug) {
-    const slugExists = await prisma.category.findFirst({
-      where: {
-        slug: payload.slug,
-        NOT: { id }
-      }
-    });
-    if (slugExists) throw new Error("Slug already taken");
-  }
-
-  return await prisma.category.update({
+  return prisma.category.update({
     where: { id },
-    data: payload
-  });
-}
-
-
-async DeleteCategory (id:string) {
-  
-  const category = await prisma.category.delete({
-    where:{
-      id:id
-    }
-  })
-
-  return category;
-}
-
-
-async createSubCategory (payload:any) {
-
-  const parent = await prisma.category.findUnique({
-    where:{
-      id:payload.parentId
-    
-    }
-    
-  });
-
-  if(!parent){
-    throw new Error("Parent category not found");
-  }
-
-  const slugExists = await prisma.category.findUnique({
-    where:{
-      slug:payload.slug
-    }
-    
-  })
-
-  if(slugExists){
-    throw new Error("Slug must be unique");
-  }
-
-  return await prisma.category.create({
-    data:{
-      name:payload.name,
-      slug:payload.slug,
-      description:payload.description,
-      image:payload.image,
-      icon:payload.icon,
-      showOnHome:payload.showOnHome,
-      parentId:payload.parentId
-    }
-  })
-
-
-
-}
-
-
-async getSubCategoryById (id:string) {
-
-  const category = await prisma.category.findMany({
-    where:{
-      parentId:id
+    data: {
+      name: payload.name ?? category.name,
+      slug: payload.slug ?? category.slug,
+      parentId:
+        payload.parentId !== undefined
+          ? payload.parentId
+          : category.parentId,
     },
-    include:{
-     parent:true
-    },
-    orderBy:{
-      createdAt:"desc"
-    }
-  })
+  });
+};
 
-  return category;
-
-}
-
-
-async updateSubCategory(id: string, payload: any) {
-  const exists = await prisma.category.findUnique({ where: { id } });
-  if (!exists) {
-    throw new Error("Subcategory not found");
+const deleteCategory = async (id: string) => {
+  if (!id) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Category id is required");
   }
 
-  // slug unique check (ignore current record)
-  if (payload.slug) {
-    const slugExists = await prisma.category.findFirst({
-      where: {
-        slug: payload.slug,
-        NOT: { id }
-      }
-    });
-    if (slugExists) throw new Error("Slug already taken");
-  }
-
-  // parent category check if parentId changed
-  if (payload.parentId) {
-    const parent = await prisma.category.findUnique({
-      where: { id: payload.parentId }
-    });
-    if (!parent) throw new Error("Parent category not found");
-  }
-
-  return await prisma.category.update({
+  const category = await prisma.category.findUnique({
     where: { id },
-    data: payload,
   });
-}
+
+  if (!category) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Category not found");
+  }
+
+  const hasMachines = await prisma.machine.findFirst({
+    where: {
+      categoryId: id,
+    },
+  });
+
+  if (hasMachines) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot delete category with existing machines"
+    );
+  }
+
+  return prisma.category.delete({
+    where: { id },
+  });
+};
+
+export const CategoryService = {
+  getCategories,
+  getCategoryTree,
+  getMachinesByCategory,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+};
 
 
 
 
 
 
-}
 
-export const categoryService = new CategoryService();
+
+
+
+
+
+
+
+
+
+
+

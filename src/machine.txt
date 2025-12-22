@@ -1,0 +1,16 @@
+ header image 
+ header title 
+ header description 
+
+ workshop array [{title , description}] as a child
+
+main-image 
+one title
+
+
+product feathers
+
+
+
+service array er moddhe
+

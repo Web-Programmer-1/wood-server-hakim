@@ -1,42 +1,43 @@
-import express, {  Request, Response } from "express";
-import { uploadCategoryImages } from "../../../utils/multer";
-import { categoryController } from "./category.controller";
-
-const router = express.Router();
 
 
+import { Router } from "express";
+import { CategoryController } from "./category.controller";
+import { authGuard } from "../../middlewares/auth";
+import { UserRole } from "@prisma/client";
 
-router.post("/", uploadCategoryImages, (req:Request, res:Response) => 
-  categoryController.createCategory(req, res)
+const router = Router();
+
+router.get(
+  "/",
+  CategoryController.getCategories
 );
 
-router.get("/", categoryController.getAllCategoriesController );
-
-
-router.get("/:id", categoryController.getCategoryByIdCon);
-
-
-router.put("/:id", uploadCategoryImages,
-  categoryController.updateCategory
+router.get(
+  "/tree",
+  CategoryController.getCategoryTree
 );
 
-router.delete("/:id", categoryController.deleteCategoryCon);
-
-router.post("/subcategory", uploadCategoryImages,
-  categoryController.createSubCategoryCon
+router.get(
+  "/:slug/machines",
+  CategoryController.getMachinesByCategory
 );
 
-
-router.get("/subcategory/:id", categoryController.getSubCategoryByIdCon);
-
-
-router.put("/subcategory/:id", uploadCategoryImages,
-  categoryController.updateSubCategoryCon
+router.post(
+  "/admin",
+  // authGuard(UserRole.ADMIN),
+  CategoryController.createCategory
 );
 
+router.patch(
+  "/admin/:id",
+  // authGuard(UserRole.ADMIN),
+  CategoryController.updateCategory
+);
 
+router.delete(
+  "/admin/:id",
+  // authGuard(UserRole.ADMIN),
+  CategoryController.deleteCategory
+);
 
-
-
-
-export const categoryRoutes = router;
+export const CategoryRoutes = router;

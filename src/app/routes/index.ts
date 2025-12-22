@@ -3,10 +3,8 @@ import express from 'express';
 
 
 import { authRouter } from '../modules/auth/auth.routes';
-import { categoryRoutes } from '../modules/category/category.route';
-import { machineRoutes } from '../modules/machine/machine.route';
-
-
+import { CategoryRoutes } from '../modules/category/category.route';
+import { MachineRoutes } from '../modules/machine/machine.route';
 
 const router = express.Router();
 
@@ -16,15 +14,17 @@ const moduleRoutes = [
         path: '/auth',
         route: authRouter
     },
-    
     {
         path: '/category',
-        route: categoryRoutes
+        route: CategoryRoutes
     },
     {
-        path: '/machine',
-        route: machineRoutes
+        path: '/machines',
+        route: MachineRoutes
     },
+
+
+
 
 
 ];

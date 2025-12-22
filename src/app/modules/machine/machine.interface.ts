@@ -1,47 +1,37 @@
 export interface IMachine {
   id: string;
-  title: string;
+  name: string;
   slug: string;
+  shortDesc?: string;
   description?: string;
-
   categoryId: string;
 
-  brand?: string;
-  model?: string;
+  thumbnailImage: string;
+  bannerImage?: string;
 
-  features?: Record<string, any>;
-  techSpecs?: Record<string, any>;
-  dynamicButtons?: Record<string, any>;
+  features: Record<string, any>;
+  specifications: Record<string, any>;
 
-  visibility: boolean;
+  isFeatured: boolean;
+  isActive: boolean;
 
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface IMachineImage {
+  id: string;
+  machineId: string;
+  imageUrl: string;
+  type: "THUMBNAIL" | "BANNER" | "GALLERY";
+  createdAt: Date;
+}
 
-
-
-
-
-
-
-
-
-
-
-export interface ICreateMachinePayload {
-  title: string;
-  slug: string;
-  categoryId: string;
-
-  description?: string;
-  brand?: string;
-  model?: string;
-
-  features?: Record<string, any>;
-  techSpecs?: Record<string, any>;
-  dynamicButtons?: Record<string, any>;
+export interface IMachineVideo {
+  id: string;
+  machineId: string;
+  videoUrl: string;
+  createdAt: Date;
 }
 
 
@@ -51,19 +41,43 @@ export interface ICreateMachinePayload {
 
 
 
-export interface IUpdateMachinePayload {
-  title?: string;
-  slug?: string;
+export interface CreateMachinePayload {
+  name: string;
+  slug: string;
+  shortDesc?: string;
   description?: string;
+  categoryId: string;
 
+  thumbnailImage: string;
+  bannerImage?: string;
+
+  features: Record<string, any>;
+  specifications: Record<string, any>;
+
+  isFeatured?: boolean;
+}
+
+
+
+
+
+
+
+
+
+export interface UpdateMachinePayload {
+  name?: string;
+  slug?: string;
+  shortDesc?: string;
+  description?: string;
   categoryId?: string;
 
-  brand?: string;
-  model?: string;
+  thumbnailImage?: string;
+  bannerImage?: string;
 
   features?: Record<string, any>;
-  techSpecs?: Record<string, any>;
-  dynamicButtons?: Record<string, any>;
+  specifications?: Record<string, any>;
 
-  visibility?: boolean;
+  isFeatured?: boolean;
+  isActive?: boolean;
 }
