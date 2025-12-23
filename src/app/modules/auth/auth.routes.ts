@@ -39,17 +39,17 @@ authRouter.post("/forgot-password", AuthController.forgotPassword);
 authRouter.post("/reset-password", AuthController.resetPassword);
 
 // GET CURRENT USER
-authRouter.get("/me", authGuard( UserRole.ADMIN, UserRole.CUSTOMER), AuthController.getMe);
+authRouter.get("/me",  AuthController.getMe);
 
 // USER CRUD
-authRouter.get("/users", authGuard(UserRole.ADMIN),  AuthController.getAllUsers);
-authRouter.get("/users/:id", authGuard(UserRole.ADMIN),  AuthController.getUserById);
+authRouter.get("/users",   AuthController.getAllUsers);
+authRouter.get("/users/:id",   AuthController.getUserById);
 // authRouter.patch("/users/:id",authGuard(UserRole.ADMIN, UserRole.CUSTOMER), AuthController.updateUserCon);
 
 
 authRouter.patch(
   "/users/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+
   updateUserCon
 );
 
@@ -58,4 +58,4 @@ authRouter.patch(
 
 
 
-authRouter.delete("/users/:id",authGuard(UserRole.ADMIN),  AuthController.deleteUser);
+authRouter.delete("/users/:id",  AuthController.deleteUser);
