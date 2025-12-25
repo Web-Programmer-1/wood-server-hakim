@@ -2,13 +2,45 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { MachineService } from "./machine.service";
 
+// const getMachines = async (req: Request, res: Response) => {
+//   const result = await MachineService.getMachines();
+//   res.status(httpStatus.OK).json({
+//     success: true,
+//     data: result,
+//   });
+// };
+
+
 const getMachines = async (req: Request, res: Response) => {
-  const result = await MachineService.getMachines();
+  const {
+    page = "1",
+    limit = "10",
+    search,
+    categoryId,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+  } = req.query;
+
+  const result = await MachineService.getMachines({
+    page: Number(page),
+    limit: Number(limit),
+    search: search as string | undefined,
+    categoryId: categoryId as string | undefined,
+    sortBy: sortBy as "createdAt" | "name",
+    sortOrder: sortOrder as "asc" | "desc",
+  });
+
   res.status(httpStatus.OK).json({
     success: true,
-    data: result,
+    data: result.data,
+    meta: result.meta,
   });
 };
+
+
+
+
+
 
 /**
  * Get all featured machines

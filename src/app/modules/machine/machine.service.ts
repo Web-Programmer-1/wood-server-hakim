@@ -1,53 +1,117 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import httpStatus from "http-status";
 import { ApiError } from "../../errors/ApiError";
 import { prisma } from "../../shared/prisma";
+import { GetMachinesParams } from "./machine.interface";
 
-const getMachines = async () => {
-  return prisma.machine.findMany({
-    where: {
-      isActive: true,
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      thumbnailImage: true,
-      category: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
+// const getMachines = async () => {
+//   return prisma.machine.findMany({
+//     where: {
+//       isActive: true,
+//     },
+//     select: {
+//       id: true,
+//       name: true,
+//       slug: true,
+//       thumbnailImage: true,
+//       category: {
+//         select: {
+//           id: true,
+//           name: true,
+//           slug: true,
+//         },
+//       },
+//     },
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//   });
+// };
+
+
+
+
+
+
+const getMachines = async (params: GetMachinesParams) => {
+  const {
+    page,
+    limit,
+    search,
+    categoryId,
+    sortBy,
+    sortOrder,
+  } = params;
+
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    isActive: true,
+  };
+
+  // 🔍 Search by name OR slug
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { slug: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  // 🎯 Category filter
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
+  // 📦 Query data
+  const [data, total] = await Promise.all([
+    prisma.machine.findMany({
+      where,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        thumbnailImage: true,
+        createdAt: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
         },
       },
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+    }),
+    prisma.machine.count({ where }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  };
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 const getFeaturedMachines = async () => {
   return prisma.machine.findMany({

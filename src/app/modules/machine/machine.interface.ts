@@ -81,3 +81,22 @@ export interface UpdateMachinePayload {
   isFeatured?: boolean;
   isActive?: boolean;
 }
+
+
+
+
+
+
+
+
+
+
+ export type GetMachinesParams = {
+  page: number;
+  limit: number;
+  search?: string;
+  categoryId?: string;
+  sortBy: "createdAt" | "name";
+  sortOrder: "asc" | "desc";
+};
+

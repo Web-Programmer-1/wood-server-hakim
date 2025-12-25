@@ -8,7 +8,13 @@ import { uploadMachineCreate } from "../../middlewares/UploadMachineImage";
 
 const router = Router();
 
+// router.get("/", MachineController.getMachines);
+
 router.get("/", MachineController.getMachines);
+
+
+
+
 router.get("/featured", MachineController.getFeaturedMachines);
 router.get("/search", MachineController.searchMachines);
 router.get("/:slug", MachineController.getMachineBySlug);
