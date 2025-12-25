@@ -74,6 +74,13 @@ const getMachines = async (params: GetMachinesParams) => {
         name: true,
         slug: true,
         thumbnailImage: true,
+        images:{
+          select: {
+            id: true,
+            url: true,
+            isPrimary: true,
+          },
+        },
         createdAt: true,
         category: {
           select: {
@@ -314,6 +321,82 @@ const deleteMachine = async (id: string) => {
   });
 };
 
+
+type GetAllMachineImagesParams = {
+  page: number;
+  limit: number;
+  search?: string;
+};
+
+const getAllMachineImages = async ({
+  page,
+  limit,
+  search,
+}: {
+  page: number;
+  limit: number;
+  search?: string;
+}) => {
+  const skip = (page - 1) * limit;
+
+  const where: any = {};
+
+  if (search) {
+    where.OR = [
+      {
+        url: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        machine: {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      },
+    ];
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.machineImage.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        url: true,
+        isPrimary: true,
+        machine: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    }),
+    prisma.machineImage.count({ where }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+  };
+};
+
+
+
+
+
 const uploadMachineImages = async (
   machineId: string,
   files: Express.MulterS3.File[]
@@ -383,6 +466,7 @@ export const MachineService = {
   uploadMachineImages,
   uploadMachineVideo,
   deleteMachineImage,
+  getAllMachineImages,
 };
 
 

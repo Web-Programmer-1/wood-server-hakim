@@ -144,6 +144,24 @@ const deleteMachine = async (req: Request, res: Response) => {
   });
 };
 
+const getAllMachineImages = async (req: Request, res: Response) => {
+  const { page = "1", limit = "10", search } = req.query;
+
+  const result = await MachineService.getAllMachineImages({
+    page: Number(page),
+    limit: Number(limit),
+    search: search as string | undefined,
+  });
+
+  res.status(200).json({
+    success: true,
+    data: result.data,
+    meta: result.meta,
+  });
+};
+
+
+
 const uploadMachineImages = async (req: Request, res: Response) => {
   const { id } = req.params;
   const files = req.files as Express.MulterS3.File[];
@@ -187,4 +205,5 @@ export const MachineController = {
   uploadMachineImages,
   uploadMachineVideo,
   deleteMachineImage,
+  getAllMachineImages,
 };

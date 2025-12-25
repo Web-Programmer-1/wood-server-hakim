@@ -57,6 +57,17 @@ router.post(
   MachineController.uploadMachineImages
 );
 
+
+
+router.get(
+  "/machine-images",
+  MachineController.getAllMachineImages
+);
+
+
+
+
+
 router.post(
   "/admin/:id/video",
 //   authGuard(UserRole.ADMIN),

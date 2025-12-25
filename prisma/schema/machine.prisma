@@ -63,7 +63,7 @@ model MachineImage {
 
 
   machine   Machine @relation(fields: [machineId], references: [id])
-
+  createdAt DateTime @default(now())
 }
 
 
