@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { MachineController } from "./machine.controller";
+import {  MachineController } from "./machine.controller";
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 import { uploadMachineVideo } from "../../middlewares/uploadMachineVideo";
@@ -14,7 +14,10 @@ router.get("/", MachineController.getMachines);
 
 
 
-
+router.get(
+  "/machine-images",
+  MachineController.getAllMachineImages
+);
 router.get("/featured", MachineController.getFeaturedMachines);
 router.get("/search", MachineController.searchMachines);
 router.get("/:slug", MachineController.getMachineBySlug);
@@ -50,6 +53,10 @@ router.delete(
   MachineController.deleteMachine
 );
 
+
+
+//  ----------- API For Machine Images ----------------
+
 router.post(
   "/admin/:id/images",
 //   authGuard(UserRole.ADMIN),
@@ -58,14 +65,34 @@ router.post(
 );
 
 
-
-router.get(
-  "/machine-images",
-  MachineController.getAllMachineImages
+router.patch(
+  "/machine-images/:id",
+  uploadProductImages.single("image"),
+  MachineController.updateMachineImage
 );
 
 
 
+
+
+// router.delete(
+//   "/machine-images/:id",
+// //   authGuard(UserRole.ADMIN),
+//   MachineController.deleteMachineImage
+// );
+
+
+router.delete(
+  "/machine-images/:id",
+  // authGuard(UserRole.ADMIN),
+  MachineController.deleteMachineImage
+);
+
+
+
+
+
+// --------------- API For Machine Video ----------------
 
 
 router.post(
@@ -75,10 +102,35 @@ router.post(
   MachineController.uploadMachineVideo
 );
 
-router.delete(
-  "/admin/:id/images/:imageId",
-//   authGuard(UserRole.ADMIN),
-  MachineController.deleteMachineImage
+
+
+router.get(
+  "/images/videos",
+  MachineController.getAllMachineVideosController
 );
+
+
+
+
+router.patch(
+  "/images/videos/:id",
+  uploadMachineVideo,
+  MachineController.updateMachineVideo
+);
+
+
+
+router.delete(
+  "/images/videos/:id",
+  MachineController.deleteMachineVideo
+);
+
+
+
+
+
+
+
+
 
 export const MachineRoutes = router;

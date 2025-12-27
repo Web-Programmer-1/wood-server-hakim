@@ -28,6 +28,8 @@ const getCategoryTree = async () => {
   });
 };
 
+
+
 const getMachinesByCategory = async (slug: string) => {
   if (!slug) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Category slug is required");
@@ -148,11 +150,23 @@ const deleteCategory = async (id: string) => {
     );
   }
 
+  const hasChildren = await prisma.category.findFirst({
+    where: {
+      parentId: id,
+    },
+  });
+
+  if (hasChildren) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot delete category with existing child categories"
+    );
+  }
+
   return prisma.category.delete({
     where: { id },
   });
 };
-
 export const CategoryService = {
   getCategories,
   getCategoryTree,

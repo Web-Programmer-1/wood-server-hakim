@@ -5,32 +5,6 @@ import { ApiError } from "../../errors/ApiError";
 import { prisma } from "../../shared/prisma";
 import { GetMachinesParams } from "./machine.interface";
 
-// const getMachines = async () => {
-//   return prisma.machine.findMany({
-//     where: {
-//       isActive: true,
-//     },
-//     select: {
-//       id: true,
-//       name: true,
-//       slug: true,
-//       thumbnailImage: true,
-//       category: {
-//         select: {
-//           id: true,
-//           name: true,
-//           slug: true,
-//         },
-//       },
-//     },
-//     orderBy: {
-//       createdAt: "desc",
-//     },
-//   });
-// };
-
-
-
 
 
 
@@ -397,6 +371,52 @@ const getAllMachineImages = async ({
 
 
 
+const updateMachineImage = async (
+  id: string,
+  payload: {
+    url?: string;
+    isPrimary?: boolean;
+  }
+) => {
+  const image = await prisma.machineImage.findUnique({
+    where: { id },
+  });
+
+  if (!image) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine image not found");
+  }
+
+  if (Object.keys(payload).length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Nothing to update");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // 🔴 One primary image per machine
+    if (payload.isPrimary === true) {
+      await tx.machineImage.updateMany({
+        where: {
+          machineId: image.machineId,
+          isPrimary: true,
+        },
+        data: { isPrimary: false },
+      });
+    }
+
+    return tx.machineImage.update({
+      where: { id },
+      data: payload,
+    });
+  });
+};
+
+
+
+
+
+
+
+
+
 const uploadMachineImages = async (
   machineId: string,
   files: Express.MulterS3.File[]
@@ -423,6 +443,32 @@ const uploadMachineImages = async (
   });
 };
 
+
+
+const deleteMachineImage = async (imageId: string) => {
+  const image = await prisma.machineImage.findUnique({
+    where: { id: imageId },
+  });
+
+  if (!image) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Image not found");
+  }
+
+  // ❗ Optional: এখানে S3 delete করতে পারো
+
+  return prisma.machineImage.delete({
+    where: { id: imageId },
+  });
+};
+
+
+
+
+
+
+// ---------------- Machine Operations 
+
+
 const uploadMachineVideo = async (
   machineId: string,
   file: Express.MulterS3.File
@@ -439,19 +485,97 @@ const uploadMachineVideo = async (
   });
 };
 
-const deleteMachineImage = async (machineId: string, imageId: string) => {
-  const image = await prisma.machineImage.findUnique({
-    where: { id: imageId },
-  });
 
-  if (!image || image.machineId !== machineId) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Image not found");
+
+const getAllMachineVideos = async ({
+  page,
+  limit,
+}: {
+  page: number;
+  limit: number;
+}) => {
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    prisma.machineVideo.findMany({
+      skip,
+      take: limit,
+      orderBy: { id: "desc" },
+      select: {
+        id: true,
+        url: true,
+        machine: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    }),
+    prisma.machineVideo.count(),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+  };
+};
+
+
+const updateMachineVideo = async (
+  id: string,
+  file: Express.MulterS3.File
+) => {
+  if (!file) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Video file required");
   }
 
-  return prisma.machineImage.delete({
-    where: { id: imageId },
+  const video = await prisma.machineVideo.findUnique({
+    where: { id },
+  });
+
+  if (!video) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine video not found");
+  }
+
+  return prisma.machineVideo.update({
+    where: { id },
+    data: {
+      url: file.location,
+    },
   });
 };
+
+
+
+
+const deleteMachineVideo = async (id: string) => {
+  const video = await prisma.machineVideo.findUnique({
+    where: { id },
+  });
+
+  if (!video) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine video not found");
+  }
+
+  // ❗ Optional: S3 delete here
+
+  await prisma.machineVideo.delete({
+    where: { id },
+  });
+
+  return null;
+};
+
+
+
+
 
 export const MachineService = {
   getMachines,
@@ -466,7 +590,11 @@ export const MachineService = {
   uploadMachineImages,
   uploadMachineVideo,
   deleteMachineImage,
+  updateMachineImage,
   getAllMachineImages,
+  getAllMachineVideos,
+  updateMachineVideo,
+  deleteMachineVideo,
 };
 
 

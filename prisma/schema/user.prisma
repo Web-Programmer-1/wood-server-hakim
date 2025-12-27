@@ -6,7 +6,6 @@ model User {
   phone         String?    
   passwordHash  String
   
-  
   role          UserRole       @default(CUSTOMER)
   status        UserStatus     @default(ACTIVE)
   

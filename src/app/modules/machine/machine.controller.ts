@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { MachineService } from "./machine.service";
 
+import { prisma } from "../../shared/prisma";
+
 // const getMachines = async (req: Request, res: Response) => {
 //   const result = await MachineService.getMachines();
 //   res.status(httpStatus.OK).json({
@@ -162,6 +164,50 @@ const getAllMachineImages = async (req: Request, res: Response) => {
 
 
 
+
+
+
+
+
+const updateMachineImage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const file = req.file as Express.MulterS3.File | undefined;
+  const { isPrimary } = req.body;
+
+  const payload: {
+    url?: string;
+    isPrimary?: boolean;
+  } = {};
+
+  // ✅ AWS S3 image URL
+  if (file?.location) {
+    payload.url = file.location;
+  }
+
+  // ✅ optional primary update
+  if (isPrimary !== undefined) {
+    payload.isPrimary = isPrimary === "true";
+  }
+
+  const result = await MachineService.updateMachineImage(id, payload);
+
+  res.status(200).json({
+    success: true,
+    message: "Machine image updated successfully",
+    data: result,
+  });
+};
+
+
+
+
+
+
+
+
+
+
 const uploadMachineImages = async (req: Request, res: Response) => {
   const { id } = req.params;
   const files = req.files as Express.MulterS3.File[];
@@ -171,6 +217,28 @@ const uploadMachineImages = async (req: Request, res: Response) => {
     data: result,
   });
 };
+
+
+
+
+
+const deleteMachineImage = async (req: Request, res: Response) => {
+  const { id } = req.params; // ✅ id = imageId
+
+  const result = await MachineService.deleteMachineImage(id);
+
+  res.status(httpStatus.OK).json({
+    success: true,
+    message: "Image deleted successfully",
+    data: result,
+  });
+};
+
+
+
+
+// machine video opearations 
+
 
 const uploadMachineVideo = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -182,15 +250,58 @@ const uploadMachineVideo = async (req: Request, res: Response) => {
   });
 };
 
-const deleteMachineImage = async (req: Request, res: Response) => {
-  const { id, imageId } = req.params;
-  const result = await MachineService.deleteMachineImage(id, imageId);
+
+
+
+const getAllMachineVideosController = async (req: Request, res: Response) => {
+  const { page = "1", limit = "10" } = req.query;
+
+  const result = await MachineService.getAllMachineVideos({
+    page: Number(page),
+    limit: Number(limit),
+  });
+
   res.status(httpStatus.OK).json({
     success: true,
-    message: "Image deleted successfully",
+    data: result.data,
+    meta: result.meta,
+  });
+};
+
+
+
+
+const updateMachineVideo = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const file = req.file as Express.MulterS3.File;
+
+  const result = await MachineService.updateMachineVideo(id, file);
+
+  res.status(httpStatus.OK).json({
+    success: true,
+    message: "Machine video updated successfully",
     data: result,
   });
 };
+
+
+
+const deleteMachineVideo = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  await MachineService.deleteMachineVideo(id);
+
+  res.status(httpStatus.OK).json({
+    success: true,
+    message: "Machine video deleted successfully",
+  });
+};
+
+
+
+
+
+
 
 export const MachineController = {
   getMachines,
@@ -206,4 +317,8 @@ export const MachineController = {
   uploadMachineVideo,
   deleteMachineImage,
   getAllMachineImages,
+  updateMachineImage,
+  getAllMachineVideosController,
+  updateMachineVideo,
+  deleteMachineVideo,
 };
