@@ -406,8 +406,12 @@ async login(body: any, res: Response) {
   const accessToken = jwt.sign(
   { id: user.id, role: user.role },
   process.env.JWT_ACCESS_SECRET!,
-  { expiresIn: "15m" }
+  { expiresIn: "90d" }
 );
+
+console.log(user.role, user.id)
+
+
 
 const refreshToken = jwt.sign(
   { id: user.id, role: user.role },

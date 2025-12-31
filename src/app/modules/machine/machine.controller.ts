@@ -2,15 +2,6 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { MachineService } from "./machine.service";
 
-import { prisma } from "../../shared/prisma";
-
-// const getMachines = async (req: Request, res: Response) => {
-//   const result = await MachineService.getMachines();
-//   res.status(httpStatus.OK).json({
-//     success: true,
-//     data: result,
-//   });
-// };
 
 
 const getMachines = async (req: Request, res: Response) => {

@@ -1,0 +1,95 @@
+enum OrderStatus {
+  PENDING     
+  CONFIRMED     
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  ONLINE
+  BKASH
+  COD
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  subTotal      Int
+  shippingFee   Int           @default(0)
+  discountTotal Int           @default(0)
+  totalAmount   Int
+
+  // Address snapshot (checkout form)
+  customerName  String
+  phone         String
+  addressLine1  String
+  addressLine2  String?
+  city          String?
+  area          String?
+  note          String?
+
+  items         OrderItem[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
+ 
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  productId   String
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  productName String
+  productSlug String
+  unitPrice   Int
+  quantity    Int
+  lineTotal   Int
+
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([id])
+}
+
+
+
+
+
+model ShippingRate {
+  id        String   @id @default(uuid())
+  city      String   @unique
+  fee       Int
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([city])
+  @@index([isActive])
+}
+
+

@@ -389,13 +389,19 @@ const updateProduct = async (id: string, payload: any) => {
     });
   }
 
-  return prisma.product.findUnique({
+  const image = prisma.product.findUnique({
     where: { id },
     include: {
       images: true,
       productCategory: true,
     },
   });
+
+  return {
+    product,
+    image,
+  }
+
 };
 
 

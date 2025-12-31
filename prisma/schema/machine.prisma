@@ -16,7 +16,7 @@ model Machine {
 
   id             String   @id @default(uuid())
 
-  // 🔹 আগের field গুলো ফেরত আনুন
+
   name           String
   slug           String   @unique
   shortDesc      String?
@@ -44,6 +44,13 @@ model Machine {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([id])
+  @@index([features])
+  @@index([brand])
+  @@index([model])
+
 }
 
 

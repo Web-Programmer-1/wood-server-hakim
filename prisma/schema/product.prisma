@@ -65,6 +65,9 @@ model Product {
 
   keyPoints        ProductKeyPoint[]
 
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
   visibility         Boolean           @default(true)
 
   createdAt          DateTime          @default(now())
