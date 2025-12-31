@@ -309,7 +309,6 @@ async register(body: IRegister) {
 
   if (stored !== otp) throw new Error("Invalid OTP");
 
-  // STEP 1 → phone দিয়ে user খুঁজো (since phone is NOT unique)
   const user = await prisma.user.findFirst({
     where: { phone },
   });
@@ -425,7 +424,7 @@ const refreshToken = jwt.sign(
     httpOnly: true,
     secure: false, // localhost
     sameSite: "lax",
-    maxAge: 15 * 60 * 1000,
+     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", refreshToken, {
@@ -610,67 +609,53 @@ async getUserById(id: string) {
 
 
 
+
 async updateUser(
-    targetUserId: string,
-    body: any,
-    requesterId: string,
-    requesterRole: UserRole
-  ) {
-    // 🔐 OWNERSHIP CHECK
-    if (
-      requesterRole === UserRole.CUSTOMER &&
-      requesterId !== targetUserId
-    ) {
-      throw new Error("You can only update your own profile");
-    }
+  targetUserId: string,
+  body: any
+) {
+  const completed = body.profile
+    ? calculateProfileCompleted(body.profile)
+    : undefined;
 
-    // 🔒 OPTIONAL: prevent CUSTOMER from updating role/status
-    if (requesterRole === UserRole.CUSTOMER) {
-      delete body.role;
-      delete body.status;
-    }
+  const updatedUser = await prisma.user.update({
+    where: { id: targetUserId },
+    data: {
+      name: body.name,
+      email: body.email,
+      phone: body.phone,
 
+      // ✅ ROLE DIRECTLY FROM BODY
+      ...(body.role ? { role: body.role as UserRole } : {}),
 
-    const completed = body.profile
-  ? calculateProfileCompleted(body.profile)
-  : undefined;
+      ...(body.status ? { status: body.status } : {}),
 
-  console.log(body.profile);
+      profile: body.profile
+        ? {
+            upsert: {
+              create: {
+                ...body.profile,
+                profileCompleted: completed ?? 0,
+              },
+              update: {
+                ...body.profile,
+                profileCompleted: completed,
+              },
+            },
+          }
+        : undefined,
+    },
+    include: { profile: true },
+  });
 
-
-    return prisma.user.update({
-      where: { id: targetUserId },
-      data: {
-        name: body.name,
-        email: body.email,
-        phone: body.phone,
-
-
-        profile: body.profile
-  ? {
-      upsert: {
-        create: {
-          ...body.profile,
-          profileCompleted: completed ?? 0,
-        },
-        update: {
-          ...body.profile,
-          profileCompleted: completed,
-        },
-      },
-    }
-  : undefined,
-
-      },
-      include: { profile: true },
-    });
-
-    
-  },
+  return updatedUser;
+},
 
 
 
-// User delete ----------------
+
+
+
 
 async deleteUser(id: string) {
   await prisma.user.delete({
@@ -682,3 +667,34 @@ async deleteUser(id: string) {
 
 
 };
+
+
+
+
+
+
+
+
+
+
+
+ export const logoutService = async (res: Response) => {
+  
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: false, 
+    sameSite: "lax",
+  });
+
+  // Clear refresh token cookie
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
+
+  return {
+    message: "Logged out successfully",
+  };
+};
+

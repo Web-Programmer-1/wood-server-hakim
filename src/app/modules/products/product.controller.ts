@@ -10,6 +10,9 @@ const createProduct = async (req: Request, res: Response) => {
 
   const payload = {
     ...req.body,
+    keyPoints: req.body.keyPoints
+      ? JSON.parse(req.body.keyPoints)
+      : null,
     images,
   };
 

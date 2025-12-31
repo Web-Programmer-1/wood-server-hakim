@@ -1,5 +1,5 @@
 import { NextFunction, Request, response, Response } from "express";
-import { AuthService } from "./auth.service";
+import { AuthService, logoutService } from "./auth.service";
 
 // auth.controller.ts
 import { RequestHandler } from "express";
@@ -132,16 +132,6 @@ async getUserById(req: Request, res: Response) {
   }
 },
 
-// async updateUser(req: Request, res: Response) {
-//   try {
-//     const data = await AuthService.updateUser(req.params.id, req.body);
-//     res.json(data);
-//   } catch (err: any) {
-//     res.status(400).json({ message: err.message });
-//   }
-// },
-
-
 
 
 
@@ -162,15 +152,6 @@ async deleteUser(req: Request, res: Response) {
 
 
 
-
-
-
-
-
-
-
-
-
 };
 
 
@@ -180,28 +161,43 @@ async deleteUser(req: Request, res: Response) {
 
 
 
+  export const logout = async (req: Request, res: Response) => {
+  try {
+    const data = await logoutService(res);
+    res.json(data);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
 
 
 
 
 
- export const updateUserCon: RequestHandler = async (req:Request & { user?: any }, res:Response) => {
+export const updateUserCon: RequestHandler = async (req, res) => {
   try {
     const result = await AuthService.updateUser(
       req.params.id,
-      req.body,
-      req.user!.id,     // authGuard guarantee করে
-      req.user!.role
+      req.body
     );
-
-    console.log(result)
 
     res.status(200).json({
       success: true,
       data: result,
     });
   } catch (error: any) {
-    res.status(403).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
 

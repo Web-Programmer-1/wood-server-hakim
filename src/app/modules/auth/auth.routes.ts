@@ -1,10 +1,7 @@
 
 
 import express from "express";
-import { AuthController, updateUserCon } from "./auth.controller";
-
-import { UserRole } from "@prisma/client";
-import { authGuard } from "../../middlewares/auth";
+import { AuthController, logout, updateUserCon } from "./auth.controller";
 
 
 export const authRouter = express.Router();
@@ -28,6 +25,10 @@ authRouter.post("/refresh-token", AuthController.refreshToken);
 authRouter.post("/send-otp", AuthController.sendOTP);
 
 
+// logOut 
+authRouter.post("/logout",logout);
+
+
 
 
 
@@ -44,7 +45,6 @@ authRouter.get("/me",  AuthController.getMe);
 // USER CRUD
 authRouter.get("/users",   AuthController.getAllUsers);
 authRouter.get("/users/:id",   AuthController.getUserById);
-// authRouter.patch("/users/:id",authGuard(UserRole.ADMIN, UserRole.CUSTOMER), AuthController.updateUserCon);
 
 
 authRouter.patch(
@@ -52,6 +52,8 @@ authRouter.patch(
 
   updateUserCon
 );
+
+
 
 
 

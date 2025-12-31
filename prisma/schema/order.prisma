@@ -34,7 +34,6 @@ model Order {
   discountTotal Int           @default(0)
   totalAmount   Int
 
-  // Address snapshot (checkout form)
   customerName  String
   phone         String
   addressLine1  String

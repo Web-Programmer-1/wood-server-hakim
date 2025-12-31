@@ -1,0 +1,18 @@
+model Review {
+  id          String   @id @default(uuid())
+
+  rating      Int      // 1–5
+  comment     String?
+
+  userId      String
+  productId   String
+
+  user        User     @relation(fields: [userId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, productId]) 
+  @@index([rating])
+  @@index([productId])
+}

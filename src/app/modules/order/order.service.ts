@@ -143,10 +143,10 @@ const getMyOrders = async (userId: string, query: any) => {
         paymentStatus: true,
         subTotal: true,
         shippingFee: true,
-        discountTotal: true,
+  
         totalAmount: true,
         createdAt: true,
-        // lightweight items summary for list page
+      
         items: {
           take: 3,
           select: {
@@ -282,20 +282,40 @@ const getAllOrdersAdmin = async (query: any) => {
       orderBy,
       skip,
       take: Number(limit),
+      
       select: {
         id: true,
         userId: true,
+      
         status: true,
         paymentMethod: true,
         paymentStatus: true,
         subTotal: true,
         shippingFee: true,
-        discountTotal: true,
+      
         totalAmount: true,
         createdAt: true,
         customerName: true,
         phone: true,
         city: true,
+
+
+
+              items: {
+        select: {
+          id: true,
+          productId: true,
+          productName: true,
+          productSlug: true,
+          quantity: true,
+          unitPrice: true,
+          lineTotal: true,
+        },
+      },
+
+
+
+
         _count: {
           select: { items: true },
         },

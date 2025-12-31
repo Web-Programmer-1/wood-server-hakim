@@ -3,83 +3,6 @@ import { prisma } from "../../shared/prisma";
 
 
 
-// const createProduct = async (payload: any) => {
-//   const {
-//     name,
-//     slug,
-//     basePrice,
-//     discountPrice,
-//     availability,
-//     brandType,
-//     productCategoryId,
-//     description,
-//     shortDescription,
-//     productType,
-//     images,
-//     keyPoints,
-    
-//   } = payload;
-
-//   if (
-//     !name ||
-//     !slug ||
-//     !basePrice ||
-//     !availability ||
-//     !brandType ||
-//     !productCategoryId
-//   ) {
-//     throw new Error("Missing required product fields");
-//   }
-
-//   const base = Number(basePrice);
-//   const discount = discountPrice ? Number(discountPrice) : null;
-
-//   const product = await prisma.product.create({
-//     data: {
-//       name,
-//       slug,
-//       basePrice: base,
-//       discountPrice: discount,
-//       availability,
-//       brandType,
-//       productType,
-//       description,
-//       shortDescription,
-//       productCategoryId,
-//       images: {
-//         create: images || [],
-//       },
-//     },
-
-//      keyPoints: keyPoints?.length
-//         ? {
-//             create: keyPoints.map((text: string, index: number) => ({
-//               text,
-//               order: index,
-//             })),
-//           }
-//         : undefined,
-//     },
-
-
-//     include: {
-//       images: true,
-//       productCategory: true,
-//     },
-//   });
-
-
-//   const discountPercent =
-//     discount && discount < base
-//       ? Math.round(((base - discount) / base) * 100)
-//       : null;
-
-//   return {
-//     ...product,
-//     discountPercent,
-//   };
-// };
-
 
 
 const createProduct = async (payload: any) => {
@@ -124,27 +47,20 @@ const createProduct = async (payload: any) => {
       description,
       shortDescription,
       productCategoryId,
+      keyPoints,
+      
 
       images: {
         create: images || [],
       },
 
      
-      keyPoints: keyPoints?.length
-        ? {
-            create: keyPoints.map((text: string, index: number) => ({
-              text,
-              order: index,
-            })),
-          }
-        : undefined,
+
     },
 
     include: {
       images: true,
-      keyPoints: {
-        orderBy: { order: "asc" },
-      },
+   
       productCategory: true,
     },
   });
@@ -159,6 +75,14 @@ const createProduct = async (payload: any) => {
     discountPercent,
   };
 };
+
+
+
+
+
+
+
+
 
 
 

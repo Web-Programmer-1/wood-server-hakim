@@ -57,16 +57,19 @@ model Product {
   rating             Float             @default(0)
   ratingCount        Int               @default(0)
 
+   keyPoints          Json? // new added keyPoints remove keyPoints Model
+
   productCategoryId  String
   
   productCategory ProductCategory @relation(fields: [productCategoryId], references: [id])
 
   images             ProductImage[]
 
-  keyPoints        ProductKeyPoint[]
+  
 
   cartItems  CartItem[]
   orderItems OrderItem[]
+  review  Review[]
 
   visibility         Boolean           @default(true)
 
@@ -89,21 +92,9 @@ model ProductImage {
   orderIndex Int      @default(0)
 
   createdAt  DateTime @default(now())
+   
+   @@index([productId])
+
 }
 
 
-
-
-model ProductKeyPoint {
-  id        String   @id @default(uuid())
-  productId String
-
-  product Product @relation(fields: [productId], references: [id])
-
-  text      String
-  order     Int      @default(0)
-
-  createdAt DateTime @default(now())
-
-  @@index([productId])
-}
