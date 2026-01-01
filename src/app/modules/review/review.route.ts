@@ -16,7 +16,7 @@ router.get(
 
 router.post(
   "/",
-  authGuard(UserRole.CUSTOMER),
+  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
   createReviewHandler
 );
 
@@ -29,13 +29,13 @@ router.post(
 
 router.get(
   "/admin/reviews",
-  authGuard(UserRole.CUSTOMER),
+  authGuard(UserRole.CUSTOMER,UserRole.ADMIN),
   getAllReviewsAdminHandler
 );
 
 router.delete(
   "/admin/reviews/:reviewId",
-  authGuard(UserRole.CUSTOMER),
+  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
   deleteReviewAdminHandler
 );
 
