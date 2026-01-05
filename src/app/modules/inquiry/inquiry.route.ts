@@ -1,6 +1,6 @@
 // src/modules/inquiry/inquiry.route.ts
 import { Router } from "express";
-import { createInquiry, getInquiries, getInquiryById, sendQuotationEmail, updateInquiryStatus } from "./inquiry.controller";
+import { createInquiry, deleteInquiry, getInquiries, getInquiryById, sendQuotationEmail, updateInquiryStatus } from "./inquiry.controller";
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
@@ -21,6 +21,13 @@ router.post(
   "/:id/send-quotation",
    authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
   sendQuotationEmail
+);
+
+
+router.delete(
+  "/:id",
+  authGuard(UserRole.ADMIN),
+  deleteInquiry
 );
 
 

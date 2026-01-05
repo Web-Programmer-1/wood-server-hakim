@@ -12,8 +12,16 @@ model Inquiry {
   status    InquiryStatus @default(PENDING)
 
 
-    respondedByAdminId String?
+  respondedByAdminId String?
+
+  respondedByAdmin  User? @relation(fields: [respondedByAdminId], references: [id])
+
+
   respondedAt        DateTime?
+
+
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

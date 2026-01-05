@@ -1,11 +1,11 @@
 import express, { Application, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
-// import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
 import config from './config';
 import router from './app/routes';
 import cookieParser from 'cookie-parser'
 import cron from 'node-cron';
+import { globalLimiter } from './app/middlewares/rateLimit';
 
 const app: Application = express();
 
@@ -15,10 +15,15 @@ app.use(cors({
     credentials: true
 }));
 
+// Rate Limit for Illegal Requests
+app.use(globalLimiter);
+
+
 //parser
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+
 
 
 cron.schedule('* * * * *', () => {

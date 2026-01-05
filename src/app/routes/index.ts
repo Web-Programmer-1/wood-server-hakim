@@ -9,6 +9,8 @@ import { OrderRoutes } from '../modules/order/order.route';
 import { ShippingRateRoutes } from '../modules/shipping/shipping.route';
 import { ReviewRoutes } from '../modules/review/review.route';
 import { InquiryRoutes } from '../modules/inquiry/inquiry.route';
+import { PaymentRoutes } from '../modules/payment/payment.route';
+import { adminPaymentRoutes } from '../modules/adminPayment/adminPayment.route';
 
 const router = express.Router();
 
@@ -53,6 +55,14 @@ const moduleRoutes = [
     {
         path: '/inquiries',
         route: InquiryRoutes,
+    },
+    {
+        path: '/payments',
+        route: PaymentRoutes,
+    },
+    {
+        path: '/admin',
+        route: adminPaymentRoutes,
     },
 
 

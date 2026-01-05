@@ -1,3 +1,4 @@
+import { Inquiry } from './../../../../node_modules/.pnpm/@prisma+client@6.19.0_prism_0ade0c2032e7f19289902b884120cfab/node_modules/.prisma/client/index.d';
 import { sendEmail } from "../../../utils/nodeMailer";
 import { prisma } from "../../shared/prisma";
 import { CreateInquiryPayload } from "../review/review.interface";
@@ -187,17 +188,46 @@ export const getInquiriesService = async (
   }
 
 
+
+
+
+
   const [data, total] = await Promise.all([
-    prisma.inquiry.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: {
-        createdAt: "desc",
+  prisma.inquiry.findMany({
+    where,
+    skip,
+    take: limit,
+    orderBy: {
+      createdAt: "desc",
+    },
+
+    
+    include: {
+      respondedByAdmin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          phone: true,
+          profile:{
+            select:{
+              avatarUri: true,
+              profession:true,
+              occupationType: true,
+              bio: true,
+            }
+          }
+        },
       },
-    }),
-    prisma.inquiry.count({ where }),
-  ]);
+    },
+  }),
+
+  prisma.inquiry.count({ where }),
+]);
+
+
+
 
 
   return {
@@ -225,6 +255,29 @@ export const getInquiryByIdService = async (id: string) => {
 
   const inquiry = await prisma.inquiry.findUnique({
     where: { id },
+
+    include: {
+      respondedByAdmin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          phone: true,
+          profile:{
+            select:{
+              avatarUri: true,
+              profession:true,
+              occupationType: true,
+              bio: true,
+            }
+          }
+        },
+      },
+    },
+
+
+
   });
 
   if (!inquiry) {
@@ -291,6 +344,9 @@ export const updateInquiryStatusService = async (
 
   return updatedInquiry;
 };
+
+
+
 
 
 
@@ -376,3 +432,49 @@ export const sendQuotationEmailService = async (
 
   return updatedInquiry;
 };
+
+
+
+
+
+
+
+
+
+
+export const deleteInquiryService = async (
+  inquiryId: string,
+  adminId: string
+) => {
+  if (!inquiryId || !adminId) {
+    throw new Error("INVALID_INPUT");
+  }
+
+  const inquiry = await prisma.inquiry.findUnique({
+    where: { id: inquiryId },
+  });
+
+  if (!inquiry) {
+    throw new Error("NOT_FOUND");
+  }
+
+  // ❌ Already deleted
+  if (inquiry.isDeleted) {
+    throw new Error("ALREADY_DELETED");
+  }
+
+  // 🔐 Optional rule:
+  // Converted inquiry delete block
+  if (inquiry.status === "CONVERTED") {
+    throw new Error("CANNOT_DELETE_CONVERTED");
+  }
+
+  return prisma.inquiry.update({
+    where: { id: inquiryId },
+    data: {
+      isDeleted: true,
+      deletedAt: new Date(),
+    },
+  });
+};
+

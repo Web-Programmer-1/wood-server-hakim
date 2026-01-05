@@ -19,10 +19,16 @@ model User {
   orders Order[]
   review Review[]
 
+  inquiries Inquiry[]
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   
   @@map("users")
+  @@index([status])
+  @@index([email])
+  @@index([phone])
+  @@index([createdAt])
 }
 
 

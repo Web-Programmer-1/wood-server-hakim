@@ -1,6 +1,6 @@
 
  export type CheckoutPayload = {
-  paymentMethod: "ONLINE" | "COD";
+  paymentMethod:  "SSLCOMMARZE" | "BKASH" | "COD" | "ONLINE";
   customerName: string;
   phone: string;
   addressLine1: string;

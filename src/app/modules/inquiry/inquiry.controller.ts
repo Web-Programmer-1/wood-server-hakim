@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createInquiryService, getInquiriesService, getInquiryByIdService, sendQuotationEmailService, updateInquiryStatusService } from "./inquiry.service";
+import { createInquiryService, deleteInquiryService, getInquiriesService, getInquiryByIdService, sendQuotationEmailService, updateInquiryStatusService } from "./inquiry.service";
 
 export const createInquiry = async (req: Request, res: Response) => {
   try {
@@ -236,6 +236,67 @@ export const sendQuotationEmail = async (
     return res.status(500).json({
       success: false,
       message: "Failed to send quotation email",
+    });
+  }
+};
+
+
+
+
+
+
+
+
+export const deleteInquiry = async (
+  req: Request & { user?: { id: string } },
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user?.id;
+
+    const result = await deleteInquiryService(id, adminId!);
+
+    return res.status(200).json({
+      success: true,
+      message: "Inquiry deleted successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    if (error.message === "INVALID_INPUT") {
+      return res.status(400).json({
+        success: false,
+        message: "Inquiry id missing",
+      });
+    }
+
+    if (error.message === "NOT_FOUND") {
+      return res.status(404).json({
+        success: false,
+        message: "Inquiry not found",
+      });
+    }
+
+    if (error.message === "ALREADY_DELETED") {
+      return res.status(409).json({
+        success: false,
+        message: "Inquiry already deleted",
+      });
+    }
+
+    if (error.message === "CANNOT_DELETE_CONVERTED") {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Converted inquiry cannot be deleted",
+      });
+    }
+
+    console.error("Delete Inquiry Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete inquiry",
     });
   }
 };

@@ -1,0 +1,48 @@
+enum PaymentProvider {
+  SSLCOMMERZ
+  BKASH
+  COD
+}
+
+enum MPaymentStatus {
+  INITIATED     
+  PENDING      
+  PAID    
+   
+  FAILED        
+  REFUNDED
+}
+
+model Payment {
+  id              String           @id @default(uuid())
+
+  orderId         String
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider        PaymentProvider
+  status         MPaymentStatus @default(INITIATED)
+
+  amount          Int
+
+  transactionId   String?          // tran_id (SSL) / paymentID (bKash)
+  gatewayRef      String?          // val_id (SSL) / trxID (bKash)
+
+  sessionKey      String?          // SSL session
+  redirectUrl     String?
+
+
+  rawRequest      Json?
+  rawResponse     Json?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([orderId])
+  @@index([provider])
+  @@index([status])
+  @@index([transactionId])
+}
+
+
+
+

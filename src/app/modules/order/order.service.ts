@@ -1,10 +1,119 @@
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, PaymentMethod } from "@prisma/client";
 import { getShippingFee } from "../../../helper/Shipping";
 import { prisma } from "../../shared/prisma";
 import { CheckoutPayload } from "./order.interface";
+import { SSLCommerzService } from "../payment/payment.service";
 
 
-const checkoutFromCart = async (userId: string, payload: CheckoutPayload) => {
+// const checkoutFromCart = async (userId: string, payload: CheckoutPayload) => {
+//   const {
+//     paymentMethod,
+//     customerName,
+//     phone,
+//     addressLine1,
+//     addressLine2,
+//     city,
+//     area,
+//     note,
+//   } = payload;
+
+//   if (!paymentMethod || !customerName || !phone || !addressLine1) {
+//     throw new Error("Missing checkout fields");
+//   }
+
+//   return prisma.$transaction(async (tx) => {
+//     // 1) Load cart with items + product snapshots
+//     const cart = await tx.cart.findUnique({
+//       where: { userId },
+//       include: {
+//         items: {
+//           include: {
+//             product: {
+//               select: { id: true, name: true, slug: true, visibility: true },
+//             },
+//           },
+//         },
+//       },
+//     });
+
+//     if (!cart || cart.items.length === 0) {
+//       throw new Error("Cart is empty");
+//     }
+
+//     // 2) Validate products
+//     for (const item of cart.items) {
+//       if (!item.product || !item.product.visibility) {
+//         throw new Error("One or more products are unavailable");
+//       }
+//       if (item.quantity < 1) {
+//         throw new Error("Invalid quantity in cart");
+//       }
+//     }
+
+//     // 3) Calculate totals (using snapshot price stored in CartItem.price)
+//     const subTotal = cart.items.reduce(
+//       (sum, item) => sum + item.price * item.quantity,
+//       0
+//     );
+
+
+
+//     const shippingFee = await getShippingFee(
+//   city as string,
+//   paymentMethod
+// );
+
+// const totalAmount =
+//   subTotal + shippingFee;
+
+
+//     const order = await tx.order.create({
+//       data: {
+//         userId,
+//        paymentMethod ,
+       
+//         status: "PENDING",
+
+//         subTotal,
+//         shippingFee,
+     
+//         totalAmount,
+
+//         customerName,
+//         phone,
+//         addressLine1,
+//         addressLine2,
+//         city,
+//         area,
+//         note,
+
+//         items: {
+//           create: cart.items.map((ci) => ({
+//             productId: ci.productId,
+//             productName: ci.product!.name,
+//             productSlug: ci.product!.slug,
+//             unitPrice: ci.price,
+//             quantity: ci.quantity,
+//             lineTotal: ci.price * ci.quantity,
+//           })),
+//         },
+//       },
+//       include: {
+//         items: true,
+//       },
+//     });
+
+ 
+//     await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+//     return order;
+//   });
+// };
+
+
+
+
+const checkoutFromCart = async (userId: string, payload:any) => {
   const {
     paymentMethod,
     customerName,
@@ -21,7 +130,7 @@ const checkoutFromCart = async (userId: string, payload: CheckoutPayload) => {
   }
 
   return prisma.$transaction(async (tx) => {
-    // 1) Load cart with items + product snapshots
+    // 1️⃣ Load cart
     const cart = await tx.cart.findUnique({
       where: { userId },
       include: {
@@ -39,7 +148,7 @@ const checkoutFromCart = async (userId: string, payload: CheckoutPayload) => {
       throw new Error("Cart is empty");
     }
 
-    // 2) Validate products
+    // 2️⃣ Validate products
     for (const item of cart.items) {
       if (!item.product || !item.product.visibility) {
         throw new Error("One or more products are unavailable");
@@ -49,36 +158,29 @@ const checkoutFromCart = async (userId: string, payload: CheckoutPayload) => {
       }
     }
 
-    // 3) Calculate totals (using snapshot price stored in CartItem.price)
+    // 3️⃣ Calculate subtotal
     const subTotal = cart.items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
-    // const shippingFee = 0;
-    // const discountTotal = 0;
-    // const totalAmount = subTotal + shippingFee - discountTotal;
-
-
     const shippingFee = await getShippingFee(
-  city as string,
-  paymentMethod
-);
+      city as string,
+      paymentMethod as "COD" || "ONLINE" ,
+    );
 
-const totalAmount =
-  subTotal + shippingFee;
+    const totalAmount = subTotal + shippingFee;
 
-
+    // 4️⃣ Create ORDER (always first)
     const order = await tx.order.create({
       data: {
         userId,
         paymentMethod,
-        paymentStatus: paymentMethod === "COD" ? "UNPAID" : "UNPAID",
-        status: "PENDING",
+        // paymentStatus: paymentMethod === "COD" ? "UNPAID" : "PENDING",
+        status: paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
 
         subTotal,
         shippingFee,
-     
         totalAmount,
 
         customerName,
@@ -100,17 +202,70 @@ const totalAmount =
           })),
         },
       },
-      include: {
-        items: true,
-      },
     });
 
- 
+    // 5️⃣ Clear cart
     await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
 
-    return order;
+    // ===============================
+    // 🔀 PAYMENT METHOD BRANCH
+    // ===============================
+
+    // ✅ COD FLOW (DONE)
+    if (paymentMethod === "COD") {
+      return {
+        type: "COD",
+        order,
+      };
+    }
+
+    // 🔁 SSLCOMMERZ FLOW
+    if (paymentMethod === "SSLCOMMARZE") {
+      // 6️⃣ Create Payment record
+      const payment = await tx.payment.create({
+        data: {
+          orderId: order.id,
+          provider: "SSLCOMMERZ",
+          amount: totalAmount,
+          status: "INITIATED",
+        },
+      });
+
+      // 7️⃣ Create SSL session
+      const session = await SSLCommerzService.createSession({
+        orderId: order.id,
+        amount: totalAmount,
+        customerName,
+        phone,
+      });
+
+      // 8️⃣ Update payment with gateway data
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          transactionId: order.id,
+          sessionKey: session.sessionkey,
+          redirectUrl: session.GatewayPageURL,
+          rawResponse: session,
+          status: "PENDING",
+        },
+      });
+
+      return {
+        type: "REDIRECT",
+        provider: "SSLCOMMERZ",
+        redirectUrl: session.GatewayPageURL,
+        orderId: order.id,
+      };
+    }
+
+    throw new Error("Unsupported payment method");
   });
 };
+
+
+
+
 
 
 
@@ -180,7 +335,7 @@ const getOrderDetails = async (userId: string, orderId: string) => {
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
-      userId, // 🔐 ownership check
+      userId, 
     },
     include: {
       items: {
@@ -208,7 +363,7 @@ const getOrderDetails = async (userId: string, orderId: string) => {
 
 
 const cancelOrder = async (userId: string, orderId: string) => {
-  // 1️⃣ Find order (ownership check)
+
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
@@ -220,12 +375,12 @@ const cancelOrder = async (userId: string, orderId: string) => {
     throw new Error("Order not found");
   }
 
-  // 2️⃣ Prevent double cancel
+ 
   if (order.status === "CANCELLED") {
     throw new Error("Order already cancelled");
   }
 
-  // 3️⃣ Cancel rules
+
   const cancellableStatuses = ["PENDING", "CONFIRMED"];
 
   if (!cancellableStatuses.includes(order.status)) {
@@ -234,7 +389,7 @@ const cancelOrder = async (userId: string, orderId: string) => {
     );
   }
 
-  // 4️⃣ Update order status
+
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {

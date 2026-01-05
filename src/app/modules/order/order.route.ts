@@ -28,7 +28,7 @@ router.patch(
 router.get("/my", authGuard(UserRole.CUSTOMER), OrderController.getMyOrders);
 
 
-router.post("/checkout", authGuard(UserRole.CUSTOMER) , OrderController.checkout);
+router.post("/checkout", authGuard(UserRole.CUSTOMER, UserRole.ADMIN) , OrderController.checkout);
 
 
 router.get("/:orderId", authGuard(UserRole.CUSTOMER), OrderController.getOrderDetails);

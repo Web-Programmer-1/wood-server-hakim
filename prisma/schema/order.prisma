@@ -9,16 +9,23 @@ enum OrderStatus {
 
 enum PaymentMethod {
   ONLINE
+  SSLCOMMARZE
   BKASH
   COD
 }
 
+
 enum PaymentStatus {
-  UNPAID
-  PAID
-  FAILED
+  INITIATED     
+  PENDING      
+  PAID   
+  UNPAID       
+  FAILED        
   REFUNDED
 }
+
+
+
 
 model Order {
   id            String        @id @default(uuid())
@@ -27,7 +34,8 @@ model Order {
 
   status        OrderStatus   @default(PENDING)
   paymentMethod PaymentMethod
-  paymentStatus PaymentStatus @default(UNPAID)
+ paymentStatus PaymentStatus @default(UNPAID) 
+
 
   subTotal      Int
   shippingFee   Int           @default(0)
@@ -44,12 +52,14 @@ model Order {
 
   items         OrderItem[]
 
+  payments  Payment[]
+
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   @@index([userId])
   @@index([status])
-  @@index([paymentStatus])
+
  
 }
 

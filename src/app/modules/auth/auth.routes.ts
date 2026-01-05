@@ -2,27 +2,28 @@
 
 import express from "express";
 import { AuthController, logout, updateUserCon } from "./auth.controller";
+import { strictLimiter } from "../../middlewares/strictFixTimeSecurity";
 
 
 export const authRouter = express.Router();
 
 // REGISTER
-authRouter.post("/register", AuthController.register);
+authRouter.post("/register", strictLimiter, AuthController.register);
 
 //  verify email
-authRouter.post("/verify-email", AuthController.verifyEmail);
+authRouter.post("/verify-email", strictLimiter, AuthController.verifyEmail);
 
 // VERIFY PHONE
-authRouter.post("/verify-phone", AuthController.verifyPhone);
+authRouter.post("/verify-phone", strictLimiter , AuthController.verifyPhone);
 
 // LOGIN
-authRouter.post("/login", AuthController.login);
+authRouter.post("/login", strictLimiter, AuthController.login);
 
 // REFRESH TOKEN
-authRouter.post("/refresh-token", AuthController.refreshToken);
+authRouter.post("/refresh-token",strictLimiter, AuthController.refreshToken);
 
 // SEND OTP (email or phone)
-authRouter.post("/send-otp", AuthController.sendOTP);
+authRouter.post("/send-otp", strictLimiter, AuthController.sendOTP);
 
 
 // logOut 
@@ -33,23 +34,23 @@ authRouter.post("/logout",logout);
 
 
 // FORGOT PASSWORD
-authRouter.post("/forgot-password", AuthController.forgotPassword);
+authRouter.post("/forgot-password", strictLimiter, AuthController.forgotPassword);
 
 
 // RESET PASSWORD
-authRouter.post("/reset-password", AuthController.resetPassword);
+authRouter.post("/reset-password",strictLimiter, AuthController.resetPassword);
 
 // GET CURRENT USER
-authRouter.get("/me",  AuthController.getMe);
+authRouter.get("/me", strictLimiter, AuthController.getMe);
 
 // USER CRUD
-authRouter.get("/users",   AuthController.getAllUsers);
-authRouter.get("/users/:id",   AuthController.getUserById);
+authRouter.get("/users", strictLimiter,  AuthController.getAllUsers);
+authRouter.get("/users/:id", strictLimiter,  AuthController.getUserById);
 
 
 authRouter.patch(
   "/users/:id",
-
+strictLimiter,
   updateUserCon
 );
 
@@ -60,4 +61,4 @@ authRouter.patch(
 
 
 
-authRouter.delete("/users/:id",  AuthController.deleteUser);
+authRouter.delete("/users/:id",strictLimiter,  AuthController.deleteUser);
