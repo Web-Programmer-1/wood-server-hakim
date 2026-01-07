@@ -1,0 +1,3667 @@
+{
+	"info": {
+		"_postman_id": "wood-server-hakim-collection",
+		"name": "Wood Server Hakim API",
+		"description": "Complete API collection for Wood Server Hakim project with all endpoints and demo examples",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"1234567890\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Register a new user. Either email or phone is required."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"1234567890\",\n  \"password\": \"Password123\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/register",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "auth", "register"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"user-id\",\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"phone\": \"1234567890\",\n    \"role\": \"CUSTOMER\",\n    \"status\": \"ACTIVE\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": \"123456\",\n  \"verificationStatus\": \"VERIFIED\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/verify-email",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "verify-email"]
+						},
+						"description": "Verify user email with OTP code"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Phone",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"1234567890\",\n  \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/verify-phone",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "verify-phone"]
+						},
+						"description": "Verify user phone number with OTP code"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Login with email/phone and password. Sets httpOnly cookies for tokens."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/login",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "auth", "login"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "accessToken=xxx; httpOnly; secure"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": \"user-id\",\n      \"name\": \"John Doe\",\n      \"email\": \"john.doe@example.com\",\n      \"role\": \"CUSTOMER\"\n    }\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/refresh-token",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "refresh-token"]
+						},
+						"description": "Refresh access token using refresh token from cookies"
+					},
+					"response": []
+				},
+				{
+					"name": "Send OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"john.doe@example.com\",\n  \"type\": \"email\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/send-otp",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "send-otp"]
+						},
+						"description": "Send OTP to email or phone. Type can be 'email' or 'phone'"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"john.doe@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "forgot-password"]
+						},
+						"description": "Request password reset. Sends OTP to email or phone."
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"john.doe@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/reset-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "reset-password"]
+						},
+						"description": "Reset password using OTP code"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "me"]
+						},
+						"description": "Get current authenticated user profile. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/auth/me",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "auth", "me"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"user-id\",\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"phone\": \"1234567890\",\n    \"role\": \"CUSTOMER\",\n    \"status\": \"ACTIVE\",\n    \"emailVerified\": true,\n    \"phoneVerified\": true,\n    \"profile\": {\n      \"avatarUri\": null,\n      \"bio\": null,\n      \"gender\": null,\n      \"dateOfBirth\": null,\n      \"profession\": null,\n      \"occupationType\": null,\n      \"nationalId\": null,\n      \"socialLinks\": {},\n      \"verificationStatus\": \"PENDING\",\n      \"profileCompleted\": 0\n    }\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "users"]
+						},
+						"description": "Get all users. Requires ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/users/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-id",
+									"description": "User ID"
+								}
+							]
+						},
+						"description": "Get user by ID. Requires ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Updated\",\n  \"email\": \"john.updated@example.com\",\n  \"phone\": \"9876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/users/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-id",
+									"description": "User ID"
+								}
+							]
+						},
+						"description": "Update user. Users can only update their own profile unless they are ADMIN. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/users/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "users", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-id",
+									"description": "User ID"
+								}
+							]
+						},
+						"description": "Delete user. Requires ADMIN role."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "logout"]
+						},
+						"description": "Logout user and clear authentication cookies"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication and user management endpoints"
+		},
+		{
+			"name": "Category",
+			"item": [
+				{
+					"name": "Get All Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/category",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "category"]
+						},
+						"description": "Get all categories"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/category",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "category"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"cat-id-1\",\n      \"name\": \"Woodworking Machines\",\n      \"slug\": \"woodworking-machines\",\n      \"parentId\": null,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    },\n    {\n      \"id\": \"cat-id-2\",\n      \"name\": \"Sawing Machines\",\n      \"slug\": \"sawing-machines\",\n      \"parentId\": \"cat-id-1\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Category Tree",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/category/tree",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "category", "tree"]
+						},
+						"description": "Get categories in tree/hierarchical structure"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/category/tree",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "category", "tree"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"cat-id-1\",\n      \"name\": \"Woodworking Machines\",\n      \"slug\": \"woodworking-machines\",\n      \"parentId\": null,\n      \"children\": [\n        {\n          \"id\": \"cat-id-2\",\n          \"name\": \"Sawing Machines\",\n          \"slug\": \"sawing-machines\",\n          \"parentId\": \"cat-id-1\",\n          \"children\": []\n        }\n      ]\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Machines By Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/category/:slug/machines",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "category", ":slug", "machines"],
+							"variable": [
+								{
+									"key": "slug",
+									"value": "woodworking-machines",
+									"description": "Category slug"
+								}
+							]
+						},
+						"description": "Get all machines in a specific category by category slug"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Woodworking Machines\",\n  \"slug\": \"woodworking-machines\",\n  \"parentId\": null\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/category/admin",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "category", "admin"]
+						},
+						"description": "Create a new category. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Woodworking Machines\",\n  \"slug\": \"woodworking-machines\",\n  \"parentId\": null\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/category/admin",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "category", "admin"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"cat-id-1\",\n    \"name\": \"Woodworking Machines\",\n    \"slug\": \"woodworking-machines\",\n    \"parentId\": null,\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Category (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Woodworking Machines\",\n  \"slug\": \"updated-woodworking-machines\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/category/admin/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "category", "admin", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cat-id-1",
+									"description": "Category ID"
+								}
+							]
+						},
+						"description": "Update a category. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/category/admin/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "category", "admin", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cat-id-1",
+									"description": "Category ID"
+								}
+							]
+						},
+						"description": "Delete a category. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/category/admin/:id",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "category", "admin", ":id"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Category deleted successfully\",\n  \"data\": {\n    \"id\": \"cat-id-1\"\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Category management endpoints"
+		},
+		{
+			"name": "Machine",
+			"item": [
+				{
+					"name": "Get All Machines",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines"]
+						},
+						"description": "Get all machines"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"machine-id-1\",\n      \"name\": \"Circular Saw Machine\",\n      \"slug\": \"circular-saw-machine\",\n      \"shortDesc\": \"High-performance circular saw\",\n      \"description\": \"Professional circular saw machine for woodworking\",\n      \"categoryId\": \"cat-id-1\",\n      \"thumbnailImage\": \"https://example.com/thumbnail.jpg\",\n      \"bannerImage\": \"https://example.com/banner.jpg\",\n      \"features\": {\n        \"power\": \"1500W\",\n        \"bladeSize\": \"7.25 inches\"\n      },\n      \"specifications\": {\n        \"weight\": \"15kg\",\n        \"dimensions\": \"50x30x20cm\"\n      },\n      \"isFeatured\": true,\n      \"isActive\": true,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Featured Machines",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/featured",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "featured"]
+						},
+						"description": "Get all featured machines"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines/featured",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines", "featured"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"machine-id-1\",\n      \"name\": \"Circular Saw Machine\",\n      \"slug\": \"circular-saw-machine\",\n      \"isFeatured\": true\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Search Machines",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/search?keyword=circular",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "search"],
+							"query": [
+								{
+									"key": "keyword",
+									"value": "circular",
+									"description": "Search keyword"
+								}
+							]
+						},
+						"description": "Search machines by keyword"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Machine By Slug",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/:slug",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", ":slug"],
+							"variable": [
+								{
+									"key": "slug",
+									"value": "circular-saw-machine",
+									"description": "Machine slug"
+								}
+							]
+						},
+						"description": "Get machine details by slug"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines/circular-saw-machine",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines", "circular-saw-machine"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"machine-id-1\",\n    \"name\": \"Circular Saw Machine\",\n    \"slug\": \"circular-saw-machine\",\n    \"shortDesc\": \"High-performance circular saw\",\n    \"description\": \"Professional circular saw machine for woodworking\",\n    \"categoryId\": \"cat-id-1\",\n    \"thumbnailImage\": \"https://example.com/thumbnail.jpg\",\n    \"bannerImage\": \"https://example.com/banner.jpg\",\n    \"features\": {\n      \"power\": \"1500W\",\n      \"bladeSize\": \"7.25 inches\"\n    },\n    \"specifications\": {\n      \"weight\": \"15kg\",\n      \"dimensions\": \"50x30x20cm\"\n    },\n    \"isFeatured\": true,\n    \"isActive\": true,\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Related Machines",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/:slug/related",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", ":slug", "related"],
+							"variable": [
+								{
+									"key": "slug",
+									"value": "circular-saw-machine",
+									"description": "Machine slug"
+								}
+							]
+						},
+						"description": "Get related machines based on category"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Machine (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "data",
+									"value": "{\n  \"name\": \"Circular Saw Machine\",\n  \"slug\": \"circular-saw-machine\",\n  \"shortDesc\": \"High-performance circular saw\",\n  \"description\": \"Professional circular saw machine for woodworking\",\n  \"categoryId\": \"cat-id-1\",\n  \"features\": {\n    \"power\": \"1500W\",\n    \"bladeSize\": \"7.25 inches\"\n  },\n  \"specifications\": {\n    \"weight\": \"15kg\",\n    \"dimensions\": \"50x30x20cm\"\n  },\n  \"isFeatured\": true\n}",
+									"type": "text"
+								},
+								{
+									"key": "thumbnail",
+									"type": "file",
+									"src": [],
+									"description": "Thumbnail image file"
+								},
+								{
+									"key": "banner",
+									"type": "file",
+									"src": [],
+									"description": "Banner image file (optional)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/admin",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "admin"]
+						},
+						"description": "Create a new machine with thumbnail and banner images. Requires ADMIN role (currently commented out in code). The 'data' field should contain JSON string with machine details."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "data",
+											"value": "{\n  \"name\": \"Circular Saw Machine\",\n  \"slug\": \"circular-saw-machine\",\n  \"categoryId\": \"cat-id-1\"\n}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines/admin",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines", "admin"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"machine-id-1\",\n    \"name\": \"Circular Saw Machine\",\n    \"slug\": \"circular-saw-machine\",\n    \"thumbnailImage\": \"https://s3.amazonaws.com/bucket/thumbnail.jpg\",\n    \"bannerImage\": \"https://s3.amazonaws.com/bucket/banner.jpg\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Machine (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Circular Saw Machine\",\n  \"shortDesc\": \"Updated description\",\n  \"isFeatured\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/admin/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "admin", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "machine-id-1",
+									"description": "Machine ID"
+								}
+							]
+						},
+						"description": "Update machine details. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Machine Status (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isActive\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/admin/:id/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "admin", ":id", "status"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "machine-id-1",
+									"description": "Machine ID"
+								}
+							]
+						},
+						"description": "Update machine active status. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Machine (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/admin/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "admin", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "machine-id-1",
+									"description": "Machine ID"
+								}
+							]
+						},
+						"description": "Delete a machine. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines/admin/:id",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines", "admin", ":id"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Machine deleted successfully\",\n  \"data\": {\n    \"id\": \"machine-id-1\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Upload Machine Images (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"description": "Image files (up to 10 images)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/admin/:id/images",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "admin", ":id", "images"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "machine-id-1",
+									"description": "Machine ID"
+								}
+							]
+						},
+						"description": "Upload multiple images for a machine (up to 10 images). Requires ADMIN role (currently commented out in code)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "images",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines/admin/:id/images",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines", "admin", ":id", "images"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"image-id-1\",\n      \"machineId\": \"machine-id-1\",\n      \"imageUrl\": \"https://s3.amazonaws.com/bucket/image1.jpg\",\n      \"type\": \"GALLERY\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Upload Machine Video (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "video",
+									"type": "file",
+									"src": [],
+									"description": "Video file"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/admin/:id/video",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "admin", ":id", "video"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "machine-id-1",
+									"description": "Machine ID"
+								}
+							]
+						},
+						"description": "Upload video for a machine. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "video",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines/admin/:id/video",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines", "admin", ":id", "video"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"video-id-1\",\n    \"machineId\": \"machine-id-1\",\n    \"videoUrl\": \"https://s3.amazonaws.com/bucket/video.mp4\",\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Machine Image (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/machine-images/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "machine-images", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "image-id-1",
+									"description": "Image ID"
+								}
+							]
+						},
+						"description": "Delete a specific image from a machine. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/machines/machine-images/:id",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "machines", "machine-images", ":id"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Image deleted successfully\",\n  \"data\": {\n    \"id\": \"image-id-1\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Machine Images",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/machine-images",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "machine-images"]
+						},
+						"description": "Get all machine images"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Machine Image (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": [],
+									"description": "Image file"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/machine-images/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "machine-images", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "image-id-1",
+									"description": "Image ID"
+								}
+							]
+						},
+						"description": "Update a machine image. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Machine Videos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/images/videos",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "images", "videos"]
+						},
+						"description": "Get all machine videos"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Machine Video (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "video",
+									"type": "file",
+									"src": [],
+									"description": "Video file"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/images/videos/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "images", "videos", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "video-id-1",
+									"description": "Video ID"
+								}
+							]
+						},
+						"description": "Update machine video. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Machine Video (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/machines/images/videos/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "machines", "images", "videos", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "video-id-1",
+									"description": "Video ID"
+								}
+							]
+						},
+						"description": "Delete machine video. Requires ADMIN role (currently commented out in code)."
+					},
+					"response": []
+				}
+			],
+			"description": "Machine management endpoints"
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/products?page=1&limit=12",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "products"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "12",
+									"description": "Items per page"
+								},
+								{
+									"key": "category",
+									"value": "",
+									"description": "Filter by category slug",
+									"disabled": true
+								},
+								{
+									"key": "minPrice",
+									"value": "",
+									"description": "Minimum price filter",
+									"disabled": true
+								},
+								{
+									"key": "maxPrice",
+									"value": "",
+									"description": "Maximum price filter",
+									"disabled": true
+								},
+								{
+									"key": "availability",
+									"value": "",
+									"description": "Filter by availability (IN_STOCK,PRE_ORDER,UPCOMING)",
+									"disabled": true
+								},
+								{
+									"key": "brandType",
+									"value": "",
+									"description": "Filter by brand type (LOCAL,PREMIUM,TRENDING,INDUSTRIAL,PROFESSIONAL)",
+									"disabled": true
+								},
+								{
+									"key": "productType",
+									"value": "",
+									"description": "Filter by product type (NEW_ARRIVAL,BEST_SELLER,FEATURED)",
+									"disabled": true
+								},
+								{
+									"key": "ratingGte",
+									"value": "",
+									"description": "Filter by minimum rating",
+									"disabled": true
+								},
+								{
+									"key": "sort",
+									"value": "",
+									"description": "Sort by (price_asc,price_desc,rating_desc)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all products with pagination and filtering options"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/products?page=1&limit=12",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "products"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "12"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 50\n  },\n  \"data\": [\n    {\n      \"id\": \"product-id-1\",\n      \"name\": \"Premium Wood Plank\",\n      \"slug\": \"premium-wood-plank\",\n      \"shortDescription\": \"High-quality wood plank for furniture\",\n      \"description\": \"Premium quality wood plank perfect for furniture making\",\n      \"basePrice\": 5000,\n      \"discountPrice\": 4000,\n      \"discountPercent\": 20,\n      \"availability\": \"IN_STOCK\",\n      \"brandType\": \"PREMIUM\",\n      \"productType\": \"BEST_SELLER\",\n      \"rating\": 4.5,\n      \"ratingCount\": 120,\n      \"productCategoryId\": \"cat-id-1\",\n      \"visibility\": true,\n      \"images\": [\n        {\n          \"id\": \"img-id-1\",\n          \"imageUrl\": \"https://example.com/image1.jpg\",\n          \"isPrimary\": true,\n          \"orderIndex\": 0\n        }\n      ],\n      \"productCategory\": {\n        \"id\": \"cat-id-1\",\n        \"name\": \"Wood Planks\",\n        \"slug\": \"wood-planks\"\n      },\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Product By Slug",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/products/:slug",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "products", ":slug"],
+							"variable": [
+								{
+									"key": "slug",
+									"value": "premium-wood-plank",
+									"description": "Product slug"
+								}
+							]
+						},
+						"description": "Get product details by slug"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/products/premium-wood-plank",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "products", "premium-wood-plank"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"product-id-1\",\n    \"name\": \"Premium Wood Plank\",\n    \"slug\": \"premium-wood-plank\",\n    \"shortDescription\": \"High-quality wood plank for furniture\",\n    \"description\": \"Premium quality wood plank perfect for furniture making\",\n    \"basePrice\": 5000,\n    \"discountPrice\": 4000,\n    \"discountPercent\": 20,\n    \"effectivePrice\": 4000,\n    \"availability\": \"IN_STOCK\",\n    \"brandType\": \"PREMIUM\",\n    \"productType\": \"BEST_SELLER\",\n    \"rating\": 4.5,\n    \"ratingCount\": 120,\n    \"productCategoryId\": \"cat-id-1\",\n    \"visibility\": true,\n    \"images\": [\n      {\n        \"id\": \"img-id-1\",\n        \"imageUrl\": \"https://example.com/image1.jpg\",\n        \"isPrimary\": true,\n        \"orderIndex\": 0\n      },\n      {\n        \"id\": \"img-id-2\",\n        \"imageUrl\": \"https://example.com/image2.jpg\",\n        \"isPrimary\": false,\n        \"orderIndex\": 1\n      }\n    ],\n    \"keyPoints\": [\n      {\n        \"id\": \"kp-id-1\",\n        \"text\": \"Premium quality material\",\n        \"order\": 0\n      },\n      {\n        \"id\": \"kp-id-2\",\n        \"text\": \"Durable and long-lasting\",\n        \"order\": 1\n      }\n    ],\n    \"productCategory\": {\n      \"id\": \"cat-id-1\",\n      \"name\": \"Wood Planks\",\n      \"slug\": \"wood-planks\"\n    },\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Related Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/products/:slug/related",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "products", ":slug", "related"],
+							"variable": [
+								{
+									"key": "slug",
+									"value": "premium-wood-plank",
+									"description": "Product slug"
+								}
+							]
+						},
+						"description": "Get related products based on category"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/products/premium-wood-plank/related",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "products", "premium-wood-plank", "related"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"product-id-2\",\n      \"name\": \"Oak Wood Plank\",\n      \"slug\": \"oak-wood-plank\",\n      \"basePrice\": 4500,\n      \"discountPrice\": 3800,\n      \"availability\": \"IN_STOCK\",\n      \"brandType\": \"PREMIUM\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Product (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Premium Wood Plank",
+									"type": "text",
+									"description": "Product name"
+								},
+								{
+									"key": "slug",
+									"value": "premium-wood-plank",
+									"type": "text",
+									"description": "Product slug (unique)"
+								},
+								{
+									"key": "basePrice",
+									"value": "5000",
+									"type": "text",
+									"description": "Base price (integer)"
+								},
+								{
+									"key": "discountPrice",
+									"value": "4000",
+									"type": "text",
+									"description": "Discount price (optional, integer)"
+								},
+								{
+									"key": "availability",
+									"value": "IN_STOCK",
+									"type": "text",
+									"description": "Availability status (IN_STOCK, PRE_ORDER, UPCOMING)"
+								},
+								{
+									"key": "brandType",
+									"value": "PREMIUM",
+									"type": "text",
+									"description": "Brand type (LOCAL, PREMIUM, TRENDING, INDUSTRIAL, PROFESSIONAL)"
+								},
+								{
+									"key": "productType",
+									"value": "BEST_SELLER",
+									"type": "text",
+									"description": "Product type (optional: NEW_ARRIVAL, BEST_SELLER, FEATURED)"
+								},
+								{
+									"key": "productCategoryId",
+									"value": "cat-id-1",
+									"type": "text",
+									"description": "Product category ID"
+								},
+								{
+									"key": "shortDescription",
+									"value": "High-quality wood plank for furniture",
+									"type": "text",
+									"description": "Short description (optional)"
+								},
+								{
+									"key": "description",
+									"value": "Premium quality wood plank perfect for furniture making",
+									"type": "text",
+									"description": "Full description (optional)"
+								},
+								{
+									"key": "keyPoints",
+									"value": "[\"Premium quality material\", \"Durable and long-lasting\", \"Eco-friendly\"]",
+									"type": "text",
+									"description": "Key points as JSON array (optional)"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"description": "Product images (up to 6 images)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "products"]
+						},
+						"description": "Create a new product with images. Requires ADMIN role. Images are uploaded as files (up to 6 images). First image will be set as primary. Key points should be provided as a JSON array string."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Premium Wood Plank",
+											"type": "text"
+										},
+										{
+											"key": "slug",
+											"value": "premium-wood-plank",
+											"type": "text"
+										},
+										{
+											"key": "basePrice",
+											"value": "5000",
+											"type": "text"
+										},
+										{
+											"key": "productCategoryId",
+											"value": "cat-id-1",
+											"type": "text"
+										},
+										{
+											"key": "availability",
+											"value": "IN_STOCK",
+											"type": "text"
+										},
+										{
+											"key": "brandType",
+											"value": "PREMIUM",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/products",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "products"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"product-id-1\",\n    \"name\": \"Premium Wood Plank\",\n    \"slug\": \"premium-wood-plank\",\n    \"basePrice\": 5000,\n    \"discountPrice\": 4000,\n    \"discountPercent\": 20,\n    \"availability\": \"IN_STOCK\",\n    \"brandType\": \"PREMIUM\",\n    \"productType\": \"BEST_SELLER\",\n    \"productCategoryId\": \"cat-id-1\",\n    \"images\": [\n      {\n        \"id\": \"img-id-1\",\n        \"imageUrl\": \"https://s3.amazonaws.com/bucket/image1.jpg\",\n        \"isPrimary\": true,\n        \"orderIndex\": 0\n      }\n    ],\n    \"keyPoints\": [\n      {\n        \"id\": \"kp-id-1\",\n        \"text\": \"Premium quality material\",\n        \"order\": 0\n      }\n    ],\n    \"productCategory\": {\n      \"id\": \"cat-id-1\",\n      \"name\": \"Wood Planks\",\n      \"slug\": \"wood-planks\"\n    },\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Product (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Updated Premium Wood Plank",
+									"type": "text",
+									"description": "Product name (optional)"
+								},
+								{
+									"key": "basePrice",
+									"value": "5500",
+									"type": "text",
+									"description": "Base price (optional, integer)"
+								},
+								{
+									"key": "discountPrice",
+									"value": "4500",
+									"type": "text",
+									"description": "Discount price (optional, integer)"
+								},
+								{
+									"key": "availability",
+									"value": "IN_STOCK",
+									"type": "text",
+									"description": "Availability status (optional)"
+								},
+								{
+									"key": "shortDescription",
+									"value": "Updated description",
+									"type": "text",
+									"description": "Short description (optional)"
+								},
+								{
+									"key": "keyPoints",
+									"value": "[\"Updated point 1\", \"Updated point 2\"]",
+									"type": "text",
+									"description": "Key points as JSON array (optional)"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"description": "New product images (optional, up to 6 images)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/products/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "products", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "product-id-1",
+									"description": "Product ID"
+								}
+							]
+						},
+						"description": "Update product details. Requires ADMIN role. All fields are optional. Images can be added (up to 6 images)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Updated Premium Wood Plank",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/products/product-id-1",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "products", "product-id-1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"product-id-1\",\n    \"name\": \"Updated Premium Wood Plank\",\n    \"slug\": \"premium-wood-plank\",\n    \"basePrice\": 5500,\n    \"discountPrice\": 4500,\n    \"discountPercent\": 18,\n    \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Product (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/products/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "products", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "product-id-1",
+									"description": "Product ID"
+								}
+							]
+						},
+						"description": "Delete a product. Requires ADMIN role."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/products/product-id-1",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "products", "product-id-1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Product deleted successfully\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Product management endpoints"
+		},
+		{
+			"name": "Product Category",
+			"item": [
+				{
+					"name": "Get All Product Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/productCategory",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "productCategory"]
+						},
+						"description": "Get all visible product categories"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/productCategory",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "productCategory"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"cat-id-1\",\n      \"name\": \"Wood Planks\",\n      \"slug\": \"wood-planks\",\n      \"coverImage\": \"https://example.com/cover.jpg\",\n      \"visibility\": true,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Product Category (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Wood Planks",
+									"type": "text",
+									"description": "Category name"
+								},
+								{
+									"key": "slug",
+									"value": "wood-planks",
+									"type": "text",
+									"description": "Category slug (unique)"
+								},
+								{
+									"key": "coverImage",
+									"type": "file",
+									"src": [],
+									"description": "Cover image file"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/productCategory",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "productCategory"]
+						},
+						"description": "Create a new product category with cover image. Requires ADMIN role."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Wood Planks",
+											"type": "text"
+										},
+										{
+											"key": "slug",
+											"value": "wood-planks",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/productCategory",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "productCategory"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"cat-id-1\",\n    \"name\": \"Wood Planks\",\n    \"slug\": \"wood-planks\",\n    \"coverImage\": \"https://s3.amazonaws.com/bucket/cover.jpg\",\n    \"visibility\": true,\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Product Category (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Updated Wood Planks",
+									"type": "text",
+									"description": "Category name (optional)"
+								},
+								{
+									"key": "slug",
+									"value": "updated-wood-planks",
+									"type": "text",
+									"description": "Category slug (optional)"
+								},
+								{
+									"key": "visibility",
+									"value": "true",
+									"type": "text",
+									"description": "Visibility status (optional)"
+								},
+								{
+									"key": "coverImage",
+									"type": "file",
+									"src": [],
+									"description": "Cover image file (optional)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/productCategory/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "productCategory", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cat-id-1",
+									"description": "Category ID"
+								}
+							]
+						},
+						"description": "Update product category. Requires ADMIN role. All fields are optional."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "name",
+											"value": "Updated Wood Planks",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/productCategory/cat-id-1",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "productCategory", "cat-id-1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"cat-id-1\",\n    \"name\": \"Updated Wood Planks\",\n    \"slug\": \"updated-wood-planks\",\n    \"visibility\": true,\n    \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Product Category (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/productCategory/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "productCategory", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cat-id-1",
+									"description": "Category ID"
+								}
+							]
+						},
+						"description": "Delete (soft delete) a product category by setting visibility to false. Requires ADMIN role."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/productCategory/cat-id-1",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "productCategory", "cat-id-1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": \"Category deleted successfully\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Product category management endpoints"
+		},
+		{
+			"name": "Reviews",
+			"item": [
+				{
+					"name": "Get Product Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/review/products/:productId/reviews",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "review", "products", ":productId", "reviews"],
+							"variable": [
+								{
+									"key": "productId",
+									"value": "product-id-1",
+									"description": "Product ID"
+								}
+							]
+						},
+						"description": "Get all reviews for a specific product"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/review/products/product-id-1/reviews",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "review", "products", "product-id-1", "reviews"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"review-id-1\",\n      \"productId\": \"product-id-1\",\n      \"userId\": \"user-id-1\",\n      \"rating\": 5,\n      \"comment\": \"Excellent product quality!\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\",\n      \"user\": {\n        \"name\": \"John Doe\",\n        \"email\": \"john.doe@example.com\",\n        \"phone\": \"1234567890\",\n        \"status\": \"ACTIVE\",\n        \"profile\": {\n          \"avatarUri\": null\n        }\n      }\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Review",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"product-id-1\",\n  \"rating\": 5,\n  \"comment\": \"Excellent product quality!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/review",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "review"]
+						},
+						"description": "Create a review for a product. Requires authentication (ADMIN or CUSTOMER role). Rating must be between 1-5. Each user can only review a product once."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"productId\": \"product-id-1\",\n  \"rating\": 5,\n  \"comment\": \"Excellent product quality!\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/review",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "review"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Review submitted successfully\",\n  \"data\": {\n    \"rating\": 4.5,\n    \"ratingCount\": 25\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Reviews (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/review/admin/reviews?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "review", "admin", "reviews"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Items per page"
+								},
+								{
+									"key": "rating",
+									"value": "",
+									"description": "Filter by rating (1-5)",
+									"disabled": true
+								},
+								{
+									"key": "productId",
+									"value": "",
+									"description": "Filter by product ID",
+									"disabled": true
+								},
+								{
+									"key": "userId",
+									"value": "",
+									"description": "Filter by user ID",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all reviews with pagination and filtering. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/review/admin/reviews?page=1&limit=10",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "review", "admin", "reviews"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 10,\n    \"total\": 50\n  },\n  \"data\": [\n    {\n      \"id\": \"review-id-1\",\n      \"productId\": \"product-id-1\",\n      \"userId\": \"user-id-1\",\n      \"rating\": 5,\n      \"comment\": \"Excellent product quality!\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"user\": {\n        \"id\": \"user-id-1\",\n        \"name\": \"John Doe\",\n        \"email\": \"john.doe@example.com\"\n      },\n      \"product\": {\n        \"id\": \"product-id-1\",\n        \"name\": \"Premium Wood Plank\",\n        \"slug\": \"premium-wood-plank\"\n      }\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Review (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/review/admin/reviews/:reviewId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "review", "admin", "reviews", ":reviewId"],
+							"variable": [
+								{
+									"key": "reviewId",
+									"value": "review-id-1",
+									"description": "Review ID"
+								}
+							]
+						},
+						"description": "Delete a review. Requires authentication (ADMIN or CUSTOMER role). Product rating will be recalculated after deletion."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/review/admin/reviews/review-id-1",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "review", "admin", "reviews", "review-id-1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Review deleted successfully\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Review management endpoints"
+		},
+		{
+			"name": "Inquiries",
+			"item": [
+				{
+					"name": "Create Inquiry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"1234567890\",\n  \"subject\": \"Product Inquiry\",\n  \"message\": \"I would like to know more about your wood products.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inquiries",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inquiries"]
+						},
+						"description": "Create a new inquiry. Name, email, subject, and message are required. Phone is optional."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"1234567890\",\n  \"subject\": \"Product Inquiry\",\n  \"message\": \"I would like to know more about your wood products.\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/inquiries",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "inquiries"]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Inquiry created successfully\",\n  \"data\": {\n    \"id\": \"inquiry-id-1\",\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"phone\": \"1234567890\",\n    \"subject\": \"Product Inquiry\",\n    \"message\": \"I would like to know more about your wood products.\",\n    \"status\": \"PENDING\",\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Inquiries",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inquiries?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inquiries"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Items per page"
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by status (PENDING, RESPONDED, CONVERTED)",
+									"disabled": true
+								},
+								{
+									"key": "dateFilter",
+									"value": "",
+									"description": "Filter by date",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by name, email, or subject",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all inquiries with pagination and filtering options"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/inquiries?page=1&limit=10",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "inquiries"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 10,\n    \"total\": 50\n  },\n  \"data\": [\n    {\n      \"id\": \"inquiry-id-1\",\n      \"name\": \"John Doe\",\n      \"email\": \"john.doe@example.com\",\n      \"phone\": \"1234567890\",\n      \"subject\": \"Product Inquiry\",\n      \"message\": \"I would like to know more about your wood products.\",\n      \"status\": \"PENDING\",\n      \"respondedByAdmin\": null,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Inquiry By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inquiries/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inquiries", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "inquiry-id-1",
+									"description": "Inquiry ID"
+								}
+							]
+						},
+						"description": "Get inquiry details by ID"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/inquiries/inquiry-id-1",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "inquiries", "inquiry-id-1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"inquiry-id-1\",\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"phone\": \"1234567890\",\n    \"subject\": \"Product Inquiry\",\n    \"message\": \"I would like to know more about your wood products.\",\n    \"status\": \"PENDING\",\n    \"respondedByAdmin\": null,\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Inquiry Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"RESPONDED\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inquiries/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inquiries", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "inquiry-id-1",
+									"description": "Inquiry ID"
+								}
+							]
+						},
+						"description": "Update inquiry status. Status can be PENDING, RESPONDED, or CONVERTED."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"RESPONDED\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/inquiries/inquiry-id-1",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "inquiries", "inquiry-id-1"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Inquiry status updated successfully\",\n  \"data\": {\n    \"id\": \"inquiry-id-1\",\n    \"status\": \"RESPONDED\",\n    \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Send Quotation Email",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subject\": \"Quotation for Your Inquiry\",\n  \"message\": \"Thank you for your inquiry. Please find the quotation attached.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inquiries/:id/send-quotation",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inquiries", ":id", "send-quotation"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "inquiry-id-1",
+									"description": "Inquiry ID"
+								}
+							]
+						},
+						"description": "Send quotation email to the inquiry sender. Requires authentication (ADMIN or CUSTOMER role). Subject and message are required."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"subject\": \"Quotation for Your Inquiry\",\n  \"message\": \"Thank you for your inquiry. Please find the quotation attached.\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/inquiries/inquiry-id-1/send-quotation",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "inquiries", "inquiry-id-1", "send-quotation"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Quotation email sent successfully\",\n  \"data\": {\n    \"inquiryId\": \"inquiry-id-1\",\n    \"emailSent\": true\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Inquiry",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/inquiries/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "inquiries", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "inquiry-id-1",
+									"description": "Inquiry ID"
+								}
+							]
+						},
+						"description": "Delete an inquiry. Requires authentication (ADMIN role)."
+					},
+					"response": []
+				}
+			],
+			"description": "Inquiry management endpoints"
+		},
+		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "Add to Cart",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"product-id-1\",\n  \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cart/add",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "cart", "add"]
+						},
+						"description": "Add a product to cart. Requires authentication (CUSTOMER or ADMIN role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cart",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "cart"]
+						},
+						"description": "Get current user's cart. Requires authentication (CUSTOMER or ADMIN role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Cart Item Quantity",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cart/item/:itemId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "cart", "item", ":itemId"],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "cart-item-id-1",
+									"description": "Cart item ID"
+								}
+							]
+						},
+						"description": "Update cart item quantity. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Cart Item",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cart/item/:itemId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "cart", "item", ":itemId"],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "cart-item-id-1",
+									"description": "Cart item ID"
+								}
+							]
+						},
+						"description": "Remove item from cart. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				}
+			],
+			"description": "Cart management endpoints"
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Checkout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"shippingAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"Dhaka\",\n    \"state\": \"Dhaka\",\n    \"zipCode\": \"1200\",\n    \"country\": \"Bangladesh\"\n  },\n  \"paymentMethod\": \"SSLCOMMERZ\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/orders/checkout",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "orders", "checkout"]
+						},
+						"description": "Create order from cart and initiate payment. Requires authentication (CUSTOMER or ADMIN role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Orders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/orders/my",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "orders", "my"]
+						},
+						"description": "Get current user's orders. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/orders/:orderId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "orders", ":orderId"],
+							"variable": [
+								{
+									"key": "orderId",
+									"value": "order-id-1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Get order details by ID. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Order",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/orders/:orderId/cancel",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "orders", ":orderId", "cancel"],
+							"variable": [
+								{
+									"key": "orderId",
+									"value": "order-id-1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Cancel an order. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Orders (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/orders/admin",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "orders", "admin"]
+						},
+						"description": "Get all orders. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Details (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/orders/admin/:orderId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "orders", "admin", ":orderId"],
+							"variable": [
+								{
+									"key": "orderId",
+									"value": "order-id-1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Get order details by ID. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"PROCESSING\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/orders/admin/:orderId/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "orders", "admin", ":orderId", "status"],
+							"variable": [
+								{
+									"key": "orderId",
+									"value": "order-id-1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Update order status. Admin only."
+					},
+					"response": []
+				}
+			],
+			"description": "Order management endpoints"
+		},
+		{
+			"name": "Shipping Rates",
+			"item": [
+				{
+					"name": "Create/Update Shipping Rate",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Standard Shipping\",\n  \"rate\": 100,\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/shipping-rates",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "shipping-rates"]
+						},
+						"description": "Create or update shipping rate. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Shipping Rates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/shipping-rates",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "shipping-rates"]
+						},
+						"description": "Get all shipping rates"
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle Shipping Rate",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/shipping-rates/:id/toggle",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "shipping-rates", ":id", "toggle"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "shipping-rate-id-1",
+									"description": "Shipping rate ID"
+								}
+							]
+						},
+						"description": "Toggle shipping rate active status"
+					},
+					"response": []
+				}
+			],
+			"description": "Shipping rate management endpoints"
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Get My Payments",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/my",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "my"]
+						},
+						"description": "Get current user's payment history. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment by Order",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/order/:orderId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "order", ":orderId"],
+							"variable": [
+								{
+									"key": "orderId",
+									"value": "order-id-1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Get payment details for a specific order. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Retry Payment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/retry/:orderId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "retry", ":orderId"],
+							"variable": [
+								{
+									"key": "orderId",
+									"value": "order-id-1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Retry payment for a failed order. Requires authentication (CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "SSLCOMMERZ Success Callback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/ssl/success",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "ssl", "success"]
+						},
+						"description": "SSLCOMMERZ payment success callback (no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "SSLCOMMERZ Fail Callback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/ssl/fail",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "ssl", "fail"]
+						},
+						"description": "SSLCOMMERZ payment fail callback (no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "SSLCOMMERZ Cancel Callback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/ssl/cancel",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "ssl", "cancel"]
+						},
+						"description": "SSLCOMMERZ payment cancel callback (no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "SSLCOMMERZ IPN",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/payments/ssl/ipn",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "payments", "ssl", "ipn"]
+						},
+						"description": "SSLCOMMERZ Instant Payment Notification (IPN) callback (no authentication required)"
+					},
+					"response": []
+				}
+			],
+			"description": "Payment management endpoints"
+		},
+		{
+			"name": "Admin Payments",
+			"item": [
+				{
+					"name": "Get Payments Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/admin/payments/summary",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "admin", "payments", "summary"]
+						},
+						"description": "Get payments summary/statistics. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Payments",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/admin/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "admin", "payments"]
+						},
+						"description": "Get all payments with pagination and filtering. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/admin/payments/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "admin", "payments", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "payment-id-1",
+									"description": "Payment ID"
+								}
+							]
+						},
+						"description": "Get payment details by ID. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Audit",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/admin/payments/audit/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "admin", "payments", "audit", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "payment-id-1",
+									"description": "Payment ID"
+								}
+							]
+						},
+						"description": "Get payment audit trail. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Payments",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/admin/payments/orders/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "admin", "payments", "orders", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "order-id-1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Get all payments for a specific order. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Payment as Failed",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/admin/payments/mark-failed/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "admin", "payments", "mark-failed", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "payment-id-1",
+									"description": "Payment ID"
+								}
+							]
+						},
+						"description": "Mark payment as failed. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Payment as Paid",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/admin/payments/mark-paid/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "admin", "payments", "mark-paid", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "payment-id-1",
+									"description": "Payment ID"
+								}
+							]
+						},
+						"description": "Mark payment as paid. Requires authentication (ADMIN or CUSTOMER role)."
+					},
+					"response": []
+				}
+			],
+			"description": "Admin payment management endpoints"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

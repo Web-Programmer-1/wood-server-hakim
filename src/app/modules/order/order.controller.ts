@@ -14,7 +14,6 @@ const checkout = async (req: Request, res: Response) => {
 };
 
 
-
 const getMyOrders = async (req: Request, res: Response) => {
   const userId = req.user!.id;
 
@@ -57,10 +56,7 @@ const cancelOrder = async (req: Request, res: Response) => {
   });
 };
 
-
 // ------------------- ONLY for Admin -------------------
-
-
 
 const getAllOrdersAdmin = async (req: Request, res: Response) => {
   const result = await OrderService.getAllOrdersAdmin(req.query);
@@ -71,7 +67,6 @@ const getAllOrdersAdmin = async (req: Request, res: Response) => {
     data: result.data,
   });
 };
-
 
 
 const getOrderDetailsAdmin = async (req: Request, res: Response) => {
@@ -99,9 +94,6 @@ const updateOrderStatus = async (req: Request, res: Response) => {
     data: result,
   });
 };
-
-
-
 
 
 export const OrderController = {

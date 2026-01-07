@@ -102,19 +102,7 @@ const retryPayment = async (req: Request, res: Response) => {
 };
 
 
-
-
 // ----------------------------- Admin Management Api -------------------------------------
-
-
-
-
-
-
-
-
-
-
 
 
 

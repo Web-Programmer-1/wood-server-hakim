@@ -192,10 +192,6 @@ const removeItem = async (userId: string, itemId: string) => {
 };
 
 
-
-
-
-
 export const CartService = {
   addToCart,
   getCart,

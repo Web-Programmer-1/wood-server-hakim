@@ -20,7 +20,7 @@ authRouter.post("/verify-phone", strictLimiter , AuthController.verifyPhone);
 authRouter.post("/login", strictLimiter, AuthController.login);
 
 // REFRESH TOKEN
-authRouter.post("/refresh-token",strictLimiter, AuthController.refreshToken);
+authRouter.post("/refresh-token", strictLimiter, AuthController.refreshToken);
 
 // SEND OTP (email or phone)
 authRouter.post("/send-otp", strictLimiter, AuthController.sendOTP);
@@ -41,7 +41,7 @@ authRouter.post("/forgot-password", strictLimiter, AuthController.forgotPassword
 authRouter.post("/reset-password",strictLimiter, AuthController.resetPassword);
 
 // GET CURRENT USER
-authRouter.get("/me", strictLimiter, AuthController.getMe);
+authRouter.get("/me", AuthController.getMe);
 
 // USER CRUD
 authRouter.get("/users", strictLimiter,  AuthController.getAllUsers);
@@ -53,11 +53,6 @@ authRouter.patch(
 strictLimiter,
   updateUserCon
 );
-
-
-
-
-
 
 
 
