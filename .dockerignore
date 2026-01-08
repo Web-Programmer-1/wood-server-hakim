@@ -1,0 +1,81 @@
+# Dependencies
+node_modules
+npm-debug.log
+pnpm-debug.log
+yarn-error.log
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs
+
+# Testing
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+__tests__
+test
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# AWS
+.aws
+*.pem
+
+# Misc
+*.log
+*.tmp
+.cache
+.parcel-cache
+.next
+.nuxt
+.vuepress
+.serverless
+
+# Postman collections (optional, remove if needed)
+*.postman_collection.json
+
+# Vercel
+vercel.json
+.vercel
+
+# ECS and deployment files
+ecs-*.json
+scripts/
+DEPLOYMENT.md

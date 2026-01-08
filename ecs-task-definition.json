@@ -1,0 +1,129 @@
+{
+  "family": "wood-server-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "wood-server",
+      "image": "YOUR_ECR_REPOSITORY_URI:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "5000"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/database-url"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/jwt-secret"
+        },
+        {
+          "name": "REFRESH_TOKEN_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/refresh-token-secret"
+        },
+        {
+          "name": "EXPIRES_IN",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/expires-in"
+        },
+        {
+          "name": "REFRESH_TOKEN_EXPIRES_IN",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/refresh-token-expires-in"
+        },
+        {
+          "name": "RESET_PASS_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/reset-pass-token"
+        },
+        {
+          "name": "RESET_PASS_TOKEN_EXPIRES_IN",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/reset-pass-token-expires-in"
+        },
+        {
+          "name": "SALT_ROUND",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/salt-round"
+        },
+        {
+          "name": "RESET_PASS_LINK",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/reset-pass-link"
+        },
+        {
+          "name": "CLOUDINARY_CLOUD_NAME",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/cloudinary-cloud-name"
+        },
+        {
+          "name": "CLOUDINARY_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/cloudinary-api-key"
+        },
+        {
+          "name": "CLOUDINARY_API_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/cloudinary-api-secret"
+        },
+        {
+          "name": "STRIPE_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/stripe-secret-key"
+        },
+        {
+          "name": "OPENROUTER_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/openrouter-api-key"
+        },
+        {
+          "name": "EMAIL",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/email"
+        },
+        {
+          "name": "APP_PASS",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/app-pass"
+        },
+        {
+          "name": "REDIS_HOST",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/redis-host"
+        },
+        {
+          "name": "REDIS_PORT",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/redis-port"
+        },
+        {
+          "name": "REDIS_PASS",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:wood-server/redis-pass"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/wood-server",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:5000/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
+

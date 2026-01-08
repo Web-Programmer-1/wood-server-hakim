@@ -1,4 +1,4 @@
-import { Inquiry } from './../../../../node_modules/.pnpm/@prisma+client@6.19.0_prism_0ade0c2032e7f19289902b884120cfab/node_modules/.prisma/client/index.d';
+import { Inquiry } from '@prisma/client';
 import { sendEmail } from "../../../utils/nodeMailer";
 import { prisma } from "../../shared/prisma";
 import { CreateInquiryPayload } from "../review/review.interface";

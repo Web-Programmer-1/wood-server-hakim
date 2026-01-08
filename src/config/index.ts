@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import path from "path";
 
+// Load .env file if it exists (won't override existing env vars from Docker/system)
+// This is safe for Docker deployments where env vars come from docker-compose
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 export default {
