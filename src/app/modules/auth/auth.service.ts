@@ -11,6 +11,8 @@ import { IEmailVerify, IRegister, RegisterBody } from "./auth.interface";
 import {  Request, Response } from "express";
 import { UserRole } from "@prisma/client";
 import { calculateProfileCompleted } from "../../../utils/profileCompleted";
+import { cookieOptions } from "../../../jwt_token_accessbility/cookieOptions";
+
 
 
 
@@ -144,64 +146,6 @@ export const AuthService = {
 
   
 
-//   async register(body: IRegister) {
-//   const { name, email, phone, password } = body;
-
-//   const hash = await bcrypt.hash(password, 10);
-
-//   return await prisma.$transaction(async (tx) => {
-   
-//     const user = await tx.user.create({
-//       data: {
-//         name,
-//         email,
-//         phone,
-//         passwordHash: hash,
-
-//         profile: {
-//           create: {
-//             avatarUri: null,
-//             bio: null,
-//             gender: null,
-//             dateOfBirth: null,
-
-//             profession: null,
-//             occupationType: null,
-//             nationalId: null,
-
-//             socialLinks: {},
-//             verificationStatus: "PENDING",
-//             profileCompleted: 0,
-//           },
-//         },
-//       },
-//       include: { profile: true },
-//     });
-
-//     // -----------------------------------------
-//     // 2️⃣ Create Login Attempt row
-//     // -----------------------------------------
-//     await tx.loginAttempt.create({
-//       data: { userId: user.id },
-//     });
-
-//     // -----------------------------------------
-//     // 3️⃣ Send OTP (outside DB but inside flow)
-//     // -----------------------------------------
-//     if (email) await this.sendEmailOTP(email);
-//     if (phone) await this.sendPhoneOTP(phone);
-
-//     // -----------------------------------------
-//     // 4️⃣ Final Response
-//     // -----------------------------------------
-//     return {
-//       message: "User registered successfully. OTP sent.",
-//       userId: user.id,
-//       profileId: user?.profile?.id,
-//     };
-//   });
-// },
-
 
 
 async register(body: IRegister) {
@@ -223,7 +167,7 @@ async register(body: IRegister) {
         phone,
         passwordHash: hash, // store hashed password
         profile: {
-          create: { avatarUri: null, bio: null, gender: null, verificationStatus: "PENDING", profileCompleted: 0 },
+          create: { avatarUri: null, bio: null, gender: null },
         },
       },
       include: { profile: true },
@@ -234,7 +178,7 @@ async register(body: IRegister) {
     return {
       message: "User registered successfully. OTP sent.",
       userId: user.id,
-      profileId: user?.profile?.id,
+    
     };
   }, {
     timeout: 30000, // 30 seconds timeout
@@ -286,7 +230,7 @@ async register(body: IRegister) {
   await prisma.userProfile.update({
   where: { userId: user.id },
   data: {
-    verificationStatus: "VERIFIED",
+  
   },
 });
 
@@ -320,12 +264,12 @@ async register(body: IRegister) {
     data: { phoneVerified: true },
   });
 
-  await prisma.userProfile.update({
-  where: { userId: user.id },
-  data: {
-    verificationStatus: "VERIFIED",
-  },
-});
+//   await prisma.userProfile.update({
+//   where: { userId: user.id },
+//   data: {
+//   user:user,
+//   },
+// });
 
 
   return { message: "Phone verified." };
@@ -421,20 +365,16 @@ const refreshToken = jwt.sign(
 
   // Set Cookies
   res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    secure: false, // localhost
-    sameSite: "lax",
+    ...cookieOptions,
      maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  // Return also in body
+
   return {
     message: "Logged in successfully.",
     accessToken,
@@ -614,10 +554,7 @@ async updateUser(
   targetUserId: string,
   body: any
 ) {
-  const completed = body.profile
-    ? calculateProfileCompleted(body.profile)
-    : undefined;
-
+ 
   const updatedUser = await prisma.user.update({
     where: { id: targetUserId },
     data: {
@@ -635,11 +572,11 @@ async updateUser(
             upsert: {
               create: {
                 ...body.profile,
-                profileCompleted: completed ?? 0,
+            
               },
               update: {
                 ...body.profile,
-                profileCompleted: completed,
+           
               },
             },
           }

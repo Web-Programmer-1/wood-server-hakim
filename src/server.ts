@@ -1,7 +1,15 @@
 import { Server } from 'http';
 import app from './app';
 import config from './config';
+import dotenv from "dotenv";
 
+
+const envFile =
+  process.env.NODE_ENV === "production"
+    ? ".env.production"
+    : ".env.local";
+
+dotenv.config({ path: envFile });
 
 async function bootstrap() {
     // This variable will hold our server instance

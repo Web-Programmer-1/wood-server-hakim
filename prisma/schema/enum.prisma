@@ -9,12 +9,6 @@ enum UserStatus {
 }
 
 
-enum VerificationStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-}
-
 
 
 

@@ -50,11 +50,7 @@ model UserProfile {
 
   socialLinks     Json?        // { facebook: "", linkedin: "", website: "" }
 
-  // ----- VERIFICATION & PROFILE STATUS -----
-  verificationStatus VerificationStatus @default(PENDING)
-  profileCompleted   Int                @default(0)   // For dashboard profile completion bar
 
-  // ----- SYSTEM INFO -----
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
