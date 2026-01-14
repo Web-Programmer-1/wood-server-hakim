@@ -11,6 +11,8 @@ import { ReviewRoutes } from '../modules/review/review.route';
 import { InquiryRoutes } from '../modules/inquiry/inquiry.route';
 import { PaymentRoutes } from '../modules/payment/payment.route';
 import { adminPaymentRoutes } from '../modules/adminPayment/adminPayment.route';
+import { BlogRoutes } from '../modules/blog/blog.route';
+import { EventRoutes } from '../modules/event/event.route';
 
 const router = express.Router();
 
@@ -64,6 +66,15 @@ const moduleRoutes = [
         path: '/admin',
         route: adminPaymentRoutes,
     },
+    {
+        path: '/blogs',
+        route: BlogRoutes,
+    },
+    {
+        path: '/events',
+        route: EventRoutes,
+    },
+    
 
 
 
