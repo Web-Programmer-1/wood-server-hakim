@@ -69,7 +69,7 @@ model MachineImage {
   isPrimary Boolean  @default(false)
 
 
-  machine   Machine @relation(fields: [machineId], references: [id])
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
@@ -80,7 +80,7 @@ model MachineVideo {
   machineId String
   url       String
 
-  machine   Machine @relation(fields: [machineId], references: [id])
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
 }
 

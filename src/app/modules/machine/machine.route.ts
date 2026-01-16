@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {  MachineController } from "./machine.controller";
-import { authGuard } from "../../middlewares/auth";
-import { UserRole } from "@prisma/client";
+
 import { uploadMachineVideo } from "../../middlewares/uploadMachineVideo";
 import { uploadProductImages } from "../../middlewares/uploadProductImage";
 import { uploadMachineCreate } from "../../middlewares/UploadMachineImage";
@@ -9,7 +8,7 @@ import { uploadMachineCreate } from "../../middlewares/UploadMachineImage";
 const router = Router();
 
 
-router.get("/", MachineController.getMachines);
+router.get('/', MachineController.getMachines);
 
 
 
@@ -74,11 +73,7 @@ router.patch(
 
 
 
-// router.delete(
-//   "/machine-images/:id",
-// //   authGuard(UserRole.ADMIN),
-//   MachineController.deleteMachineImage
-// );
+
 
 
 router.delete(

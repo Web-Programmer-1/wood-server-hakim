@@ -55,6 +55,12 @@ const getMachines = async (params: GetMachinesParams) => {
             isPrimary: true,
           },
         },
+       videos:{
+        select:{
+          id:true,
+          url:true,
+        },
+       },
         createdAt: true,
         category: {
           select: {
