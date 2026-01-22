@@ -1,0 +1,8 @@
+
+model CompanyLogo {
+  id        String   @id @default(uuid())
+  imageUrl  String  
+  
+  createdAt DateTime @default(now())
+}
+

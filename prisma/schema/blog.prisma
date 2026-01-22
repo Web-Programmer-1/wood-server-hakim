@@ -1,4 +1,43 @@
-/// ---------- BLOG ENUMS ----------
+model Blog {
+  id          String         @id @default(uuid())
+  title       String
+  slug        String         @unique
+  excerpt     String?
+  content     String
+  category    BlogCategory
+  status      BlogStatus     @default(DRAFT)
+  highlight   HighlightBadge @default(NONE)
+  coverImage  String?
+  publishedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@map("blogs")
+}
+
+model Event {
+  id          String         @id @default(uuid())
+  title       String
+  slug        String         @unique
+  description String?
+  category    EventCategory
+  status      EventStatus    @default(UPCOMING)
+  highlight   HighlightBadge @default(NONE)
+  location    String
+  startDate   DateTime
+  endDate     DateTime
+  bannerImage String?
+  viewCount   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([startDate])
+  @@map("events")
+}
 
 enum BlogStatus {
   DRAFT
@@ -12,8 +51,6 @@ enum BlogCategory {
   BUSINESS_INSIGHT
   INDUSTRY_NEWS
 }
-
-/// ---------- EVENT ENUMS ----------
 
 enum EventStatus {
   UPCOMING
@@ -29,70 +66,10 @@ enum EventCategory {
   PRODUCT_LAUNCH
 }
 
-/// ---------- SHARED ----------
-
 enum HighlightBadge {
   NONE
   NEW
   FEATURED
   LIVE
   ENDED
-}
-
-
-
-
-
-model Blog {
-  id            String        @id @default(uuid())
-
-  title         String
-  slug          String        @unique
-  excerpt       String?
-  content       String
-
-  category      BlogCategory
-  status        BlogStatus    @default(DRAFT)
-  highlight     HighlightBadge @default(NONE)
-
-  coverImage    String?
-
-  publishedAt   DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@index([category])
-  @@index([status])
-  @@map("blogs")
-}
-
-
-
-
-model Event {
-  id            String         @id @default(uuid())
-
-  title         String
-  slug          String         @unique
-  description   String?
-
-  category      EventCategory
-  status        EventStatus    @default(UPCOMING)
-  highlight     HighlightBadge @default(NONE)
-
-  location      String
-  startDate     DateTime
-  endDate       DateTime
-
-  bannerImage   String?
-
-  viewCount     Int            @default(0)
-
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  @@index([status])
-  @@index([category])
-  @@index([startDate])
-  @@map("events")
 }

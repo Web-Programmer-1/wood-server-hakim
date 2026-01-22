@@ -15,6 +15,7 @@ export interface IMachine {
   isFeatured: boolean;
   isActive: boolean;
 
+  stockQuantity: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,7 +51,7 @@ export interface CreateMachinePayload {
 
   thumbnailImage: string;
   bannerImage?: string;
-
+  stockQuantity: number;
   features: Record<string, any>;
   specifications: Record<string, any>;
 
@@ -77,7 +78,7 @@ export interface UpdateMachinePayload {
 
   features?: Record<string, any>;
   specifications?: Record<string, any>;
-
+  stockQuantity?: number;
   isFeatured?: boolean;
   isActive?: boolean;
 }

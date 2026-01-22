@@ -1,93 +1,57 @@
 model Category {
-  id        String    @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
-  slug      String    @unique
+  slug      String     @unique
   parentId  String?
-  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  createdAt DateTime   @default(now())
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryTree")
   machines  Machine[]
-  createdAt DateTime  @default(now())
 }
 
-
-
-
 model Machine {
-
-  id             String   @id @default(uuid())
-
-
+  id             String         @id @default(uuid())
   name           String
-  slug           String   @unique
+  slug           String         @unique
   shortDesc      String?
   description    String?
-
   thumbnailImage String?
   bannerImage    String?
-
-  isActive       Boolean  @default(true)
-  isFeatured     Boolean  @default(false)
-
+  isActive       Boolean        @default(true)
+  isFeatured     Boolean        @default(false)
   categoryId     String
-  category       Category @relation(fields: [categoryId], references: [id])
-
   brand          String?
   model          String?
-
   features       Json?
   specifications Json?
   workSections   Json?
   dynamicButtons Json?
-
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  stockQuantity  Int            @default(0)
+  category       Category       @relation(fields: [categoryId], references: [id])
   images         MachineImage[]
   videos         MachineVideo[]
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
 
   @@index([categoryId])
   @@index([id])
   @@index([features])
   @@index([brand])
   @@index([model])
-
 }
-
-
-
-
-
 
 model MachineImage {
-
   id        String   @id @default(uuid())
-
   machineId String
-
   url       String
-
   isPrimary Boolean  @default(false)
-
-
-  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  machine   Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
-
 
 model MachineVideo {
-
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   machineId String
   url       String
-
   machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
-
 }
-
-
-
-
-
-
-
-

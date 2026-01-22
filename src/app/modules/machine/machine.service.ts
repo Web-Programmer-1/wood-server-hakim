@@ -48,6 +48,7 @@ const getMachines = async (params: GetMachinesParams) => {
         name: true,
         slug: true,
         thumbnailImage: true,
+        stockQuantity: true,
         images:{
           select: {
             id: true,
@@ -137,6 +138,52 @@ const searchMachines = async (keyword: string) => {
   });
 };
 
+// const getMachineBySlug = async (slug: string) => {
+//   if (!slug) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "Machine slug is required");
+//   }
+
+//   const machine = await prisma.machine.findUnique({
+//     where: { slug  },
+//     include: {
+   
+      
+//       images: {
+//         select: {
+//           id: true,
+//           url: true,
+//           isPrimary: true,
+//         },
+//       },
+//       videos: {
+//         select: {
+//           id: true,
+//           url: true,
+//         },
+//       },
+    
+//       category: {
+//         select: {
+//           id: true,
+//           name: true,
+//           slug: true,
+//         },
+//       },
+//     },
+  
+//   });
+
+//   if (!machine || !machine.isActive) {
+//     throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
+//   }
+
+//   return machine;
+// };
+
+
+
+
+
 const getMachineBySlug = async (slug: string) => {
   if (!slug) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Machine slug is required");
@@ -144,7 +191,25 @@ const getMachineBySlug = async (slug: string) => {
 
   const machine = await prisma.machine.findUnique({
     where: { slug },
-    include: {
+    // 👇 include বাদ দিয়ে select ব্যবহার করা হলো (বেশি কন্ট্রোলের জন্য)
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      shortDesc: true,
+      description: true,
+      thumbnailImage: true,
+      bannerImage: true,
+      
+      stockQuantity: true, // ✅ এই যে নতুন ফিল্ড যোগ করা হলো
+      
+      isActive: true,
+      brand: true,
+      model: true,
+      features: true,
+      specifications: true,
+      
+      // 👇 রিলেশনগুলোও select এর ভেতরেই থাকবে
       images: {
         select: {
           id: true,
@@ -174,6 +239,10 @@ const getMachineBySlug = async (slug: string) => {
 
   return machine;
 };
+
+
+
+
 
 const getRelatedMachines = async (slug: string) => {
   const machine = await prisma.machine.findUnique({
@@ -229,6 +298,7 @@ const createMachine = async (payload: any) => {
       description: payload.description,
       categoryId: payload.categoryId,
       thumbnailImage: payload.thumbnailImage,
+      stockQuantity: payload.stockQuantity ? Number(payload.stockQuantity) : 0,
       bannerImage: payload.bannerImage,
       brand: payload.brand,
       model: payload.model,

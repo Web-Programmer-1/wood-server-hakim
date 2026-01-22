@@ -13,6 +13,7 @@ import { PaymentRoutes } from '../modules/payment/payment.route';
 import { adminPaymentRoutes } from '../modules/adminPayment/adminPayment.route';
 import { BlogRoutes } from '../modules/blog/blog.route';
 import { EventRoutes } from '../modules/event/event.route';
+import { LandingRoutes } from '../modules/dynamicLandingPage/landing.routes';
 
 const router = express.Router();
 
@@ -74,6 +75,11 @@ const moduleRoutes = [
         path: '/events',
         route: EventRoutes,
     },
+    {
+        path: '/landing',
+        route: LandingRoutes,
+    },
+
     
 
 

@@ -1,28 +1,23 @@
 model Cart {
   id        String     @id @default(uuid())
   userId    String     @unique
-
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
-
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
 
   @@index([userId])
 }
 
 model CartItem {
   id        String   @id @default(uuid())
-  cartId   String
+  cartId    String
   productId String
-
-  cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product  Product  @relation(fields: [productId], references: [id])
-
-  quantity Int      @default(1)
-  price    Int      // snapshot price (discounted or base)
-
+  quantity  Int      @default(1)
+  price     Int
   createdAt DateTime @default(now())
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([cartId, productId])
   @@index([productId])
