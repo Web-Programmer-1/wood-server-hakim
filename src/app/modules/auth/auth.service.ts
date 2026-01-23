@@ -9,9 +9,9 @@ import { prisma } from "../../shared/prisma";
 import redis from "../../../utils/redis";
 import { IEmailVerify, IRegister, RegisterBody } from "./auth.interface";
 import {  Request, Response } from "express";
-import { UserRole } from "@prisma/client";
-import { calculateProfileCompleted } from "../../../utils/profileCompleted";
+
 import { cookieOptions } from "../../../jwt_token_accessbility/cookieOptions";
+import { UserRole } from "../../constants/UserRole";
 
 
 
@@ -159,7 +159,7 @@ async register(body: IRegister) {
 
   // Perform database operations in transaction
   // Set timeout to 30 seconds as a safety measure
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: any) => {
     const user = await tx.user.create({
       data: {
         name,
@@ -562,7 +562,7 @@ async updateUser(
       email: body.email,
       phone: body.phone,
 
-      // ✅ ROLE DIRECTLY FROM BODY
+
       ...(body.role ? { role: body.role as UserRole } : {}),
 
       ...(body.status ? { status: body.status } : {}),

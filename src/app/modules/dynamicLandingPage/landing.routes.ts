@@ -2,8 +2,8 @@ import express from "express";
 import { LandingController } from "./landing.controller";
 
 import { authGuard } from "../../middlewares/auth";
-import { UserRole } from "@prisma/client";
-import { uploadCompanyLogo, uploadHeroMedia } from "../../../config/uploadDynamic";
+import { UserRole } from "../../constants/UserRole";
+import { uploadCompanyLogo, uploadHeroMedia, uploadLandingSlider, uploadLandingVideo } from "../../../config/uploadDynamic";
 
 const router = express.Router();
 
@@ -77,6 +77,114 @@ router.delete("/office/:id", LandingController.deleteOffice);
 
 
 
+// ====================  Mega Offer Apis ==================== //
+
+
+/* ============ MEGA OFFER ============ */
+
+router.get(
+  "/mega-offer",
+  LandingController.getMegaOffers
+);
+
+
+router.post(
+  "/mega-offer",
+  authGuard(UserRole.ADMIN),
+  uploadLandingSlider.single("image"),
+  LandingController.createMegaOffer
+);
+
+router.patch(
+  "/mega-offer/:id",
+  authGuard(UserRole.ADMIN),
+  uploadLandingSlider.single("image"),
+  LandingController.updateMegaOffer
+);
+
+  
+
+router.delete(
+  "/mega-offer/:id",
+  authGuard(UserRole.ADMIN),
+  LandingController.deleteMegaOffer
+);
+
+
+
+
+// ================== GalleryImage Apis ================== //
+
+
+
+router.post(
+  "/gallery",
+  authGuard(UserRole.ADMIN),
+  uploadLandingSlider.array("image", 12), // max 12 images
+  LandingController.createGalleryImages
+);
+
+router.get(
+  "/gallery",
+  LandingController.getGalleryImages
+);
+
+router.delete(
+  "/gallery/:id",
+  authGuard(UserRole.ADMIN),
+  LandingController.deleteGalleryImage
+);
+
+
+
+
+
+/* ===================== LANDING VIDEO ===================== */
+
+/**
+ * CREATE landing video
+ * - thumbnail (required)
+ * - video (only if sourceType = UPLOAD)
+ * - youtubeUrl (only if sourceType = YOUTUBE)
+ */
+router.post(
+  "/landing-video",
+  authGuard(UserRole.ADMIN),
+  uploadLandingVideo.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  LandingController.createLandingVideo
+);
+
+
+router.get(
+  "/landing-video",
+  LandingController.getLandingVideos
+);
+
+/**
+ * UPDATE landing video
+ * - thumbnail optional
+ * - video optional
+ * - sourceType switch supported
+ */
+router.patch(
+  "/landing-video/:id",
+  authGuard(UserRole.ADMIN),
+  uploadLandingVideo.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  LandingController.updateLandingVideo
+);
+
+
+router.delete(
+  "/landing-video/:id",
+  authGuard(UserRole.ADMIN),
+  LandingController.deleteLandingVideo
+);
 
 
 

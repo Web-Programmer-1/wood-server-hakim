@@ -1,0 +1,57 @@
+model MegaOffer {
+  id        String   @id @default(uuid())
+
+  imageUrl  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("mega_offers")
+}
+
+
+
+model GalleryImage {
+  id        String   @id @default(uuid())
+
+  imageUrl  String
+
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("gallery_images")
+}
+
+
+
+
+enum LandingVideoSource {
+  YOUTUBE
+  UPLOAD
+}
+
+model LandingVideo {
+  id            String              @id @default(uuid())
+
+  title         String
+  thumbnailUrl  String
+
+  sourceType    LandingVideoSource
+
+  youtubeUrl    String?
+  videoUrl      String?
+
+  isActive      Boolean             @default(true)
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([isActive])
+  @@index([sourceType])
+  @@map("landing_videos")
+}
+
+

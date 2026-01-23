@@ -1,4 +1,4 @@
-import { BlogCategory, BlogStatus, HighlightBadge } from "@prisma/client";
+import { BlogCategory, BlogStatus, HighlightBadge } from "../../constants/blog.enum";
 
 export interface CreateBlogInput {
   title: string;

@@ -1,12 +1,9 @@
 
 import slugify from "slugify";
-import {
-  BlogCategory,
-  BlogStatus,
-  HighlightBadge,
-} from "@prisma/client";
+
 import { CreateBlogInput, UpdateBlogInput } from "./blog.interface";
 import { prisma } from "../../shared/prisma";
+import { BlogCategory, BlogStatus, HighlightBadge } from "../../constants/blog.enum";
 
 export const createBlog = async (data: CreateBlogInput) => {
   // -------- Required validation ----------

@@ -1,7 +1,8 @@
 import express from "express";
 import { authGuard } from "../../middlewares/auth";
-import { UserRole } from "@prisma/client";
+
 import { AdminPaymentController } from "./adminPayment.controller";
+import { UserRole } from "../../constants/UserRole";
 
 const router = express.Router();
 

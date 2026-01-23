@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { createReviewHandler, deleteReviewAdminHandler, getAllReviewsAdminHandler, getProductReviewsHandler } from "./review.controller";
 
-import { UserRole } from "@prisma/client";
 import { authGuard } from "../../middlewares/auth";
+import { UserRole } from "../../constants/UserRole";
 
 const router = Router();
 

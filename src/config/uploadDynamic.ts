@@ -49,4 +49,19 @@ export const uploadCompanyLogo = createUploader(
 
 
 
+
+// landingVideo uploader
+export const uploadLandingVideo = createUploader(
+  "landing/videos",
+  [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "video/mp4",
+    "video/webm",
+  ],
+  100 * 1024 * 1024 // 100MB
+);
+
+
 export const uploadLandingSlider = createUploader("landing/sliders", ["image/jpeg", "image/png", "image/webp"], 5 * 1024 * 1024);

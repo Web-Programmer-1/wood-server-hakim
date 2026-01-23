@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { createInquiry, deleteInquiry, getInquiries, getInquiryById, sendQuotationEmail, updateInquiryStatus } from "./inquiry.controller";
 import { authGuard } from "../../middlewares/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "../../constants/UserRole";
 
 const router = Router();
 

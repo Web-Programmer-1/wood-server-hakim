@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { createBlogController, deleteBlogController, getBlogBySlugController, getBlogsAdminController, updateBlogController } from "./blog.controller";
 
-import { UserRole } from "@prisma/client";
+
 import { uploadContentImage } from "../../middlewares/upload.blog.image";
 import { authGuard } from "../../middlewares/auth";
+import { UserRole } from "../../constants/UserRole";
 
 const router = Router();
 

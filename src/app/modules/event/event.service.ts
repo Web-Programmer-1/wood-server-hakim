@@ -1,13 +1,11 @@
 
 import slugify from "slugify";
-import {
-    BlogStatus,
-  EventCategory,
-  EventStatus,
-  HighlightBadge,
-} from "@prisma/client";
+
 import { CreateEventInput, UpdateEventInput } from "./event.interface";
 import { prisma } from "../../shared/prisma";
+import { BlogStatus, HighlightBadge } from "../../constants/blog.enum";
+import {  EventStatus } from "../../constants/event.enum";
+import { EventCategory } from "@prisma/client";
 
 
 
@@ -111,7 +109,7 @@ export const getDashboardAnalytics = async () => {
       published: publishedBlogs,
       draft: draftBlogs,
       archived: archivedBlogs,
-      byCategory: blogsByCategory.map((b) => ({
+      byCategory: blogsByCategory.map((b:any) => ({
         category: b.category,
         count: b._count.category,
       })),
@@ -124,7 +122,7 @@ export const getDashboardAnalytics = async () => {
       ongoing: ongoingEvents,
       completed: completedEvents,
       cancelled: cancelledEvents,
-      byCategory: eventsByCategory.map((e) => ({
+      byCategory: eventsByCategory.map((e:any) => ({
         category: e.category,
         count: e._count.category,
       })),
