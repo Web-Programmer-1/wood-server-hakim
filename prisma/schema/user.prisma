@@ -9,7 +9,7 @@ model User {
   name          String
   email         String?
   phone         String?
-  passwordHash  String
+  passwordHash  String  // Hashed password
   role          UserRole      @default(CUSTOMER)
   status        UserStatus    @default(ACTIVE)
   emailVerified Boolean       @default(false)
