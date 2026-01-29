@@ -3,7 +3,7 @@
 import httpStatus from "http-status";
 import { ApiError } from "../../errors/ApiError";
 import { prisma } from "../../shared/prisma";
-import { GetMachinesParams } from "./machine.interface";
+import { GetMachinesParams, IMachine } from "./machine.interface";
 
 
 
@@ -138,49 +138,6 @@ const searchMachines = async (keyword: string) => {
   });
 };
 
-// const getMachineBySlug = async (slug: string) => {
-//   if (!slug) {
-//     throw new ApiError(httpStatus.BAD_REQUEST, "Machine slug is required");
-//   }
-
-//   const machine = await prisma.machine.findUnique({
-//     where: { slug  },
-//     include: {
-   
-      
-//       images: {
-//         select: {
-//           id: true,
-//           url: true,
-//           isPrimary: true,
-//         },
-//       },
-//       videos: {
-//         select: {
-//           id: true,
-//           url: true,
-//         },
-//       },
-    
-//       category: {
-//         select: {
-//           id: true,
-//           name: true,
-//           slug: true,
-//         },
-//       },
-//     },
-  
-//   });
-
-//   if (!machine || !machine.isActive) {
-//     throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
-//   }
-
-//   return machine;
-// };
-
-
 
 
 
@@ -191,7 +148,7 @@ const getMachineBySlug = async (slug: string) => {
 
   const machine = await prisma.machine.findUnique({
     where: { slug },
-    // 👇 include বাদ দিয়ে select ব্যবহার করা হলো (বেশি কন্ট্রোলের জন্য)
+
     select: {
       id: true,
       name: true,
@@ -201,15 +158,26 @@ const getMachineBySlug = async (slug: string) => {
       thumbnailImage: true,
       bannerImage: true,
       
-      stockQuantity: true, // ✅ এই যে নতুন ফিল্ড যোগ করা হলো
-      
+      stockQuantity: true, 
       isActive: true,
       brand: true,
       model: true,
       features: true,
       specifications: true,
+      workSections: true,
+      dynamicButtons: true,
+      listPrice: true,
+      discountPercent: true,
+      discountPrice: true,
+      createdAt: true,
+      bookedQty: true,
+      bookedName: true,
+      bookedPhone: true,
+      bookedEmail: true,
+      bookedNote: true,
+
       
-      // 👇 রিলেশনগুলোও select এর ভেতরেই থাকবে
+
       images: {
         select: {
           id: true,
@@ -271,46 +239,116 @@ const getRelatedMachines = async (slug: string) => {
   });
 };
 
+
+
+
 const createMachine = async (payload: any) => {
-  if (!payload.name || !payload.slug || !payload.categoryId) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
+  const {
+    name,
+    slug,
+    categoryId,
+    listPrice,
+    discountPercent,
+    bookedQty,
+  } = payload;
+
+  if (!name || !slug || !categoryId) {
+    throw new Error(
+    
       "Name, slug and categoryId are required"
     );
   }
 
+  if (!listPrice || Number(listPrice) <= 0) {
+    throw new Error(
+   
+      "List price must be greater than 0"
+    );
+  }
+
   const exist = await prisma.machine.findUnique({
-    where: { slug: payload.slug },
+    where: { slug },
   });
 
   if (exist) {
-    throw new ApiError(
-      httpStatus.CONFLICT,
+    throw new Error(
       "Machine with this slug already exists"
+    );
+  }
+
+  let discountPrice: number | null = null;
+  if (discountPercent !== undefined && discountPercent !== null) {
+    const percent = Number(discountPercent);
+    if (percent < 0 || percent > 100) {
+      throw new Error(
+  
+        "Discount percent must be between 0 and 100"
+      );
+    }
+
+    discountPrice =
+      Number(listPrice) -
+      Math.round((Number(listPrice) * percent) / 100);
+  }
+
+  const finalBookedQty =
+    bookedQty !== undefined ? Number(bookedQty) : 0;
+
+  if (finalBookedQty < 0) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Booked quantity cannot be negative"
     );
   }
 
   return prisma.machine.create({
     data: {
-      name: payload.name,
-      slug: payload.slug,
+      name,
+      slug,
       shortDesc: payload.shortDesc,
       description: payload.description,
-      categoryId: payload.categoryId,
+      categoryId,
       thumbnailImage: payload.thumbnailImage,
-      stockQuantity: payload.stockQuantity ? Number(payload.stockQuantity) : 0,
       bannerImage: payload.bannerImage,
+
       brand: payload.brand,
       model: payload.model,
+
       features: payload.features || {},
       specifications: payload.specifications || {},
       workSections: payload.workSections || [],
       dynamicButtons: payload.dynamicButtons || [],
+
+      listPrice: Number(listPrice),
+      discountPercent:
+        discountPercent !== undefined ? Number(discountPercent) : null,
+      discountPrice,
+
+      stockQuantity: payload.stockQuantity
+        ? Number(payload.stockQuantity)
+        : 0,
+
+    
+      bookedQty: finalBookedQty,
+      bookedName: payload.bookedName ?? null,
+      bookedPhone: payload.bookedPhone ?? null,
+      bookedEmail: payload.bookedEmail ?? null,
+      bookedNote: payload.bookedNote ?? null,
+
       isFeatured: payload.isFeatured || false,
       isActive: payload.isActive ?? true,
     },
   });
 };
+
+
+
+
+
+
+
+
+
 
 const updateMachine = async (id: string, payload: any) => {
   const machine = await prisma.machine.findUnique({
@@ -318,32 +356,71 @@ const updateMachine = async (id: string, payload: any) => {
   });
 
   if (!machine) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
+    throw new Error( "Machine not found");
   }
 
+  // 🔴 Slug uniqueness check
   if (payload.slug && payload.slug !== machine.slug) {
     const slugExist = await prisma.machine.findUnique({
       where: { slug: payload.slug },
     });
 
     if (slugExist) {
-      throw new ApiError(
-        httpStatus.CONFLICT,
+      throw new Error(
+  
         "Machine slug already in use"
       );
     }
   }
 
+  // 🧮 Price recalculation logic
+  const listPrice =
+    payload.listPrice !== undefined
+      ? Number(payload.listPrice)
+      : machine.listPrice;
+
+  const discountPercent =
+    payload.discountPercent !== undefined
+      ? payload.discountPercent !== null
+        ? Number(payload.discountPercent)
+        : null
+      : machine.discountPercent;
+
+  let discountPrice = machine.discountPrice;
+
+  if (discountPercent !== null && discountPercent !== undefined) {
+    if (discountPercent < 0 || discountPercent > 100) {
+      throw new Error(
+    
+        "Discount percent must be between 0 and 100"
+      );
+    }
+
+    discountPrice =
+      listPrice -
+      Math.round((listPrice * discountPercent) / 100);
+  } else {
+    discountPrice = null;
+  }
+
   return prisma.machine.update({
     where: { id },
-    data: payload,
+    data: {
+      ...payload,
+      listPrice,
+      discountPercent,
+      discountPrice,
+    },
   });
 };
 
+
+
+
 const updateMachineStatus = async (id: string, payload: any) => {
   if (typeof payload.isActive !== "boolean") {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
+    throw new Error(
+   
       "isActive boolean value required"
     );
   }

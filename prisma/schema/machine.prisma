@@ -33,6 +33,22 @@ model Machine {
   images         MachineImage[]
   videos         MachineVideo[]
 
+
+  
+  // ===== Pricing (NEW) =====
+  listPrice       Int                 // mandatory
+  discountPercent Int?                // 0–100
+  discountPrice   Int?                // auto-calculated
+  bookedQty      Int      @default(0)
+
+
+
+  // ---------------- 👤 Last Booking Info (simple) ----------------
+  bookedName       String?
+  bookedPhone      String?
+  bookedEmail      String?
+  bookedNote       String?
+
   @@index([categoryId])
   @@index([id])
   @@index([features])
@@ -55,3 +71,8 @@ model MachineVideo {
   url       String
   machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
+
+
+
+
+
