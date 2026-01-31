@@ -102,6 +102,7 @@ const getCart = async (userId: string) => {
       id: item.id,
       product: item.product,
       price: item.price,
+      unitPrice: item.price,
       quantity: item.quantity,
       subtotal,
     };

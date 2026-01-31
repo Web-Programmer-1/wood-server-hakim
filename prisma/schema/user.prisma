@@ -1,15 +1,14 @@
- enum UserRole {
+enum UserRole {
   ADMIN
   CUSTOMER
 }
-
 
 model User {
   id            String        @id @default(uuid())
   name          String
   email         String?
   phone         String?
-  passwordHash  String  // Hashed password
+  passwordHash  String // Hashed password
   role          UserRole      @default(CUSTOMER)
   status        UserStatus    @default(ACTIVE)
   emailVerified Boolean       @default(false)
@@ -22,6 +21,7 @@ model User {
   review        Review[]
   loginAttempt  LoginAttempt?
   profile       UserProfile?
+  couponUsages  CouponUsage[] @relation("userCouponUsages")
 
   @@index([status])
   @@index([email])

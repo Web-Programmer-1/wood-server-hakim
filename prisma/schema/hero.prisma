@@ -1,19 +1,16 @@
-
 model HeroSection {
-  id          String   @id @default(uuid())
-  title       String
-  subtitle    String?
-  buttonText  String?
-  
-  logoImage   String  
-  imageUrl    String   
-  videoUrl    String   
-  
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String  @id @default(uuid())
+  title      String
+  subtitle   String?
+  buttonText String?
+
+  logoImage String
+  imageUrl  String
+  videoUrl  String
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@map("hero_sections")
 }
-
-
-

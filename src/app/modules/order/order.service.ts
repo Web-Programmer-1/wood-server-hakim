@@ -1,15 +1,73 @@
-import { OrderStatus, PaymentMethod } from "@prisma/client";
+import { CouponDiscountType, OrderStatus, PaymentMethod } from "@prisma/client";
 import { getShippingFee } from "../../../helper/Shipping";
 import { prisma } from "../../shared/prisma";
-import { CheckoutPayload } from "./order.interface";
+
 import { SSLCommerzService } from "../payment/payment.service";
 import { BkashService } from "../bkashPayment/bkash.service";
 
 
 
 
+const applyCoupon = async (
+  tx: any,
+  userId: string,
+  couponCode: string,
+  subTotal: number
+) => {
+  const coupon = await tx.coupon.findUnique({
+    where: { code: couponCode.toUpperCase() },
+  });
 
-// const checkoutFromCart = async (userId: string, payload:any) => {
+  if (!coupon) throw new Error("Invalid coupon");
+  if (!coupon.isActive) throw new Error("Coupon inactive");
+  if (coupon.endAt < new Date()) throw new Error("Coupon expired");
+
+  if (subTotal < coupon.minOrderAmount) {
+    throw new Error(`Minimum order ${coupon.minOrderAmount} required`);
+  }
+
+  if (
+    coupon.totalUsageLimit &&
+    coupon.usedCount >= coupon.totalUsageLimit
+  ) {
+    throw new Error("Coupon usage limit reached");
+  }
+
+  if (coupon.perUserLimit) {
+    const used = await tx.couponUsage.count({
+      where: { couponId: coupon.id, userId },
+    });
+    if (used >= coupon.perUserLimit) {
+      throw new Error("Coupon already used");
+    }
+  }
+
+  let discount = 0;
+  if (coupon.discountType === CouponDiscountType.PERCENT) {
+    discount = Math.floor((subTotal * coupon.discountValue) / 100);
+  } else {
+    discount = coupon.discountValue;
+  }
+
+  if (coupon.maxDiscountAmount) {
+    discount = Math.min(discount, coupon.maxDiscountAmount);
+  }
+
+  discount = Math.min(discount, subTotal);
+
+  return {
+    couponId: coupon.id,
+    couponCode: coupon.code,
+    discountTotal: discount,
+  };
+};
+
+
+
+
+
+
+// export const checkoutFromCart = async (userId: string, payload: any) => {
 //   const {
 //     paymentMethod,
 //     customerName,
@@ -19,6 +77,7 @@ import { BkashService } from "../bkashPayment/bkash.service";
 //     city,
 //     area,
 //     note,
+//     couponCode, // ✅ optional
 //   } = payload;
 
 //   if (!paymentMethod || !customerName || !phone || !addressLine1) {
@@ -32,9 +91,7 @@ import { BkashService } from "../bkashPayment/bkash.service";
 //       include: {
 //         items: {
 //           include: {
-//             product: {
-//               select: { id: true, name: true, slug: true, visibility: true },
-//             },
+//             product: { select: { id: true, name: true, slug: true, visibility: true } },
 //           },
 //         },
 //       },
@@ -44,38 +101,45 @@ import { BkashService } from "../bkashPayment/bkash.service";
 //       throw new Error("Cart is empty");
 //     }
 
-//     // 2️⃣ Validate products
 //     for (const item of cart.items) {
 //       if (!item.product || !item.product.visibility) {
-//         throw new Error("One or more products are unavailable");
-//       }
-//       if (item.quantity < 1) {
-//         throw new Error("Invalid quantity in cart");
+//         throw new Error(`Product ${item.product?.name} unavailable`);
 //       }
 //     }
 
-//     // 3️⃣ Calculate subtotal
+//     // 2️⃣ Subtotal
 //     const subTotal = cart.items.reduce(
 //       (sum, item) => sum + item.price * item.quantity,
 //       0
 //     );
 
-//     const shippingFee = await getShippingFee(
-//       city as string,
-//       paymentMethod as "COD" || "ONLINE" ,
-//     );
+//     // 3️⃣ Shipping
+//     const shippingFee = await getShippingFee(city as string, paymentMethod);
 
-//     const totalAmount = subTotal + shippingFee;
+//     // 4️⃣ Coupon (optional)
+//     let discountTotal = 0;
+//     let appliedCouponId: string | null = null;
+//     let appliedCouponCode: string | null = null;
 
-//     // 4️⃣ Create ORDER (always first)
+//     if (couponCode) {
+//       const r = await applyCoupon(tx, userId, couponCode, subTotal);
+//       discountTotal = r.discountTotal;
+//       appliedCouponId = r.couponId;
+//       appliedCouponCode = r.couponCode;
+//     }
+
+//     // 5️⃣ Final total
+//     const totalAmount = subTotal - discountTotal + shippingFee;
+
+//     // 6️⃣ Create Order
 //     const order = await tx.order.create({
 //       data: {
 //         userId,
 //         paymentMethod,
-//         // paymentStatus: paymentMethod === "COD" ? "UNPAID" : "PENDING",
 //         status: paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
 
 //         subTotal,
+//         discountTotal,
 //         shippingFee,
 //         totalAmount,
 
@@ -88,7 +152,7 @@ import { BkashService } from "../bkashPayment/bkash.service";
 //         note,
 
 //         items: {
-//           create: cart.items.map((ci) => ({
+//           create: cart.items.map((ci: any) => ({
 //             productId: ci.productId,
 //             productName: ci.product!.name,
 //             productSlug: ci.product!.slug,
@@ -100,91 +164,98 @@ import { BkashService } from "../bkashPayment/bkash.service";
 //       },
 //     });
 
-//     // 5️⃣ Clear cart
-//     await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-
-//     // ===============================
-//     // 🔀 PAYMENT METHOD BRANCH
-//     // ===============================
-
-//     // ✅ COD FLOW (DONE)
-//     if (paymentMethod === "COD") {
-//       return {
-//         type: "COD",
-//         order,
-//       };
-//     }
-
-//     // 🔁 SSLCOMMERZ FLOW
-//     if (paymentMethod === "SSLCOMMARZE") {
-//       // 6️⃣ Create Payment record
-//       const payment = await tx.payment.create({
+//     // 7️⃣ Save coupon usage (AFTER order create)
+//     if (appliedCouponId) {
+//       await tx.couponUsage.create({
 //         data: {
+//           couponId: appliedCouponId,
+//           userId,
 //           orderId: order.id,
-//           provider: "SSLCOMMERZ",
-//           amount: totalAmount,
-//           status: "INITIATED",
 //         },
 //       });
 
-//       // 7️⃣ Create SSL session
-//       const session = await SSLCommerzService.createSession({
-//         orderId: order.id,
-//         amount: totalAmount,
-//         customerName,
-//         phone,
+//       await tx.coupon.update({
+//         where: { id: appliedCouponId },
+//         data: { usedCount: { increment: 1 } },
 //       });
+//     }
 
-//       // 8️⃣ Update payment with gateway data
-//       await tx.payment.update({
-//         where: { id: payment.id },
+//     // 8️⃣ Clear cart
+//     await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+//     // 9️⃣ Payment branches
+//     if (paymentMethod === "COD") {
+//       return { type: "COD", order };
+//     }
+
+//     if (paymentMethod === "BKASH") {
+//       const bkash = await BkashService.createBkashPayment(
+//         userId,
+//         order.id,
+//         totalAmount
+//       );
+
+//       await tx.payment.create({
 //         data: {
-//           transactionId: order.id,
-//           sessionKey: session.sessionkey,
-//           redirectUrl: session.GatewayPageURL,
-//           rawResponse: session,
+//           orderId: order.id,
+//           provider: "BKASH",
+//           amount: totalAmount,
+//           transactionId: bkash.paymentID,
 //           status: "PENDING",
+//           redirectUrl: bkash.bkashURL,
 //         },
 //       });
 
 //       return {
 //         type: "REDIRECT",
-//         provider: "SSLCOMMERZ",
-//         redirectUrl: session.GatewayPageURL,
+//         provider: "BKASH",
+//         redirectUrl: bkash.bkashURL,
 //         orderId: order.id,
 //       };
 //     }
 
-    
-//     // 🔁 BKASH FLOW (নতুন যোগ করা হয়েছে)
-// if (paymentMethod === "BKASH") {
-//   // ১. পেমেন্ট রেকর্ড তৈরি (INITIATED)
-//   const payment = await tx.payment.create({
-//     data: {
+//     // SSLCOMMERZ / ONLINE
+//     const payment = await tx.payment.create({
+//       data: {
+//         orderId: order.id,
+//         provider: "SSLCOMMERZ",
+//         amount: totalAmount,
+//         status: "INITIATED",
+//       },
+//     });
+
+
+
+//     const session = await SSLCommerzService.createSession({
 //       orderId: order.id,
-//       provider: "BKASH",
 //       amount: totalAmount,
-//       status: "INITIATED",
-//     },
-//   });
+   
+//       customerName,
+//       phone,
+//     });
 
-//   // ২. bKash পেমেন্ট সেশন বা স্যান্ডবক্স ইউআরএল তৈরি
-//   // নোট: আমরা আগে যে BkashService বানিয়েছিলাম সেটা এখানে কল হবে
-//   const bkashSession = await BkashService.createBkashPayment(
-//     userId,
-//     order.id,
-//     totalAmount
-//   );
 
-//   return {
-//     type: "REDIRECT",
-//     provider: "BKASH",
-//     redirectUrl: bkashSession.bkashURL, // বিকাশ থেকে পাওয়া পেমেন্ট লিংক
-//     orderId: order.id,
-//   };
-// }
 
-//     throw new Error("Unsupported payment method");
+    
+
+
+
+//     await tx.payment.update({
+//       where: { id: payment.id },
+//       data: {
+//         transactionId: order.id,
+//         sessionKey: session.sessionkey,
+//         redirectUrl: session.GatewayPageURL,
+//         status: "PENDING",
+//       },
+//     });
+
+//     return {
+//       type: "REDIRECT",
+//       provider: "SSLCOMMERZ",
+//       redirectUrl: session.GatewayPageURL,
+//       orderId: order.id,
+//     };
 //   });
 // };
 
@@ -192,9 +263,10 @@ import { BkashService } from "../bkashPayment/bkash.service";
 
 
 
-// order.service.ts
 
-const checkoutFromCart = async (userId: string, payload: any) => {
+
+
+export const checkoutFromCart = async (userId: string, payload: any) => {
   const {
     paymentMethod,
     customerName,
@@ -204,15 +276,15 @@ const checkoutFromCart = async (userId: string, payload: any) => {
     city,
     area,
     note,
+    couponCode, // optional
   } = payload;
 
-  // বেসিক ভ্যালিডেশন
   if (!paymentMethod || !customerName || !phone || !addressLine1) {
     throw new Error("Missing checkout fields");
   }
 
   return prisma.$transaction(async (tx) => {
-    // ১️⃣ ইউজার এর কার্ট লোড করা
+    // 1️⃣ Load cart
     const cart = await tx.cart.findUnique({
       where: { userId },
       include: {
@@ -230,32 +302,57 @@ const checkoutFromCart = async (userId: string, payload: any) => {
       throw new Error("Cart is empty");
     }
 
-    // ২️⃣ প্রোডাক্ট এর এভেইলেবিলিটি চেক করা
+    // 2️⃣ Validate products
     for (const item of cart.items) {
       if (!item.product || !item.product.visibility) {
-        throw new Error(`Product ${item.product?.name} is currently unavailable`);
+        throw new Error(`Product ${item.product?.name} unavailable`);
       }
     }
 
-    // ৩️⃣ সাবটোটাল এবং শিপিং ফি ক্যালকুলেশন
+    // 3️⃣ Subtotal
     const subTotal = cart.items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
-    const shippingFee = await getShippingFee(city as string, paymentMethod);
-    const totalAmount = subTotal + shippingFee;
+    // 4️⃣ Shipping
+    const shippingFee = await getShippingFee(city, paymentMethod);
 
-    // ৪️⃣ ডাটাবেসে অর্ডার তৈরি করা
+    // 5️⃣ Coupon
+    let discountTotal = 0;
+    let appliedCouponId: string | null = null;
+    let appliedCouponCode: string | null = null;
+
+    if (couponCode) {
+      const couponResult = await applyCoupon(
+        tx,
+        userId,
+        couponCode,
+        subTotal
+      );
+
+      discountTotal = couponResult.discountTotal;
+      appliedCouponId = couponResult.couponId;
+      appliedCouponCode = couponResult.couponCode;
+    }
+
+    // 6️⃣ Final total
+    const totalAmount = subTotal - discountTotal + shippingFee;
+
+    // 7️⃣ Create order
     const order = await tx.order.create({
       data: {
         userId,
         paymentMethod,
-        // COD হলে স্ট্যাটাস সরাসরি CONFIRMED হতে পারে, অনলাইন হলে PENDING
         status: paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
+
         subTotal,
+        discountTotal,
         shippingFee,
         totalAmount,
+
+        couponCode: appliedCouponCode,
+
         customerName,
         phone,
         addressLine1,
@@ -263,6 +360,7 @@ const checkoutFromCart = async (userId: string, payload: any) => {
         city,
         area,
         note,
+
         items: {
           create: cart.items.map((ci) => ({
             productId: ci.productId,
@@ -276,93 +374,110 @@ const checkoutFromCart = async (userId: string, payload: any) => {
       },
     });
 
-    // ৫️⃣ কার্ট ক্লিয়ার করা
-    await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+    // 8️⃣ Save coupon usage
+    if (appliedCouponId) {
+      await tx.couponUsage.create({
+        data: {
+          couponId: appliedCouponId,
+          userId,
+          orderId: order.id,
+        },
+      });
 
-    // ==========================================
-    // 🔀 পেমেন্ট গেটওয়ে হ্যান্ডেলিং (BRANCHING)
-    // ==========================================
+      await tx.coupon.update({
+        where: { id: appliedCouponId },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
 
-    // ✅ ১. ক্যাশ অন ডেলিভারি (COD)
+    // 9️⃣ Clear cart
+    await tx.cartItem.deleteMany({
+      where: { cartId: cart.id },
+    });
+
+    // 🔟 Payment handling
     if (paymentMethod === "COD") {
-      return {
-        type: "COD",
-        message: "Order placed successfully with Cash on Delivery",
-        order,
-      };
+      return { type: "COD", order };
     }
 
-    // ✅ ২. বিকাশ পেমেন্ট (BKASH)
-    if (paymentMethod === "BKASH") {
-      // বিকাশ সেশন তৈরি করা
-      const bkashData = await BkashService.createBkashPayment(
-        userId,
-        order.id,
-        totalAmount
-      );
 
-      // পেমেন্ট রেকর্ড তৈরি
-      await tx.payment.create({
-        data: {
-          orderId: order.id,
-          provider: "BKASH",
-          amount: totalAmount,
-          transactionId: bkashData.paymentID, // বিকাশ পেমেন্ট আইডি
-          status: "PENDING",
-          redirectUrl: bkashData.bkashURL,
-        },
-      });
 
-      return {
-        type: "REDIRECT",
-        provider: "BKASH",
-        redirectUrl: bkashData.bkashURL,
+    
+// BKASH
+if (paymentMethod === "BKASH") {
+  const bkash = await BkashService.createBkashPayment(
+    userId,
+    order.id,
+    totalAmount
+  );
+
+  await tx.payment.create({
+    data: {
+      orderId: order.id,
+      provider: "BKASH",
+      amount: totalAmount,
+      transactionId: bkash.paymentID,
+      status: "PENDING",
+      redirectUrl: bkash.bkashURL,
+    },
+  });
+
+  return {
+    type: "REDIRECT",
+    provider: "BKASH",
+    redirectUrl: bkash.bkashURL,
+    orderId: order.id,
+  };
+}
+
+
+
+
+    // SSLCOMMERZ
+    const payment = await tx.payment.create({
+      data: {
         orderId: order.id,
-      };
-    }
-
-    // ✅ ৩. SSLCOMMERZ পেমেন্ট
-    if (paymentMethod === "SSLCOMMERZ" || paymentMethod === "ONLINE") {
-      // পেমেন্ট রেকর্ড তৈরি
-      const payment = await tx.payment.create({
-        data: {
-          orderId: order.id,
-          provider: "SSLCOMMERZ",
-          amount: totalAmount,
-          status: "INITIATED",
-        },
-      });
-
-      // SSL সেশন তৈরি
-      const session = await SSLCommerzService.createSession({
-        orderId: order.id,
-        amount: totalAmount,
-        customerName,
-        phone,
-      });
-
-      // পেমেন্ট আপডেট
-      await tx.payment.update({
-        where: { id: payment.id },
-        data: {
-          transactionId: order.id,
-          sessionKey: session.sessionkey,
-          redirectUrl: session.GatewayPageURL,
-          status: "PENDING",
-        },
-      });
-
-      return {
-        type: "REDIRECT",
         provider: "SSLCOMMERZ",
-        redirectUrl: session.GatewayPageURL,
-        orderId: order.id,
-      };
-    }
+        amount: totalAmount,
+        status: "INITIATED",
+      },
+    });
 
-    throw new Error("Payment method not supported");
+    const session = await SSLCommerzService.createSession({
+      orderId: order.id,
+      amount: totalAmount,
+      customerName,
+      phone,
+    });
+
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        transactionId: order.id,
+        sessionKey: session.sessionkey,
+        redirectUrl: session.GatewayPageURL,
+        status: "PENDING",
+      },
+    });
+
+    return {
+      type: "REDIRECT",
+      provider: "SSLCOMMERZ",
+      redirectUrl: session.GatewayPageURL,
+      orderId: order.id,
+    };
   });
 };
+
+
+
+
+
+
+
+
+
+
 
 
 

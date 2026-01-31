@@ -1,8 +1,3 @@
-// import https from "https";
-
-// export const sslCommerzHttpsAgent = new https.Agent({
-//   rejectUnauthorized: false,
-// });
 
 
 

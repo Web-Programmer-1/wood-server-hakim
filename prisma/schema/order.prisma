@@ -21,6 +21,10 @@ model Order {
   items         OrderItem[]
   payments      Payment[]
 
+  couponId    String?
+  couponCode  String?
+  couponUsage CouponUsage?
+
   @@index([userId])
   @@index([status])
 }

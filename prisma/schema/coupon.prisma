@@ -1,0 +1,45 @@
+enum CouponDiscountType {
+  PERCENT
+  FLAT
+}
+
+model Coupon {
+  id                String             @id @default(uuid())
+  code              String             @unique
+  discountType      CouponDiscountType
+  discountValue     Int
+  minOrderAmount    Int
+  maxDiscountAmount Int?
+  startAt           DateTime?
+  endAt             DateTime
+  isActive          Boolean            @default(true)
+  totalUsageLimit   Int?
+  perUserLimit      Int?
+  usedCount         Int                @default(0)
+
+  usages CouponUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model CouponUsage {
+  id       String   @id @default(uuid())
+  couponId String
+  userId   String
+  orderId  String   @unique
+  usedAt   DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  user User @relation("userCouponUsages", fields: [userId], references: [id])
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
+}

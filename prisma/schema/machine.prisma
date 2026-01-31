@@ -10,44 +10,43 @@ model Category {
 }
 
 model Machine {
-  id             String         @id @default(uuid())
-  name           String
-  slug           String         @unique
-  shortDesc      String?
-  description    String?
-  thumbnailImage String?
-  bannerImage    String?
-  isActive       Boolean        @default(true)
-  isFeatured     Boolean        @default(false)
-  categoryId     String
-  brand          String?
-  model          String?
-  features       Json?
-  specifications Json?
-  workSections   Json?
-  dynamicButtons Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  stockQuantity  Int            @default(0)
-  category       Category       @relation(fields: [categoryId], references: [id])
-  images         MachineImage[]
-  videos         MachineVideo[]
+  id               String             @id @default(uuid())
+  name             String
+  slug             String             @unique
+  shortDesc        String?
+  description      String?
+  thumbnailImage   String?
+  bannerImage      String?
+  isActive         Boolean            @default(true)
+  isFeatured       Boolean            @default(false)
+  categoryId       String
+  brand            String?
+  model            String?
+  features         Json?
+  specifications   Json?
+  workSections     Json?
+  dynamicButtons   Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  stockQuantity    Int                @default(0)
+  category         Category           @relation(fields: [categoryId], references: [id])
+  images           MachineImage[]
+  videos           MachineVideo[]
+  machineInventory MachineInventory[]
+  machineSerial    MachineSerial[]
+  stockMovement    StockMovement[]
 
-
-  
   // ===== Pricing (NEW) =====
-  listPrice       Int                 // mandatory
-  discountPercent Int?                // 0–100
-  discountPrice   Int?                // auto-calculated
-  bookedQty      Int      @default(0)
-
-
+  listPrice       Int // mandatory
+  discountPercent Int? // 0–100
+  discountPrice   Int? // auto-calculated
+  bookedQty       Int  @default(0)
 
   // ---------------- 👤 Last Booking Info (simple) ----------------
-  bookedName       String?
-  bookedPhone      String?
-  bookedEmail      String?
-  bookedNote       String?
+  bookedName  String?
+  bookedPhone String?
+  bookedEmail String?
+  bookedNote  String?
 
   @@index([categoryId])
   @@index([id])
@@ -71,8 +70,3 @@ model MachineVideo {
   url       String
   machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
-
-
-
-
-

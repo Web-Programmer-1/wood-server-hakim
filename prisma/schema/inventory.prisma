@@ -1,0 +1,223 @@
+// =========================
+// INVENTORY ENUMS
+// =========================
+
+enum InventoryItemType {
+  PRODUCT
+  MACHINE
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  RESERVED
+  RELEASED
+  RETURN
+  DAMAGE
+  ADJUSTMENT
+}
+
+enum InventoryStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+}
+
+enum MachineSerialStatus {
+  AVAILABLE
+  SOLD
+  DAMAGED
+}
+
+// =========================
+// WAREHOUSE
+// =========================
+
+model Warehouse {
+  id        String  @id @default(uuid())
+  name      String
+  location  String?
+  isDefault Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  productInventories ProductInventory[]
+  machineInventories MachineInventory[]
+
+  @@index([isDefault])
+}
+
+// =========================
+// PRODUCT INVENTORY
+// =========================
+
+model ProductInventory {
+  id          String @id @default(uuid())
+  productId   String
+  warehouseId String
+
+  sku              String @unique
+  stockQuantity    Int    @default(0)
+  reservedQuantity Int    @default(0)
+  reorderLevel     Int    @default(5)
+
+  costPrice   Int // purchase price (latest)
+  averageCost Int // weighted avg (optional logic)
+  status      InventoryStatus @default(IN_STOCK)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+  // ✅ multi-warehouse support
+  @@unique([productId, warehouseId])
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([status])
+  @@index([sku])
+}
+
+// =========================
+// MACHINE INVENTORY
+// =========================
+
+model MachineInventory {
+  id          String @id @default(uuid())
+  machineId   String
+  warehouseId String
+
+  stockQuantity    Int @default(0)
+  reservedQuantity Int @default(0)
+  reorderLevel     Int @default(1)
+
+  costPrice Int
+  status    InventoryStatus @default(IN_STOCK)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  machine   Machine   @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+  //  multi-warehouse support
+  @@unique([machineId, warehouseId])
+  @@index([machineId])
+  @@index([warehouseId])
+  @@index([status])
+}
+
+// =========================
+// MACHINE SERIAL TRACKING
+// =========================
+
+model MachineSerial {
+  id          String              @id @default(uuid())
+  machineId   String
+  serialNo    String              @unique
+  status      MachineSerialStatus @default(AVAILABLE)
+  soldOrderId String?
+
+  createdAt DateTime @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([machineId])
+  @@index([status])
+  @@index([soldOrderId])
+}
+
+// =========================
+// STOCK MOVEMENT LEDGER
+// =========================
+
+model StockMovement {
+  id       String            @id @default(uuid())
+  itemType InventoryItemType
+
+  productId String?
+  machineId String?
+
+  movementType StockMovementType
+  quantity     Int
+
+  referenceId String? // orderId / cartId / adminId
+  note        String?
+  createdBy   String?
+
+  createdAt DateTime @default(now())
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  machine Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
+
+  @@index([itemType])
+  @@index([movementType])
+  @@index([productId])
+  @@index([machineId])
+  @@index([referenceId])
+  @@index([createdAt])
+}
+
+// =========================
+// INVENTORY RESERVATION (CART HOLD)
+// =========================
+
+model InventoryReservation {
+  id        String   @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  // ✅ relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([expiresAt])
+  @@index([productId])
+  @@index([cartId])
+}
+
+// =========================
+// INVENTORY ALERT
+// =========================
+
+model InventoryAlert {
+  id       String            @id @default(uuid())
+  itemType InventoryItemType
+  itemId   String
+  message  String
+  isRead   Boolean           @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([itemType])
+  @@index([itemId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// =========================
+// INVENTORY SNAPSHOT (ANALYTICS)
+// =========================
+
+model InventorySnapshot {
+  id       String            @id @default(uuid())
+  itemType InventoryItemType
+  itemId   String
+
+  openingStock Int
+  closingStock Int
+  date         DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([itemType, itemId, date])
+  @@index([date])
+  @@index([itemType])
+  @@index([itemId])
+}

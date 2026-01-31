@@ -10,24 +10,49 @@ type SSLSessionInput = {
   amount: number;
   customerName: string;
   phone: string;
+  email?: string;
+  addressLine1?: string;
+  city?: string;
+  area?: string;
+  note?: string;
+
 };
+
+
+
+
 
 const createSession = async (input: SSLSessionInput) => {
   const payload = {
+    // 🔐 Store credentials
     store_id: process.env.SSLCOMMERZ_STORE_ID!,
     store_passwd: process.env.SSLCOMMERZ_STORE_PASSWORD!,
+
+    // 💰 Transaction
     total_amount: input.amount,
     currency: "BDT",
     tran_id: input.orderId,
+
+    // 🔁 Redirect URLs
     success_url: process.env.SSLCOMMERZ_SUCCESS_URL!,
     fail_url: process.env.SSLCOMMERZ_FAIL_URL!,
     cancel_url: process.env.SSLCOMMERZ_CANCEL_URL!,
     ipn_url: process.env.SSLCOMMERZ_IPN_URL!,
+
+    // 👤 Customer info (MANDATORY)
     cus_name: input.customerName,
+    cus_email: input.email || "test@example.com",
     cus_phone: input.phone,
+    cus_add1: input.addressLine1 || "N/A",      // ✅ MUST
+    cus_city: input.city || "Dhaka",             // ✅ MUST
+    cus_country: "Bangladesh",                   // ✅ MUST
+
+    // 📦 Product info
     product_name: "Order Payment",
     product_category: "Ecommerce",
     product_profile: "general",
+
+    // 🚚 Shipping
     shipping_method: "NO",
   };
 
@@ -35,13 +60,29 @@ const createSession = async (input: SSLSessionInput) => {
     process.env.SSLCOMMERZ_SESSION_URL!,
     qs.stringify(payload),
     {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
       httpsAgent: sslCommerzHttpsAgent,
     }
   );
 
+  // 🔴 Defensive check
+  if (!res.data?.GatewayPageURL) {
+    console.error("SSLCOMMERZ ERROR:", res.data);
+    throw new Error(res.data?.failedreason || "SSLCommerz session failed");
+  }
+
   return res.data;
 };
+
+
+
+
+
+
+
+
 
 const handleSuccess = async (body: any) => {
   const { tran_id, val_id, amount } = body;

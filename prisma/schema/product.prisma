@@ -13,29 +13,32 @@ model ProductCategory {
 }
 
 model Product {
-  id                String             @id @default(uuid())
-  name              String
-  slug              String             @unique
-  shortDescription  String?
-  description       String?
-  basePrice         Int
-  discountPrice     Int?
-  discountPercent   Int?
-  availability      AvailabilityStatus
-  brandType         BrandType
-  productType       ProductType?
-  rating            Float              @default(0)
-  ratingCount       Int                @default(0)
-  keyPoints         Json?
-  productCategoryId String
-  visibility        Boolean            @default(true)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  cartItems         CartItem[]
-  orderItems        OrderItem[]
-  productCategory   ProductCategory    @relation(fields: [productCategoryId], references: [id])
-  images            ProductImage[]
-  review            Review[]
+  id                   String                 @id @default(uuid())
+  name                 String
+  slug                 String                 @unique
+  shortDescription     String?
+  description          String?
+  basePrice            Int
+  discountPrice        Int?
+  discountPercent      Int?
+  availability         AvailabilityStatus
+  brandType            BrandType
+  productType          ProductType?
+  rating               Float                  @default(0)
+  ratingCount          Int                    @default(0)
+  keyPoints            Json?
+  productCategoryId    String
+  visibility           Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  cartItems            CartItem[]
+  orderItems           OrderItem[]
+  productCategory      ProductCategory        @relation(fields: [productCategoryId], references: [id])
+  images               ProductImage[]
+  review               Review[]
+  productInventory     ProductInventory[]
+  stockMovement        StockMovement[]
+  inventoryReservation InventoryReservation[]
 
   @@index([slug])
   @@index([productCategoryId])
