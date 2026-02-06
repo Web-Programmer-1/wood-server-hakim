@@ -783,6 +783,35 @@ static async updateProduct(
 
 
 
+// static async deleteInventoryProduct(
+//   productId: string,
+//   adminId?: string
+// ) {
+//   const inventory = await prisma.productInventory.findUnique({
+//     where: { productId },
+//   });
+
+//   if (!inventory) {
+//     throw {
+//       statusCode: 404,
+//       errorCode: "INVENTORY_NOT_FOUND",
+//       message: "Inventory not found for this product",
+//     };
+//   }
+
+//   const result = await prisma.productInventory.delete({
+//     where: { productId },     
+//   })
+
+//   return result
+
+// }
+
+
+
+
+
+
 static async deleteInventoryProduct(
   productId: string,
   adminId?: string
@@ -795,50 +824,28 @@ static async deleteInventoryProduct(
     throw {
       statusCode: 404,
       errorCode: "INVENTORY_NOT_FOUND",
-      message: "Inventory not found for this product",
-    };
-  }
-
-  const totalQty =
-    inventory.availableQty +
-    inventory.reservedQty +
-    inventory.damagedQty;
-
-  if (totalQty === 0 && inventory.status === "OUT_OF_STOCK") {
-    throw {
-      statusCode: 400,
-      errorCode: "ALREADY_REMOVED",
-      message: "Inventory already removed",
+      message: "Inventory not found",
     };
   }
 
   await prisma.$transaction(async (tx) => {
-    // 1️⃣ Create audit movement
-    await tx.stockMovement.create({
-      data: {
-        inventoryId: inventory.id,
-        productId: inventory.productId,
-        type: "ADJUSTMENT",
-        quantity: -totalQty,
-        previousQty: totalQty,
-        currentQty: 0,
-        reason: "Inventory product removed",
-        updatedBy: adminId,
-      },
+    
+    await tx.stockMovement.deleteMany({
+      where: { inventoryId: inventory.id },
     });
 
-    // 2️⃣ Reset inventory
-    await tx.productInventory.update({
+    // 2️⃣ delete inventory
+    await tx.productInventory.delete({
       where: { id: inventory.id },
-      data: {
-        availableQty: 0,
-        reservedQty: 0,
-        damagedQty: 0,
-        status: "OUT_OF_STOCK",
-      },
     });
   });
+
+  return { deleted: true };
 }
+
+
+
+
 
 
 
