@@ -299,6 +299,32 @@ export class InventoryService {
 
 
 
+  static async getRecentMovements(limit: number) {
+  return prisma.stockMovement.findMany({
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: {
+      productId: true,
+      type: true,
+      quantity: true,
+      previousQty: true,
+      currentQty: true,
+      reason: true,
+      referenceId: true,
+      createdAt: true,
+      product: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  });
+}
+
+
+
+
 
   static async getMovementHistory(productId: string, limit: number) {
   return prisma.stockMovement.findMany({
@@ -782,30 +808,6 @@ static async updateProduct(
 
 
 
-
-// static async deleteInventoryProduct(
-//   productId: string,
-//   adminId?: string
-// ) {
-//   const inventory = await prisma.productInventory.findUnique({
-//     where: { productId },
-//   });
-
-//   if (!inventory) {
-//     throw {
-//       statusCode: 404,
-//       errorCode: "INVENTORY_NOT_FOUND",
-//       message: "Inventory not found for this product",
-//     };
-//   }
-
-//   const result = await prisma.productInventory.delete({
-//     where: { productId },     
-//   })
-
-//   return result
-
-// }
 
 
 

@@ -27,6 +27,12 @@ router.get("/products/export",
 );
 
 
+// get Recent Movements for a product
+
+router.get("/movements",
+
+    authGuard(UserRole.ADMIN),
+    InventoryController.getRecentMovements);
 
 router.get(
   "/movements/:productId",

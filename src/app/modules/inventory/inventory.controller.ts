@@ -126,6 +126,26 @@ static async getInventoryDetails(req: Request, res: Response) {
 
 
 
+static async getRecentMovements(req: Request, res: Response) {
+  try {
+    const limit = Number(req.query.limit) || 10;
+
+    const data = await InventoryService.getRecentMovements(limit);
+
+    return res.json({
+      success: true,
+      message: "Recent stock movements loaded",
+      data,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load recent movements",
+      errorCode: "RECENT_MOVEMENT_ERROR",
+    });
+  }
+}
+
 
 
 
