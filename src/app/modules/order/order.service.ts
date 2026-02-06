@@ -4,9 +4,8 @@ import { prisma } from "../../shared/prisma";
 
 import { SSLCommerzService } from "../payment/payment.service";
 import { BkashService } from "../bkashPayment/bkash.service";
-
-
-
+import { PaperflyService } from "../courier/courier.service";
+import { tr } from "zod/v4/locales";
 
 const applyCoupon = async (
   tx: any,
@@ -66,206 +65,6 @@ const applyCoupon = async (
 
 
 
-
-// export const checkoutFromCart = async (userId: string, payload: any) => {
-//   const {
-//     paymentMethod,
-//     customerName,
-//     phone,
-//     addressLine1,
-//     addressLine2,
-//     city,
-//     area,
-//     note,
-//     couponCode, // ✅ optional
-//   } = payload;
-
-//   if (!paymentMethod || !customerName || !phone || !addressLine1) {
-//     throw new Error("Missing checkout fields");
-//   }
-
-//   return prisma.$transaction(async (tx) => {
-//     // 1️⃣ Load cart
-//     const cart = await tx.cart.findUnique({
-//       where: { userId },
-//       include: {
-//         items: {
-//           include: {
-//             product: { select: { id: true, name: true, slug: true, visibility: true } },
-//           },
-//         },
-//       },
-//     });
-
-//     if (!cart || cart.items.length === 0) {
-//       throw new Error("Cart is empty");
-//     }
-
-//     for (const item of cart.items) {
-//       if (!item.product || !item.product.visibility) {
-//         throw new Error(`Product ${item.product?.name} unavailable`);
-//       }
-//     }
-
-//     // 2️⃣ Subtotal
-//     const subTotal = cart.items.reduce(
-//       (sum, item) => sum + item.price * item.quantity,
-//       0
-//     );
-
-//     // 3️⃣ Shipping
-//     const shippingFee = await getShippingFee(city as string, paymentMethod);
-
-//     // 4️⃣ Coupon (optional)
-//     let discountTotal = 0;
-//     let appliedCouponId: string | null = null;
-//     let appliedCouponCode: string | null = null;
-
-//     if (couponCode) {
-//       const r = await applyCoupon(tx, userId, couponCode, subTotal);
-//       discountTotal = r.discountTotal;
-//       appliedCouponId = r.couponId;
-//       appliedCouponCode = r.couponCode;
-//     }
-
-//     // 5️⃣ Final total
-//     const totalAmount = subTotal - discountTotal + shippingFee;
-
-//     // 6️⃣ Create Order
-//     const order = await tx.order.create({
-//       data: {
-//         userId,
-//         paymentMethod,
-//         status: paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
-
-//         subTotal,
-//         discountTotal,
-//         shippingFee,
-//         totalAmount,
-
-//         customerName,
-//         phone,
-//         addressLine1,
-//         addressLine2,
-//         city,
-//         area,
-//         note,
-
-//         items: {
-//           create: cart.items.map((ci: any) => ({
-//             productId: ci.productId,
-//             productName: ci.product!.name,
-//             productSlug: ci.product!.slug,
-//             unitPrice: ci.price,
-//             quantity: ci.quantity,
-//             lineTotal: ci.price * ci.quantity,
-//           })),
-//         },
-//       },
-//     });
-
-//     // 7️⃣ Save coupon usage (AFTER order create)
-//     if (appliedCouponId) {
-//       await tx.couponUsage.create({
-//         data: {
-//           couponId: appliedCouponId,
-//           userId,
-//           orderId: order.id,
-//         },
-//       });
-
-//       await tx.coupon.update({
-//         where: { id: appliedCouponId },
-//         data: { usedCount: { increment: 1 } },
-//       });
-//     }
-
-//     // 8️⃣ Clear cart
-//     await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-
-//     // 9️⃣ Payment branches
-//     if (paymentMethod === "COD") {
-//       return { type: "COD", order };
-//     }
-
-//     if (paymentMethod === "BKASH") {
-//       const bkash = await BkashService.createBkashPayment(
-//         userId,
-//         order.id,
-//         totalAmount
-//       );
-
-//       await tx.payment.create({
-//         data: {
-//           orderId: order.id,
-//           provider: "BKASH",
-//           amount: totalAmount,
-//           transactionId: bkash.paymentID,
-//           status: "PENDING",
-//           redirectUrl: bkash.bkashURL,
-//         },
-//       });
-
-//       return {
-//         type: "REDIRECT",
-//         provider: "BKASH",
-//         redirectUrl: bkash.bkashURL,
-//         orderId: order.id,
-//       };
-//     }
-
-//     // SSLCOMMERZ / ONLINE
-//     const payment = await tx.payment.create({
-//       data: {
-//         orderId: order.id,
-//         provider: "SSLCOMMERZ",
-//         amount: totalAmount,
-//         status: "INITIATED",
-//       },
-//     });
-
-
-
-//     const session = await SSLCommerzService.createSession({
-//       orderId: order.id,
-//       amount: totalAmount,
-   
-//       customerName,
-//       phone,
-//     });
-
-
-
-    
-
-
-
-//     await tx.payment.update({
-//       where: { id: payment.id },
-//       data: {
-//         transactionId: order.id,
-//         sessionKey: session.sessionkey,
-//         redirectUrl: session.GatewayPageURL,
-//         status: "PENDING",
-//       },
-//     });
-
-//     return {
-//       type: "REDIRECT",
-//       provider: "SSLCOMMERZ",
-//       redirectUrl: session.GatewayPageURL,
-//       orderId: order.id,
-//     };
-//   });
-// };
-
-
-
-
-
-
-
-
 export const checkoutFromCart = async (userId: string, payload: any) => {
   const {
     paymentMethod,
@@ -276,14 +75,19 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
     city,
     area,
     note,
-    couponCode, // optional
+    couponCode,
+      weight, 
   } = payload;
 
   if (!paymentMethod || !customerName || !phone || !addressLine1) {
     throw new Error("Missing checkout fields");
   }
 
-  return prisma.$transaction(async (tx) => {
+  const finalWeight = weight ? Number(weight) : 1;
+
+
+  // 🔹 STEP 1: transaction result ধরছি
+  const result = await prisma.$transaction(async (tx) => {
     // 1️⃣ Load cart
     const cart = await tx.cart.findUnique({
       where: { userId },
@@ -374,7 +178,7 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       },
     });
 
-    // 8️⃣ Save coupon usage
+    // 8️⃣ Coupon usage
     if (appliedCouponId) {
       await tx.couponUsage.create({
         data: {
@@ -400,38 +204,32 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       return { type: "COD", order };
     }
 
+    // BKASH
+    if (paymentMethod === "BKASH") {
+      const bkash = await BkashService.createBkashPayment(
+        userId,
+        order.id,
+        totalAmount
+      );
 
+      await tx.payment.create({
+        data: {
+          orderId: order.id,
+          provider: "BKASH",
+          amount: totalAmount,
+          transactionId: bkash.paymentID,
+          status: "PENDING",
+          redirectUrl: bkash.bkashURL,
+        },
+      });
 
-    
-// BKASH
-if (paymentMethod === "BKASH") {
-  const bkash = await BkashService.createBkashPayment(
-    userId,
-    order.id,
-    totalAmount
-  );
-
-  await tx.payment.create({
-    data: {
-      orderId: order.id,
-      provider: "BKASH",
-      amount: totalAmount,
-      transactionId: bkash.paymentID,
-      status: "PENDING",
-      redirectUrl: bkash.bkashURL,
-    },
-  });
-
-  return {
-    type: "REDIRECT",
-    provider: "BKASH",
-    redirectUrl: bkash.bkashURL,
-    orderId: order.id,
-  };
-}
-
-
-
+      return {
+        type: "REDIRECT",
+        provider: "BKASH",
+        redirectUrl: bkash.bkashURL,
+        orderId: order.id,
+      };
+    }
 
     // SSLCOMMERZ
     const payment = await tx.payment.create({
@@ -467,7 +265,321 @@ if (paymentMethod === "BKASH") {
       orderId: order.id,
     };
   });
+
+  if (result.type === "COD") {
+    const order = result.order!;
+
+    // const courier = await PaperflyService.createOrder({
+    //   ...order,
+    //   weight:finalWeight,
+    // });
+
+    const courierRes = await PaperflyService.createOrder({
+  ...order,
+  weight: finalWeight,
+});
+
+await prisma.order.update({
+  where: { id: order.id },
+  data: {
+    courierName: "PAPERFLY",
+    trackingNumber: courierRes.tracking_number,
+    trackingBarcode: courierRes.tracking_barcode,
+    status:OrderStatus.CONFIRMED,
+  },
+});
+
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        courierName: "PAPERFLY",
+        trackingNumber: courierRes.tracking_number,
+        trackingBarcode: courierRes.tracking_barcode,
+        // trackingToken: trackingToken,
+      },
+    });
+
+    return {
+      type: "COD",
+      orderId: order.id,
+      trackingNumber: courierRes.tracking_number,
+    };
+  }
+
+
+
+
+  return result;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export const checkoutFromCart = async (userId: string, payload: any) => {
+//   const {
+//     paymentMethod,
+//     customerName,
+//     phone,
+//     addressLine1,
+//     addressLine2,
+//     city,
+//     area,
+//     note,
+//     couponCode, // optional
+//   } = payload;
+
+//   if (!paymentMethod || !customerName || !phone || !addressLine1) {
+//     throw new Error("Missing checkout fields");
+//   }
+
+//   return prisma.$transaction(async (tx) => {
+//     // 1️⃣ Load cart
+//     const cart = await tx.cart.findUnique({
+//       where: { userId },
+//       include: {
+//         items: {
+//           include: {
+//             product: {
+//               select: { id: true, name: true, slug: true, visibility: true },
+//             },
+//           },
+//         },
+//       },
+//     });
+
+//     if (!cart || cart.items.length === 0) {
+//       throw new Error("Cart is empty");
+//     }
+
+//     // 2️⃣ Validate products
+//     for (const item of cart.items) {
+//       if (!item.product || !item.product.visibility) {
+//         throw new Error(`Product ${item.product?.name} unavailable`);
+//       }
+//     }
+
+//     // 3️⃣ Subtotal
+//     const subTotal = cart.items.reduce(
+//       (sum, item) => sum + item.price * item.quantity,
+//       0
+//     );
+
+//     // 4️⃣ Shipping
+//     const shippingFee = await getShippingFee(city, paymentMethod);
+
+//     // 5️⃣ Coupon
+//     let discountTotal = 0;
+//     let appliedCouponId: string | null = null;
+//     let appliedCouponCode: string | null = null;
+
+//     if (couponCode) {
+//       const couponResult = await applyCoupon(
+//         tx,
+//         userId,
+//         couponCode,
+//         subTotal
+//       );
+
+//       discountTotal = couponResult.discountTotal;
+//       appliedCouponId = couponResult.couponId;
+//       appliedCouponCode = couponResult.couponCode;
+//     }
+
+//     // 6️⃣ Final total
+//     const totalAmount = subTotal - discountTotal + shippingFee;
+
+//     // 7️⃣ Create order
+//     const order = await tx.order.create({
+//       data: {
+//         userId,
+//         paymentMethod,
+//         status: paymentMethod === "COD" ? "CONFIRMED" : "PENDING",
+
+//         subTotal,
+//         discountTotal,
+//         shippingFee,
+//         totalAmount,
+
+//         couponCode: appliedCouponCode,
+
+//         customerName,
+//         phone,
+//         addressLine1,
+//         addressLine2,
+//         city,
+//         area,
+//         note,
+
+//         items: {
+//           create: cart.items.map((ci) => ({
+//             productId: ci.productId,
+//             productName: ci.product!.name,
+//             productSlug: ci.product!.slug,
+//             unitPrice: ci.price,
+//             quantity: ci.quantity,
+//             lineTotal: ci.price * ci.quantity,
+//           })),
+//         },
+//       },
+//     });
+
+//     // 8️⃣ Save coupon usage
+//     if (appliedCouponId) {
+//       await tx.couponUsage.create({
+//         data: {
+//           couponId: appliedCouponId,
+//           userId,
+//           orderId: order.id,
+//         },
+//       });
+
+//       await tx.coupon.update({
+//         where: { id: appliedCouponId },
+//         data: { usedCount: { increment: 1 } },
+//       });
+//     }
+
+//     // 9️⃣ Clear cart
+//     await tx.cartItem.deleteMany({
+//       where: { cartId: cart.id },
+//     });
+
+//     // 🔟 Payment handling
+//     // if (paymentMethod === "COD") {
+//     //   return { type: "COD", order };
+//     // }
+
+
+
+
+//     if (paymentMethod === "COD") {
+//   // Create courier order
+//   const courier = await PaperflyService.createOrder(order);
+
+//   await tx.order.update({
+//     where: { id: order.id },
+//     data: {
+//       courierName: "PAPERFLY",
+//       trackingNumber: courier.tracking_number,
+//       trackingBarcode: courier.tracking_barcode,
+//       status: "CONFIRMED",
+//     },
+//   });
+
+
+
+
+
+
+//   return {
+//     type: "COD",
+//     orderId: order.id,
+//     trackingNumber: courier.tracking_number,
+//   };
+// }
+
+
+
+
+
+
+    
+// // BKASH
+// if (paymentMethod === "BKASH") {
+//   const bkash = await BkashService.createBkashPayment(
+//     userId,
+//     order.id,
+//     totalAmount
+//   );
+
+//   await tx.payment.create({
+//     data: {
+//       orderId: order.id,
+//       provider: "BKASH",
+//       amount: totalAmount,
+//       transactionId: bkash.paymentID,
+//       status: "PENDING",
+//       redirectUrl: bkash.bkashURL,
+//     },
+//   });
+
+//   return {
+//     type: "REDIRECT",
+//     provider: "BKASH",
+//     redirectUrl: bkash.bkashURL,
+//     orderId: order.id,
+//   };
+// }
+
+
+
+
+//     // SSLCOMMERZ
+//     const payment = await tx.payment.create({
+//       data: {
+//         orderId: order.id,
+//         provider: "SSLCOMMERZ",
+//         amount: totalAmount,
+//         status: "INITIATED",
+//       },
+//     });
+
+//     const session = await SSLCommerzService.createSession({
+//       orderId: order.id,
+//       amount: totalAmount,
+//       customerName,
+//       phone,
+//     });
+
+//     await tx.payment.update({
+//       where: { id: payment.id },
+//       data: {
+//         transactionId: order.id,
+//         sessionKey: session.sessionkey,
+//         redirectUrl: session.GatewayPageURL,
+//         status: "PENDING",
+//       },
+//     });
+
+//     return {
+//       type: "REDIRECT",
+//       provider: "SSLCOMMERZ",
+//       redirectUrl: session.GatewayPageURL,
+//       orderId: order.id,
+//     };
+//   });
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -574,6 +686,58 @@ const getOrderDetails = async (userId: string, orderId: string) => {
 
 
 
+// const cancelOrder = async (userId: string, orderId: string) => {
+
+//   const order = await prisma.order.findFirst({
+//     where: {
+//       id: orderId,
+//       userId,
+//     },
+//   });
+
+//   if (!order) {
+//     throw new Error("Order not found");
+//   }
+
+ 
+//   if (order.status === "CANCELLED") {
+//     throw new Error("Order already cancelled");
+//   }
+
+
+//   const cancellableStatuses = ["PENDING", "CONFIRMED"];
+
+//   if (!cancellableStatuses.includes(order.status)) {
+//     throw new Error(
+//       `Order cannot be cancelled at ${order.status} stage`
+//     );
+//   }
+
+
+  
+
+
+
+//   const updatedOrder = await prisma.order.update({
+//     where: { id: orderId },
+//     data: {
+//       status: "CANCELLED",
+//     },
+//   });
+
+//   return updatedOrder;
+// };
+
+
+
+
+
+//  -------------------------- ONLY for Admin ------------------------------------
+
+
+
+
+
 const cancelOrder = async (userId: string, orderId: string) => {
 
   const order = await prisma.order.findFirst({
@@ -587,7 +751,7 @@ const cancelOrder = async (userId: string, orderId: string) => {
     throw new Error("Order not found");
   }
 
- 
+
   if (order.status === "CANCELLED") {
     throw new Error("Order already cancelled");
   }
@@ -599,6 +763,16 @@ const cancelOrder = async (userId: string, orderId: string) => {
     throw new Error(
       `Order cannot be cancelled at ${order.status} stage`
     );
+  }
+
+  
+  if (order.courierName === "PAPERFLY" && order.trackingNumber) {
+    try {
+      await PaperflyService.cancel(order.id);
+    } catch (error) {
+      console.error("Paperfly cancel failed:", error);
+
+    }
   }
 
 
@@ -616,7 +790,7 @@ const cancelOrder = async (userId: string, orderId: string) => {
 
 
 
-//  -------------------------- ONLY for Admin ------------------------------------
+
 
 
 
@@ -775,6 +949,27 @@ const updateOrderStatus = async (
 };
 
 
+
+const deleteOrder = async (orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!order) {
+    throw new Error( "Order not found");
+  }
+
+  await prisma.order.delete({
+    where: { id: orderId },
+  });
+
+  return {
+    message: "Order deleted successfully",
+  };
+};
+
+
+
 export const OrderService = {
   
   checkoutFromCart,
@@ -784,4 +979,6 @@ export const OrderService = {
   getAllOrdersAdmin,
   getOrderDetailsAdmin,
   updateOrderStatus,
+  deleteOrder,
+  
 };

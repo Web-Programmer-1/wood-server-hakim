@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import { OrderService } from "./order.service";
+import { PaperflyService } from "../courier/courier.service";
+import { prisma } from "../../shared/prisma";
+import { HttpStatusCode } from "axios";
 
 const checkout = async (req: Request, res: Response) => {
   const userId = req.user!.id;
@@ -102,6 +105,42 @@ const updateOrderStatus = async (req: Request, res: Response) => {
 
 
 
+// Order Tracking Paperfly
+
+
+
+
+const trackOrder = async (req: Request, res: Response) => {
+  const { orderId } = req.params;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!order || !order.trackingNumber) {
+    throw new Error("Tracking not available");
+  }
+
+  const tracking = await PaperflyService.track(order.trackingNumber);
+
+  res.status(200).json({
+    success: true,
+    data: tracking,
+  });
+};
+
+
+
+const deleteOrder = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const result = await OrderService.deleteOrder(id);
+
+  res.status(HttpStatusCode.Accepted).json({
+    success: true,
+    message: result.message,
+  });
+};
 
 
 export const OrderController = {
@@ -113,5 +152,7 @@ export const OrderController = {
   getAllOrdersAdmin,
   getOrderDetailsAdmin,
   updateOrderStatus,
+  trackOrder,
+  deleteOrder,
 
 };

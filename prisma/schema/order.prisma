@@ -14,12 +14,18 @@ model Order {
   addressLine2  String?
   city          String?
   area          String?
-  note          String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items         OrderItem[]
-  payments      Payment[]
+
+  courierName     String? // Paperfly
+  trackingNumber  String? // Z-051125-...
+  trackingBarcode String?
+  trackingToken   String? @unique
+
+  note      String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+  payments  Payment[]
 
   couponId    String?
   couponCode  String?
@@ -40,7 +46,7 @@ model OrderItem {
   lineTotal   Int
   createdAt   DateTime @default(now())
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([productId])

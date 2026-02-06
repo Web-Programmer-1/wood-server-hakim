@@ -10,31 +10,28 @@ model Category {
 }
 
 model Machine {
-  id               String             @id @default(uuid())
-  name             String
-  slug             String             @unique
-  shortDesc        String?
-  description      String?
-  thumbnailImage   String?
-  bannerImage      String?
-  isActive         Boolean            @default(true)
-  isFeatured       Boolean            @default(false)
-  categoryId       String
-  brand            String?
-  model            String?
-  features         Json?
-  specifications   Json?
-  workSections     Json?
-  dynamicButtons   Json?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  stockQuantity    Int                @default(0)
-  category         Category           @relation(fields: [categoryId], references: [id])
-  images           MachineImage[]
-  videos           MachineVideo[]
-  machineInventory MachineInventory[]
-  machineSerial    MachineSerial[]
-  stockMovement    StockMovement[]
+  id             String         @id @default(uuid())
+  name           String
+  slug           String         @unique
+  shortDesc      String?
+  description    String?
+  thumbnailImage String?
+  bannerImage    String?
+  isActive       Boolean        @default(true)
+  isFeatured     Boolean        @default(false)
+  categoryId     String
+  brand          String?
+  model          String?
+  features       Json?
+  specifications Json?
+  workSections   Json?
+  dynamicButtons Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  stockQuantity  Int            @default(0)
+  category       Category       @relation(fields: [categoryId], references: [id])
+  images         MachineImage[]
+  videos         MachineVideo[]
 
   // ===== Pricing (NEW) =====
   listPrice       Int // mandatory

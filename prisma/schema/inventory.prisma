@@ -2,19 +2,14 @@
 // INVENTORY ENUMS
 // =========================
 
-enum InventoryItemType {
-  PRODUCT
-  MACHINE
-}
-
 enum StockMovementType {
-  IN
-  OUT
-  RESERVED
-  RELEASED
-  RETURN
-  DAMAGE
-  ADJUSTMENT
+  IN // Restock / Purchase
+  OUT // Order shipped / manual out
+  RESERVED // Order placed (hold)
+  RELEASED // Order cancelled
+  ADJUSTMENT // Manual correction
+  DAMAGE // Damaged / lost
+  RETURN // Customer return
 }
 
 enum InventoryStatus {
@@ -23,201 +18,68 @@ enum InventoryStatus {
   OUT_OF_STOCK
 }
 
-enum MachineSerialStatus {
-  AVAILABLE
-  SOLD
-  DAMAGED
-}
-
-// =========================
-// WAREHOUSE
-// =========================
-
-model Warehouse {
-  id        String  @id @default(uuid())
-  name      String
-  location  String?
-  isDefault Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  productInventories ProductInventory[]
-  machineInventories MachineInventory[]
-
-  @@index([isDefault])
-}
-
 // =========================
 // PRODUCT INVENTORY
+// (Single company storage)
 // =========================
 
 model ProductInventory {
-  id          String @id @default(uuid())
-  productId   String
-  warehouseId String
+  id String @id @default(uuid())
 
-  sku              String @unique
-  stockQuantity    Int    @default(0)
-  reservedQuantity Int    @default(0)
-  reorderLevel     Int    @default(5)
+  productId String @unique
+  sku       String @unique
 
-  costPrice   Int // purchase price (latest)
-  averageCost Int // weighted avg (optional logic)
-  status      InventoryStatus @default(IN_STOCK)
+  availableQty Int @default(0) // Sellable stock
+  reservedQty  Int @default(0) // Order hold
+  damagedQty   Int @default(0) // Damaged stock
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  reorderLevel Int @default(5)
 
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  costPrice   Int?
+  averageCost Int?
 
-  // ✅ multi-warehouse support
-  @@unique([productId, warehouseId])
-  @@index([productId])
-  @@index([warehouseId])
-  @@index([status])
-  @@index([sku])
-}
-
-// =========================
-// MACHINE INVENTORY
-// =========================
-
-model MachineInventory {
-  id          String @id @default(uuid())
-  machineId   String
-  warehouseId String
-
-  stockQuantity    Int @default(0)
-  reservedQuantity Int @default(0)
-  reorderLevel     Int @default(1)
-
-  costPrice Int
-  status    InventoryStatus @default(IN_STOCK)
+  status InventoryStatus @default(IN_STOCK)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  machine   Machine   @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  visibility Boolean @default(true)
 
-  //  multi-warehouse support
-  @@unique([machineId, warehouseId])
-  @@index([machineId])
-  @@index([warehouseId])
+  // Relations
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  movements StockMovement[]
+
   @@index([status])
 }
 
 // =========================
-// MACHINE SERIAL TRACKING
-// =========================
-
-model MachineSerial {
-  id          String              @id @default(uuid())
-  machineId   String
-  serialNo    String              @unique
-  status      MachineSerialStatus @default(AVAILABLE)
-  soldOrderId String?
-
-  createdAt DateTime @default(now())
-
-  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
-
-  @@index([machineId])
-  @@index([status])
-  @@index([soldOrderId])
-}
-
-// =========================
-// STOCK MOVEMENT LEDGER
+// STOCK MOVEMENT (AUDIT LOG)
 // =========================
 
 model StockMovement {
-  id       String            @id @default(uuid())
-  itemType InventoryItemType
+  id String @id @default(uuid())
 
-  productId String?
-  machineId String?
+  inventoryId String
+  productId   String
 
-  movementType StockMovementType
-  quantity     Int
+  type     StockMovementType
+  quantity Int
 
-  referenceId String? // orderId / cartId / adminId
-  note        String?
-  createdBy   String?
+  previousQty Int
+  currentQty  Int
+
+  reason      String?
+  referenceId String? // orderId / manual reference
+  updatedBy   String? // admin userId (optional)
 
   createdAt DateTime @default(now())
 
-  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  machine Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  // Relations
+  inventory ProductInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  product   Product          @relation(fields: [productId], references: [id])
 
-  @@index([itemType])
-  @@index([movementType])
+  @@index([inventoryId])
   @@index([productId])
-  @@index([machineId])
-  @@index([referenceId])
+  @@index([type])
   @@index([createdAt])
-}
-
-// =========================
-// INVENTORY RESERVATION (CART HOLD)
-// =========================
-
-model InventoryReservation {
-  id        String   @id @default(uuid())
-  cartId    String
-  productId String
-  quantity  Int
-  expiresAt DateTime
-
-  createdAt DateTime @default(now())
-
-  // ✅ relations
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
-  @@unique([cartId, productId])
-  @@index([expiresAt])
-  @@index([productId])
-  @@index([cartId])
-}
-
-// =========================
-// INVENTORY ALERT
-// =========================
-
-model InventoryAlert {
-  id       String            @id @default(uuid())
-  itemType InventoryItemType
-  itemId   String
-  message  String
-  isRead   Boolean           @default(false)
-
-  createdAt DateTime @default(now())
-
-  @@index([itemType])
-  @@index([itemId])
-  @@index([isRead])
-  @@index([createdAt])
-}
-
-// =========================
-// INVENTORY SNAPSHOT (ANALYTICS)
-// =========================
-
-model InventorySnapshot {
-  id       String            @id @default(uuid())
-  itemType InventoryItemType
-  itemId   String
-
-  openingStock Int
-  closingStock Int
-  date         DateTime
-
-  createdAt DateTime @default(now())
-
-  @@unique([itemType, itemId, date])
-  @@index([date])
-  @@index([itemType])
-  @@index([itemId])
 }

@@ -1,7 +1,8 @@
 import express from "express";
 import { AdminCouponController, applyCouponPreview, getAvailableCoupons } from "./coupon.controller";
 import { authGuard } from "../../middlewares/auth";
-import { UserRole } from "../../constants/UserRole";
+import { UserRole } from "@prisma/client";
+
 
 const router = express.Router();
 

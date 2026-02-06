@@ -9,7 +9,9 @@ const router = express.Router();
 
 // only for admin 
 
-router.get("/admin",OrderController.getAllOrdersAdmin);
+router.get("/admin",
+  authGuard(UserRole.ADMIN),
+  OrderController.getAllOrdersAdmin);
 
 router.get("/admin/:orderId",    OrderController.getOrderDetailsAdmin);
 
@@ -39,6 +41,17 @@ router.patch("/:orderId/cancel",authGuard(UserRole.CUSTOMER), OrderController.ca
 
 
 
+//  Paperfly Order Tracking  Api
+
+
+router.get(
+  "/:orderId/tracking",
+  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+  OrderController.trackOrder
+);
+
+
+
 
 
 // -------------------------- ONLY for ADMIN ----------------------------
@@ -47,6 +60,12 @@ router.patch("/:orderId/cancel",authGuard(UserRole.CUSTOMER), OrderController.ca
 router.get("/admin",authGuard(UserRole.CUSTOMER), OrderController.getAllOrdersAdmin);
 
 
+
+router.delete(
+  "/admin/:id",
+  authGuard(UserRole.ADMIN),
+  OrderController.deleteOrder
+);
 
 
 
