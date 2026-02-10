@@ -151,7 +151,26 @@ export const AuthService = {
 async register(body: IRegister) {
   const { name, email, phone, password } = body;
 
-  console.log(name, email, phone, password)
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          email ? { email } : undefined,
+          phone ? { phone } : undefined,
+        ].filter(Boolean) as any,
+      },
+    });
+
+    if (existingUser) {
+      if (email && existingUser.email === email) {
+        throw new Error("Email already registered");
+      }
+      if (phone && existingUser.phone === phone) {
+        throw new Error("Phone number already registered");
+      }
+      throw new Error("User already exists");
+    }
+
 
   if (!password) throw new Error("Password is required");
 
