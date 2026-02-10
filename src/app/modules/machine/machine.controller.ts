@@ -92,7 +92,8 @@ const createMachine = async (req: Request, res: Response) => {
   };
 
   const result = await MachineService.createMachine(payload);
-
+  
+  console.log("CreateMachine", result)
   res.status(201).json({
     success: true,
     data: result,

@@ -601,69 +601,6 @@ static async getStockReport(from: string, to: string) {
 
 
 
-// static async createProduct(payload: {
-//   name: string;
-//   slug: string;
-//   basePrice: number;
-//   productCategoryId: string;
-//   sku: string;
-//   reorderLevel?: number;
-//   costPrice?: number;
-// }) {
-//   const {
-//     name,
-//     slug,
-//     basePrice,
-//     productCategoryId,
-//     sku,
-//     reorderLevel = 5,
-//     costPrice = 0,
-//   } = payload;
-
-//   // 🔍 Validation
-//   if (!name || !slug || !basePrice || !productCategoryId || !sku) {
-//     throw {
-//       statusCode: 400,
-//       errorCode: "INVALID_INPUT",
-//       message: "Name, slug, basePrice, category and SKU are required",
-//     };
-//   }
-
-//   // 🔒 Transaction (product + inventory together)
-//   return prisma.$transaction(async (tx) => {
-//     const product = await tx.product.create({
-//       data: {
-//         name,
-//         slug,
-//         basePrice,
-//         productCategoryId,
-//         availability: "IN_STOCK",
-//         brandType: "LOCAL",
-//       },
-//     });
-
-//     const inventory = await tx.productInventory.create({
-//       data: {
-//         productId: product.id,
-//         sku,
-//         reorderLevel,
-//         costPrice,
-//         availableQty: 0,
-//         reservedQty: 0,
-//         damagedQty: 0,
-//         status: "OUT_OF_STOCK",
-//       },
-//     });
-
-//     return {
-//       productId: product.id,
-//       name: product.name,
-//       sku: inventory.sku,
-//       reorderLevel: inventory.reorderLevel,
-//     };
-//   });
-// }
-
 
 
 

@@ -295,6 +295,7 @@ const createMachine = async (payload: any) => {
     bookedQty !== undefined ? Number(bookedQty) : 0;
 
   if (finalBookedQty < 0) {
+    
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "Booked quantity cannot be negative"
