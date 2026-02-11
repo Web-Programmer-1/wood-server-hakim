@@ -9,9 +9,8 @@ import { globalLimiter } from './app/middlewares/rateLimit';
 
 const app: Application = express();
 
-
 app.use(cors({
-    origin: ['http://localhost:3000'],
+    origin: true, // Allow all origins for development
     credentials: true
 }));
 

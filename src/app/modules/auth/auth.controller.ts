@@ -142,13 +142,34 @@ async getUserById(req: Request, res: Response) {
 
 
 async deleteUser(req: Request, res: Response) {
-  try {
-    const data = await AuthService.deleteUser(req.params.id);
-    res.json(data);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
-  }
-},
+    try {
+      const data = await AuthService.deleteUser(req.params.id);
+      res.json(data);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
+
+  async uploadAvatar(req: Request, res: Response) {
+    try {
+      if (!req.file) {
+        throw new Error("No file uploaded");
+      }
+      
+      // The file is already uploaded to S3 by the middleware
+      // @ts-ignore - location property exists on multer-s3 file object
+      const avatarUrl = (req.file as any).location;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          url: avatarUrl
+        }
+      });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
 
 
 

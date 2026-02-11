@@ -3,12 +3,13 @@
 import express from "express";
 import { AuthController, logout, updateUserCon } from "./auth.controller";
 import { strictLimiter } from "../../middlewares/strictFixTimeSecurity";
+import { uploadUserAvatar } from "../../middlewares/uploadUserAvatar";
 
 
 export const authRouter = express.Router();
 
 // REGISTER
-authRouter.post("/register", strictLimiter, AuthController.register);
+authRouter.post("/register", AuthController.register);
 
 //  verify email
 authRouter.post("/verify-email", strictLimiter, AuthController.verifyEmail);
@@ -17,7 +18,7 @@ authRouter.post("/verify-email", strictLimiter, AuthController.verifyEmail);
 authRouter.post("/verify-phone", strictLimiter , AuthController.verifyPhone);
 
 // LOGIN
-authRouter.post("/login", strictLimiter, AuthController.login);
+authRouter.post("/login", AuthController.login);
 
 // REFRESH TOKEN
 authRouter.post("/refresh-token",strictLimiter, AuthController.refreshToken);
@@ -47,6 +48,14 @@ authRouter.get("/me", strictLimiter, AuthController.getMe);
 authRouter.get("/users", strictLimiter,  AuthController.getAllUsers);
 authRouter.get("/users/:id", strictLimiter,  AuthController.getUserById);
 
+
+// UPLOAD AVATAR
+authRouter.post(
+  "/upload-avatar",
+  strictLimiter,
+  uploadUserAvatar.single("file"),
+  AuthController.uploadAvatar
+);
 
 authRouter.patch(
   "/users/:id",
