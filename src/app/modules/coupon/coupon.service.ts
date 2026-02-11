@@ -119,29 +119,118 @@ getAvailableCoupons: async (userId: string) => {
 
 
 
+  // getAll: async (query: any) => {
+  //   const { page = 1, limit = 10, isActive } = query;
+
+  //   const where: any = {};
+  //   if (isActive !== undefined) where.isActive = isActive === "true";
+
+  //   const skip = (Number(page) - 1) * Number(limit);
+
+  //   const [data, total] = await Promise.all([
+  //     prisma.coupon.findMany({
+  //       where,
+  //       orderBy: { createdAt: "desc" },
+  //       skip,
+  //       take: Number(limit),
+  //     }),
+  //     prisma.coupon.count({ where }),
+  //   ]);
+
+  //   return {
+  //     meta: { page: Number(page), limit: Number(limit), total },
+  //     data,
+  //   };
+  // },
+
+
+
   getAll: async (query: any) => {
-    const { page = 1, limit = 10, isActive } = query;
+  const {
+    page = 1,
+    limit = 10,
+    isActive,
+    discountType,
+    expired,
+    minOrderMin,
+    minOrderMax,
+    search,
+  } = query;
 
-    const where: any = {};
-    if (isActive !== undefined) where.isActive = isActive === "true";
+  const where: any = {};
+  const now = new Date();
 
-    const skip = (Number(page) - 1) * Number(limit);
+  /* ===============================
+     1️⃣ Status Filter
+  ============================== */
+  if (isActive !== undefined) {
+    where.isActive = isActive === "true";
+  }
 
-    const [data, total] = await Promise.all([
-      prisma.coupon.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: Number(limit),
-      }),
-      prisma.coupon.count({ where }),
-    ]);
+  /* ===============================
+     2️⃣ Discount Type Filter
+  ============================== */
+  if (discountType) {
+    where.discountType = discountType;
+  }
 
-    return {
-      meta: { page: Number(page), limit: Number(limit), total },
-      data,
+  /* ===============================
+     3️⃣ Expired / Valid Filter
+  ============================== */
+  if (expired === "true") {
+    where.endAt = { lt: now };
+  }
+
+  if (expired === "false") {
+    where.endAt = { gte: now };
+  }
+
+  /* ===============================
+     6️⃣ Min Order Range Filter
+  ============================== */
+  if (minOrderMin || minOrderMax) {
+    where.minOrderAmount = {};
+
+    if (minOrderMin) {
+      where.minOrderAmount.gte = Number(minOrderMin);
+    }
+
+    if (minOrderMax) {
+      where.minOrderAmount.lte = Number(minOrderMax);
+    }
+  }
+
+  /* ===============================
+     7️⃣ Search Filter (Code)
+  ============================== */
+  if (search) {
+    where.code = {
+      contains: search,
+      mode: "insensitive",
     };
-  },
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [data, total] = await Promise.all([
+    prisma.coupon.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: Number(limit),
+    }),
+    prisma.coupon.count({ where }),
+  ]);
+
+  return {
+    meta: { page: Number(page), limit: Number(limit), total },
+    data,
+  };
+},
+
+
+
+
 
   update: async (couponId: string, payload: any) => {
     return prisma.coupon.update({
