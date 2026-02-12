@@ -47,6 +47,23 @@ export const AdminCouponService = {
 
 
 
+getById: async (couponId: string) => {
+  const coupon = await prisma.coupon.findUnique({
+    where: { id: couponId },
+  });
+
+  if (!coupon) {
+    throw {
+      statusCode: 404,
+      message: "Coupon not found",
+    };
+  }
+
+  return coupon;
+},
+
+
+
 
 
 
@@ -359,17 +376,16 @@ export const getCouponUsagesForAdmin = async (query: any) => {
 
   const skip = (Number(page) - 1) * Number(limit);
 
-  // 🔎 WHERE condition build
+
   const where: any = {};
 
-  // filter by coupon
   if (couponCode) {
     where.coupon = {
       code: { equals: couponCode, mode: "insensitive" },
     };
   }
 
-  // filter by user
+
   if (userId) {
     where.userId = userId;
   }
@@ -469,7 +485,6 @@ export const getCouponUsagesForAdmin = async (query: any) => {
     })),
   };
 };
-
 
 
 

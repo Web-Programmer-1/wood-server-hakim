@@ -1,5 +1,5 @@
 import express from "express";
-import { AdminCouponController, applyCouponPreview, getAvailableCoupons } from "./coupon.controller";
+import { AdminCouponController, applyCouponPreview, getAvailableCoupons, getCouponById } from "./coupon.controller";
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
@@ -25,6 +25,13 @@ router.get(
   "/available",
   authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
 getAvailableCoupons
+);
+
+
+router.get(
+  "/:couponId",
+  authGuard(UserRole.ADMIN),
+  getCouponById
 );
 
 

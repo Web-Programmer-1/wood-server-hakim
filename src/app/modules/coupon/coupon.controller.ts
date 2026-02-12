@@ -74,6 +74,22 @@ const getCouponUsages = async (req: Request, res: Response) => {
 };
 
 
+ export const getCouponById = async (
+  req: Request,
+  res: Response
+) => {
+  const { couponId } = req.params;
+
+  const result =
+    await AdminCouponService.getById(couponId);
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+};
+
+
 
 
 
