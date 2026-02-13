@@ -1,19 +1,11 @@
 import express from "express";
-import { AdminCouponController, applyCouponPreview, getAvailableCoupons, getCouponById } from "./coupon.controller";
+import { AdminCouponController, applyCouponPreview, getAvailableCoupons, getCouponByIdController } from "./coupon.controller";
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
 
 const router = express.Router();
 
-
-// couponById
-
-router.get(
-  "/:couponId",
-  authGuard(UserRole.ADMIN),
-  getCouponById
-);
 
 
 
@@ -48,6 +40,10 @@ router.get(
   authGuard(UserRole.ADMIN),
   AdminCouponController.getCoupons
 );
+
+
+
+
 
 router.patch(
   "/:couponId",
@@ -86,4 +82,33 @@ router.get(
 )
 
 
+// 🔥 Dynamic route last
+router.get(
+  "/:couponId",
+  // authGuard(UserRole.ADMIN),
+  getCouponByIdController
+);
+
+
 export const AdminCouponRoutes = router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

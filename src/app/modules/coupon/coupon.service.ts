@@ -47,25 +47,6 @@ export const AdminCouponService = {
 
 
 
-getById: async (couponId: string) => {
-  const coupon = await prisma.coupon.findUnique({
-    where: { id: couponId },
-  });
-
-  if (!coupon) {
-    throw {
-      statusCode: 404,
-      message: "Coupon not found",
-    };
-  }
-
-  return coupon;
-},
-
-
-
-
-
 
 getAvailableCoupons: async (userId: string) => {
 
@@ -564,3 +545,29 @@ export const getCouponAnalyticsStats = async () => {
     thisMonthUsage,
   };
 };
+
+
+
+
+
+  export const  getCouponById = async (couponId: string) => {
+    if (!couponId) {
+      throw {
+        statusCode: 400,
+        message: "Coupon ID is required",
+      };
+    }
+
+    const coupon = await prisma.coupon.findUnique({
+      where: { id: couponId },
+    });
+
+    if (!coupon) {
+      throw {
+        statusCode: 404,
+        message: "Coupon not found",
+      };
+    }
+
+    return coupon;
+  };

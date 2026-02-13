@@ -1,6 +1,6 @@
 
 import { Request, Response } from "express";
-import { AdminCouponService, CouponPreviewService, getCouponAnalyticsStats, getCouponUsagesForAdmin } from "./coupon.service";
+import { AdminCouponService, CouponPreviewService, getCouponAnalyticsStats, getCouponById, getCouponUsagesForAdmin } from "./coupon.service";
 
 const createCoupon = async (req: Request, res: Response) => {
   const result = await AdminCouponService.create(req.body);
@@ -74,22 +74,6 @@ const getCouponUsages = async (req: Request, res: Response) => {
 };
 
 
- export const getCouponById = async (
-  req: Request,
-  res: Response
-) => {
-  const { couponId } = req.params;
-
-  const result =
-    await AdminCouponService.getById(couponId);
-
-  res.status(200).json({
-    success: true,
-    data: result,
-  });
-};
-
-
 
 
 
@@ -103,6 +87,30 @@ const getCouponAnalytics = async (req: Request, res: Response) => {
 };
 
 
+
+
+export const getCouponByIdController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { couponId } = req.params;
+
+    const result =
+      await getCouponById(couponId);
+
+    res.status(200).json({
+      success: true,
+      message: "Coupon fetched successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(error?.statusCode || 500).json({
+      success: false,
+      message: error?.message || "Something went wrong",
+    });
+  }
+};
 
 
 
