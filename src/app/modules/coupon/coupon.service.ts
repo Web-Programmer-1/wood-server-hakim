@@ -230,12 +230,34 @@ getAvailableCoupons: async (userId: string) => {
 
 
 
+  // update: async (couponId: string, payload: any) => {
+  //   return prisma.coupon.update({
+  //     where: { id: couponId },
+  //     data: payload,
+  //   });
+  // },
+
   update: async (couponId: string, payload: any) => {
-    return prisma.coupon.update({
-      where: { id: couponId },
-      data: payload,
-    });
-  },
+  if (!couponId) {
+    throw {
+      statusCode: 400,
+      message: "Coupon ID is required",
+    };
+  }
+
+  const updateData: any = { ...payload };
+
+
+  if (payload.endAt) {
+    updateData.endAt = new Date(payload.endAt);
+  }
+
+  return prisma.coupon.update({
+    where: { id: couponId },
+    data: updateData,
+  });
+},
+
 
   toggleStatus: async (couponId: string, isActive: boolean) => {
     return prisma.coupon.update({
