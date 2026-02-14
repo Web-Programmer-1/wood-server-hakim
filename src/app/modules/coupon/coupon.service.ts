@@ -48,55 +48,59 @@ export const AdminCouponService = {
 
 
 
-getAvailableCoupons: async (userId: string) => {
+getAvailableCoupons: async (options: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) => {
+  const { page = 1, limit = 10, search } = options;
 
-  const cart = await prisma.cart.findUnique({
-    where: { userId },
-    include: { items: true },
-  });
-
-  const subTotal =
-    cart?.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    ) ?? 0;
-
+  const skip = (page - 1) * limit;
   const now = new Date();
 
+  const where: any = {
+    isActive: true,
+    endAt: { gte: now },
+  };
 
-  const coupons = await prisma.coupon.findMany({
-    where: {
-      isActive: true,
-      endAt: { gte: now },
+  // 🔍 Search Filter
+  if (search) {
+    where.code = {
+      contains: search,
+      mode: "insensitive",
+    };
+  }
 
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [coupons, total] = await Promise.all([
+    prisma.coupon.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.coupon.count({ where }),
+  ]);
 
-  const availableCoupons = [];
-
-  for (const coupon of coupons) {
-    // total usage limit
+  const availableCoupons = coupons.filter((coupon) => {
+    // total usage limit check
     if (
       coupon.totalUsageLimit !== null &&
       coupon.usedCount >= coupon.totalUsageLimit
     ) {
-      continue;
+      return false;
     }
 
-    // per-user usage limit
-    if (coupon.perUserLimit !== null) {
-      const usedCount = await prisma.couponUsage.count({
-        where: {
-          couponId: coupon.id,
-          userId,
-        },
-      });
+    return true;
+  });
 
-      if (usedCount >= coupon.perUserLimit) continue;
-    }
-
-    availableCoupons.push({
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+    data: availableCoupons.map((coupon) => ({
       id: coupon.id,
       code: coupon.code,
       title:
@@ -107,39 +111,12 @@ getAvailableCoupons: async (userId: string) => {
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
       minOrderAmount: coupon.minOrderAmount,
-    });
-  }
-
-  return availableCoupons;
+    })),
+  };
 },
 
 
 
-
-
-  // getAll: async (query: any) => {
-  //   const { page = 1, limit = 10, isActive } = query;
-
-  //   const where: any = {};
-  //   if (isActive !== undefined) where.isActive = isActive === "true";
-
-  //   const skip = (Number(page) - 1) * Number(limit);
-
-  //   const [data, total] = await Promise.all([
-  //     prisma.coupon.findMany({
-  //       where,
-  //       orderBy: { createdAt: "desc" },
-  //       skip,
-  //       take: Number(limit),
-  //     }),
-  //     prisma.coupon.count({ where }),
-  //   ]);
-
-  //   return {
-  //     meta: { page: Number(page), limit: Number(limit), total },
-  //     data,
-  //   };
-  // },
 
 
 
@@ -230,12 +207,7 @@ getAvailableCoupons: async (userId: string) => {
 
 
 
-  // update: async (couponId: string, payload: any) => {
-  //   return prisma.coupon.update({
-  //     where: { id: couponId },
-  //     data: payload,
-  //   });
-  // },
+
 
   update: async (couponId: string, payload: any) => {
   if (!couponId) {

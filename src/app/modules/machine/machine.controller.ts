@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { MachineService } from "./machine.service";
+import { ApiError } from "../../errors/ApiError";
 
 
 
@@ -64,6 +65,32 @@ const getMachineBySlug = async (req: Request, res: Response) => {
     data: result,
   });
 };
+
+
+
+
+const downloadMachineSpecPdf = async (req: Request, res: Response) => {
+  const { slug } = req.params;
+
+  const machine = await MachineService.getMachineBySlug(slug);
+
+  if (!machine) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
+  }
+
+  // PDF headers
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=${machine.slug}-specification.pdf`
+  );
+
+  await MachineService.generateMachineSpecPdf(machine, res as any);
+};
+
+
+
+
 
 const getRelatedMachines = async (req: Request, res: Response) => {
   const { slug } = req.params;
@@ -300,6 +327,7 @@ export const MachineController = {
   getFeaturedMachines,
   searchMachines,
   getMachineBySlug,
+  downloadMachineSpecPdf,
   getRelatedMachines,
   createMachine,
   updateMachine,

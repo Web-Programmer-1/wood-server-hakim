@@ -82,7 +82,7 @@ router.get(
 )
 
 
-// 🔥 Dynamic route last
+
 router.get(
   "/:couponId",
   // authGuard(UserRole.ADMIN),

@@ -51,19 +51,48 @@ export const applyCouponPreview = async (req: Request, res: Response) => {
 
 
 
- export const getAvailableCoupons = async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+//  export const getAvailableCoupons = async (req: Request, res: Response) => {
+//   const userId = req.user!.id;
 
-  const data = await AdminCouponService.getAvailableCoupons(userId);
+//   const data = await AdminCouponService.getAvailableCoupons(userId);
+
+//   res.status(200).json({
+//     success: true,
+//     data,
+//   });
+// };
+
+
+
+
+
+
+
+
+
+
+
+// coupon.controller.ts
+
+
+
+export const getAvailableCoupons = async (req: Request, res: Response) => {
+  const { page = 1, limit = 10, search } = req.query;
+
+  const data = await AdminCouponService.getAvailableCoupons({
+    page: Number(page),
+    limit: Number(limit),
+    search: search as string,
+  });
 
   res.status(200).json({
     success: true,
-    data,
+    ...data,
   });
 };
 
 
-// coupon.controller.ts
+
 const getCouponUsages = async (req: Request, res: Response) => {
   const data = await getCouponUsagesForAdmin(req.query);
 

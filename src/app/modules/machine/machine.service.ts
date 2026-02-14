@@ -4,7 +4,8 @@ import httpStatus from "http-status";
 import { ApiError } from "../../errors/ApiError";
 import { prisma } from "../../shared/prisma";
 import { GetMachinesParams, IMachine } from "./machine.interface";
-
+import PDFDocument from "pdfkit";
+import { Response } from "express";
 
 
 
@@ -208,6 +209,44 @@ const getMachineBySlug = async (slug: string) => {
   return machine;
 };
 
+
+
+
+
+
+const generateMachineSpecPdf = async (machine: any, res: Response) => {
+  const doc = new PDFDocument({ margin: 40 });
+
+  doc.pipe(res as any);
+
+  // ======================
+  // Title
+  // ======================
+  doc
+    .fontSize(20)
+    .text(machine.name, { align: "center" })
+    .moveDown();
+
+  doc
+    .fontSize(12)
+    .text("Product Specifications", { underline: true })
+    .moveDown();
+
+  // ======================
+  // Specifications Table
+  // ======================
+  const specs = machine.specifications || {};
+
+  Object.entries(specs).forEach(([key, value]) => {
+    doc
+      .fontSize(10)
+      .text(`${key.toUpperCase()}:`, { continued: true })
+      .text(` ${value}`)
+      .moveDown(0.5);
+  });
+
+  doc.end();
+};
 
 
 
@@ -736,6 +775,7 @@ export const MachineService = {
   getFeaturedMachines,
   searchMachines,
   getMachineBySlug,
+  generateMachineSpecPdf,
   getRelatedMachines,
   createMachine,
   updateMachine,

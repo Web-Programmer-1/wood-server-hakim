@@ -19,6 +19,9 @@ router.get(
 router.get("/featured", MachineController.getFeaturedMachines);
 router.get("/search", MachineController.searchMachines);
 router.get("/:slug", MachineController.getMachineBySlug);
+
+router.get("/:slug/download-spec", MachineController.downloadMachineSpecPdf);
+
 router.get("/:slug/related", MachineController.getRelatedMachines);
 
 
