@@ -15,7 +15,7 @@ export interface IMachine {
   isFeatured: boolean;
   isActive: boolean;
 
-  //  new added fields for pricing
+
   listPrice: number;
   discountPercent?: number;
   discountPrice?: number;

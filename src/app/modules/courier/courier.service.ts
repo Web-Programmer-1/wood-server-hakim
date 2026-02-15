@@ -60,6 +60,7 @@ export const PaperflyService = {
       },
       headers: {
         "Content-Type": "application/json",
+ 
       },
     }
   );
