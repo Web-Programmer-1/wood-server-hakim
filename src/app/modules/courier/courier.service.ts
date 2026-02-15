@@ -48,26 +48,19 @@ export const PaperflyService = {
 
 
   async track(referenceNumber: string) {
-  const res = await axios.post(
-    "https://api.paperfly.com.bd/API-Order-Tracking",
-    {
-      ReferenceNumber: referenceNumber,
-    },
-    {
-      auth: {
-        username: process.env.PAPERFLY_USERNAME!,
-        password: process.env.PAPERFLY_PASSWORD!,
+    const res = await axios.post(
+      `${PAPERFLY_BASE_URL}/API-Order-Tracking`,
+      {
+        ReferenceNumber: referenceNumber,
       },
-      headers: {
-        "Content-Type": "application/json",
- 
+      {
+        auth,
+        headers,
       },
-    }
-  );
+    );
 
-  return res.data.success;
-}
-,
+    return res.data;
+  },
 
 
 
@@ -92,22 +85,18 @@ export const PaperflyService = {
 
 
 
-async cancel(orderId: string) {
-  const res = await axios.post(
-    "https://api.paperfly.com.bd/api/v1/cancel-order",
-    {
-      order_id: orderId,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        username: process.env.PAPERFLY_USERNAME!,
-        password: process.env.PAPERFLY_PASSWORD!,
+  async cancel(referenceNumber: string) {
+    const res = await axios.post(
+      `${PAPERFLY_BASE_URL}/api/v1/cancel-order`,
+      {
+        order_id: referenceNumber,
       },
-    }
-  );
+      {
+        auth,
+        headers,
+      },
+    );
 
-  return res.data;
-
-}
+    return res.data.success;
+  },
 };
