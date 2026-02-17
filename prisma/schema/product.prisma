@@ -13,36 +13,42 @@ model ProductCategory {
 }
 
 model Product {
-  id                String             @id @default(uuid())
-  name              String
-  slug              String             @unique
-  shortDescription  String?
-  description       String?
-  basePrice         Int
-  discountPrice     Int?
-  discountPercent   Int?
-  availability      AvailabilityStatus
-  brandType         BrandType
-  productType       ProductType?
-  rating            Float              @default(0)
-  ratingCount       Int                @default(0)
+  id               String             @id @default(uuid())
+  name             String
+  slug             String             @unique
+  shortDescription String?
+  description      String?
+  basePrice        Int
+  discountPrice    Int?
+  discountPercent  Int?
+  availability     AvailabilityStatus
+  brandType        BrandType
+  productType      ProductType?
+
+  rating            Float           @default(0)
+  ratingCount       Int             @default(0)
   keyPoints         Json?
   productCategoryId String
-  visibility        Boolean            @default(true)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  visibility        Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   cartItems         CartItem[]
   orderItems        OrderItem[]
-  productCategory   ProductCategory    @relation(fields: [productCategoryId], references: [id])
+  productCategory   ProductCategory @relation(fields: [productCategoryId], references: [id])
   images            ProductImage[]
   review            Review[]
-  stockMovement     StockMovement[]
-  productInventory  ProductInventory[]
+
+  //  ADD THESE FOR INVENTORY
+  stockQuantity Int @default(0)
+  reservedQty   Int @default(0)
+  damagedQty    Int @default(0)
+  reorderLevel  Int @default(5)
 
   @@index([slug])
   @@index([productCategoryId])
   @@index([availability])
   @@index([brandType])
+  @@index([stockQuantity])
 }
 
 model ProductImage {

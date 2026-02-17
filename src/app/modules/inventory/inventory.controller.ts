@@ -1,354 +1,203 @@
 import { Request, Response } from "express";
 import { InventoryService } from "./inventory.service";
 
-function sendSuccess(res: Response, message: string, data: any, status = 200) {
-  return res.status(status).json({ success: true, message, data });
-}
+export const InventoryController = {
+  async getAllProducts(req: Request, res: Response) {
+    const result = await InventoryService.getAllProducts();
 
-function sendError(res: Response, err: unknown) {
-  // smart + clear error mapping
-  if (err instanceof Error) {
-    const anyErr = err as any;
-
-    // Custom service errors
-    if (anyErr?.statusCode && anyErr?.errorCode) {
-      return res.status(anyErr.statusCode).json({
-        success: false,
-        message: anyErr.message,
-        errorCode: anyErr.errorCode,
-      });
-    }
-
-    // Default
-    return res.status(500).json({
-      success: false,
-      message: err.message || "Something went wrong",
-      errorCode: "INTERNAL_ERROR",
-    });
-  }
-
-  return res.status(500).json({
-    success: false,
-    message: "Something went wrong",
-    errorCode: "INTERNAL_ERROR",
-  });
-}
-
-export class InventoryController {
-  static async getDashboard(req: Request, res: Response) {
-    try {
-      const data = await InventoryService.getDashboard();
-      return sendSuccess(res, "Inventory dashboard loaded", data);
-    } catch (err) {
-      return sendError(res, err);
-    }
-  };
-
-
-
-
-
-
-
-
-  static async getInventoryList(req: Request, res: Response) {
-  try {
-    const data = await InventoryService.getInventoryList(req.query);
-    return res.json({
+    res.status(200).json({
       success: true,
-      message: "Inventory list loaded",
-      data,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err instanceof Error ? err.message : "Failed to load inventory list",
-      errorCode: "INVENTORY_LIST_ERROR",
-    });
-  }
-}
-
-static async exportInventoryCSV(req: Request, res: Response) {
-  try {
-    const csv = await InventoryService.exportInventoryCSV();
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", "attachment; filename=inventory.csv");
-    return res.send(csv);
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to export inventory",
-      errorCode: "EXPORT_FAILED",
-    });
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static async getInventoryDetails(req: Request, res: Response) {
-  try {
-    const { productId } = req.params;
-
-    if (!productId) {
-      return res.status(400).json({
-        success: false,
-        message: "Product ID is required",
-        errorCode: "PRODUCT_ID_MISSING",
-      });
-    }
-
-    const data = await InventoryService.getInventoryDetails(productId);
-
-    return res.json({
-      success: true,
-      message: "Inventory details loaded",
-      data,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err instanceof Error ? err.message : "Failed to load inventory details",
-      errorCode: "INVENTORY_DETAILS_ERROR",
-    });
-  }
-}
-
-
-
-static async getRecentMovements(req: Request, res: Response) {
-  try {
-    const limit = Number(req.query.limit) || 10;
-
-    const data = await InventoryService.getRecentMovements(limit);
-
-    return res.json({
-      success: true,
-      message: "Recent stock movements loaded",
-      data,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load recent movements",
-      errorCode: "RECENT_MOVEMENT_ERROR",
-    });
-  }
-}
-
-
-
-
-
-static async getMovementHistory(req: Request, res: Response) {
-  try {
-    const { productId } = req.params;
-    const limit = Number(req.query.limit) || 20;
-
-    const data = await InventoryService.getMovementHistory(productId, limit);
-
-    return res.json({
-      success: true,
-      message: "Stock movement history loaded",
-      data,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err instanceof Error ? err.message : "Failed to load movements",
-      errorCode: "MOVEMENT_HISTORY_ERROR",
-    });
-  }
-}
-
-static async createMovement(req: Request, res: Response) {
-  try {
-    const result = await InventoryService.createMovement(req.body);
-
-    return res.status(201).json({
-      success: true,
-      message: "Stock updated successfully",
       data: result,
     });
-  } catch (err: any) {
-    return res.status(err?.statusCode || 500).json({
-      success: false,
-      message: err.message || "Stock update failed",
-      errorCode: err.errorCode || "STOCK_UPDATE_ERROR",
-    });
-  }
-}
+  },
 
 
-
-
-
-
-static async getAnalyticsSummary(req: Request, res: Response) {
-  try {
-    const data = await InventoryService.getAnalyticsSummary();
-    return res.json({
-      success: true,
-      message: "Inventory analytics summary loaded",
-      data,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load analytics summary",
-      errorCode: "ANALYTICS_SUMMARY_ERROR",
-    });
-  }
-}
-
-static async getMovementAnalytics(req: Request, res: Response) {
-  try {
-    const days = Number(req.query.days) || 30;
-    const data = await InventoryService.getMovementAnalytics(days);
-
-    return res.json({
-      success: true,
-      message: "Movement analytics loaded",
-      data,
-    });
-  } catch {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load movement analytics",
-      errorCode: "MOVEMENT_ANALYTICS_ERROR",
-    });
-  }
-}
-
-static async getStockReport(req: Request, res: Response) {
-  try {
-    const { from, to } = req.query as any;
-    const data = await InventoryService.getStockReport(from, to);
-
-    return res.json({
-      success: true,
-      message: "Stock report generated",
-      data,
-    });
-  } catch {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid date range",
-      errorCode: "REPORT_ERROR",
-    });
-  }
-}
-
-
-
-
-
-
-
-
-
-
-static async createProduct(req: Request, res: Response) {
-  try {
-    const data = await InventoryService.createProduct(req.body);
-
-    return res.status(201).json({
-      success: true,
-      message: "Product created successfully",
-      data,
-    });
-  } catch (err: any) {
-    return res.status(err?.statusCode || 500).json({
-      success: false,
-      message: err.message || "Failed to create product",
-      errorCode: err.errorCode || "CREATE_PRODUCT_ERROR",
-    });
-  }
-}
-
-static async updateProduct(req: Request, res: Response) {
-  try {
-    const { productId } = req.params;
-    const data = await InventoryService.updateProduct(productId, req.body);
-
-    return res.json({
-      success: true,
-      message: "Product updated successfully",
-      data,
-    });
-  } catch (err: any) {
-    return res.status(err?.statusCode || 500).json({
-      success: false,
-      message: err.message || "Failed to update product",
-      errorCode: err.errorCode || "UPDATE_PRODUCT_ERROR",
-    });
-  }
-}
-
-
-
-
-static async deleteInventoryProduct(req: Request, res: Response) {
-  try {
-    const { productId } = req.params;
-
-    if (!productId) {
-      return res.status(400).json({
-        success: false,
-        message: "Product ID is required",
-        errorCode: "PRODUCT_ID_MISSING",
-      });
-    }
-
-    await InventoryService.deleteInventoryProduct(
-      productId,
-      req.user?.id
-    );
-
-    return res.json({
-      success: true,
-      message: "Inventory product removed successfully",
-    });
-  } catch (err: any) {
-    return res.status(err.statusCode || 500).json({
-      success: false,
-      message: err.message || "Failed to delete inventory product",
-      errorCode: err.errorCode || "INVENTORY_DELETE_ERROR",
-    });
-  }
-}
-
-
-
-static async adjustInventory(req: Request, res: Response) {
-  const result = await InventoryService.adjustInventory(
-    req.body,
-    req.user?.id
+  async restockProduct(req: Request, res: Response) {
+  const result = await InventoryService.restockProduct(
+    req.body
   );
 
   res.status(200).json({
     success: true,
-    message: "Inventory adjusted successfully",
+    message: "Product restocked successfully",
     data: result,
   });
-}
+},
+
+
+
+
+async reserveProduct(req: Request, res: Response) {
+  const result = await InventoryService.reserveProduct(
+    req.body
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Product reserved successfully",
+    data: result,
+  });
+},
+
+
+
+
+async confirmSale(req: Request, res: Response) {
+  const result = await InventoryService.confirmSale(
+    req.body
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Sale confirmed successfully",
+    data: result,
+  });
+},
+
+
+
+
+
+async releaseProduct(req: Request, res: Response) {
+  const result = await InventoryService.releaseProduct(
+    req.body
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Reservation released successfully",
+    data: result,
+  });
+},
+
+
+
+async damageProduct(req: Request, res: Response) {
+  const result = await InventoryService.damageProduct(
+    req.body
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Product marked as damaged",
+    data: result,
+  });
+},
+
+
+
+
+
+async getLowStockProducts(req: Request, res: Response) {
+  const result =
+    await InventoryService.getLowStockProducts();
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+},
+
+
+
+
+async getAllMachines(req: Request, res: Response) {
+  const result =
+    await InventoryService.getAllMachines();
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+},
+
+async restockMachine(req:Request, res:Response){
+  const body = req.body;
+  const result = await InventoryService.restockMachine(body);
+
+  res.status(200).json({
+    success: true,
+    message: "Machine restocked successfully",
+    data: result,
+  })
+
+},
+
+
+  async bookMachine(req: Request, res: Response) {
+    const result = await InventoryService.bookMachine(req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Machine booked successfully",
+      data: result,
+    });
+  },
+
+
+
+  
+  async confirmMachineSale(req: Request, res: Response) {
+    const result = await InventoryService.confirmMachineSale(req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Machine sale confirmed successfully",
+      data: result,
+    });
+  },
+
+
+
+
+
+    async releaseMachine(req: Request, res: Response) {
+    const result = await InventoryService.releaseMachine(req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Machine booking released successfully",
+      data: result,
+    });
+  },
+
+
+
+  async getInventoryActivity(req: Request, res: Response) {
+  const { limit } = req.query;
+
+  const result =
+    await InventoryService.getInventoryActivity(
+      Number(limit) || 20
+    );
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+},
+
+
+  async getInventorySummaryController(req: Request, res: Response) {
+ try {
+   
+
+    const result = await InventoryService.getInventorySummary();
+  res.status(200).json({
+    success: true,
+    message:"Inventory Summary Data fetch",
+    data: result,
+  });
+ } catch (error) {
+  
+ }
+},
 
 
 
 
 
 
-}
 
 
 
@@ -359,4 +208,4 @@ static async adjustInventory(req: Request, res: Response) {
 
 
 
-
+};

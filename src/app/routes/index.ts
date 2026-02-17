@@ -89,8 +89,8 @@ const moduleRoutes = [
     {
         path: '/inventory',
         route: InventoryRoutes,
-        
     },
+
 
     
 

@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import { InventoryController } from "./inventory.controller";
 import { authGuard } from "../../middlewares/auth";
@@ -5,96 +6,91 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// Dashboard
 router.get(
-  "/dashboard",
+  "/products",
   authGuard(UserRole.ADMIN),
-  InventoryController.getDashboard,
-);
-
-router.get("/products", 
-    authGuard(UserRole.ADMIN),
-    InventoryController.getInventoryList);
-
-router.get("/products/export",
-    authGuard(UserRole.ADMIN),
-    InventoryController.exportInventoryCSV);
-
-    router.get(
-  "/products/:productId",
-  authGuard(UserRole.ADMIN),
-  InventoryController.getInventoryDetails
-);
-
-
-// get Recent Movements for a product
-
-router.get("/movements",
-
-    authGuard(UserRole.ADMIN),
-    InventoryController.getRecentMovements);
-
-router.get(
-  "/movements/:productId",
-  authGuard(UserRole.ADMIN),
-  InventoryController.getMovementHistory
-);
-
-router.post(
-  "/movement",
-  authGuard(UserRole.ADMIN),
-  InventoryController.createMovement
-);
-
-
-
-router.get(
-  "/analytics/summary",
-  InventoryController.getAnalyticsSummary
-);
-
-router.get(
-  "/analytics/movement",
-  InventoryController.getMovementAnalytics
-);
-
-router.get(
-  "/reports/stock",
-  InventoryController.getStockReport
-);
-
-
-
-// Create product (with inventory)
-router.post(
-  "/product",
-  authGuard(UserRole.ADMIN),
-  InventoryController.createProduct
-);
-
-// Update product (basic + inventory fields)
-router.put(
-  "/products/:productId",
-  authGuard(UserRole.ADMIN),
-  InventoryController.updateProduct
-);
-
-
-// inventory.route.ts
-router.delete(
-  "/products/:productId",
-  authGuard(UserRole.ADMIN),
-  InventoryController.deleteInventoryProduct
+  InventoryController.getAllProducts
 );
 
 
 router.post(
-  "/adjustment",
-  authGuard(UserRole.ADMIN),
-  InventoryController.adjustInventory
+  "/products/restock",
+    authGuard(UserRole.ADMIN),
+  InventoryController.restockProduct
 );
 
 
+router.post(
+  "/products/reserve",
+  InventoryController.reserveProduct
+);
+
+router.post(
+  "/products/confirm-sale",
+  InventoryController.confirmSale
+);
+
+
+router.post(
+  "/products/release",
+  InventoryController.releaseProduct
+);
+
+
+router.post(
+  "/products/damage",
+  InventoryController.damageProduct
+);
+
+
+
+router.get(
+  "/low-stock",
+  InventoryController.getLowStockProducts
+);
+
+
+// Machine Inventory Management apis 
+
+
+router.get(
+  "/machines",
+  InventoryController.getAllMachines
+);
+
+router.post(
+  "/machines/restock",
+  InventoryController.restockMachine
+);
+
+
+
+router.post(
+  "/machines/book",
+  InventoryController.bookMachine
+);
+
+
+router.post(
+  "/machines/confirm-sale",
+  InventoryController.confirmMachineSale
+);
+
+
+router.post(
+  "/machines/release",
+  InventoryController.releaseMachine
+);
+
+
+router.get(
+  "/activity",
+  InventoryController.getInventoryActivity
+);
+
+router.get("/summary",
+  authGuard(UserRole.ADMIN),
+  InventoryController.getInventorySummaryController)
 
 
 

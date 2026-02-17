@@ -39,7 +39,7 @@ model Machine {
   discountPrice   Int? // auto-calculated
   bookedQty       Int  @default(0)
 
-  // ---------------- 👤 Last Booking Info (simple) ----------------
+  // ----------------  Last Booking Info (simple) ----------------
   bookedName  String?
   bookedPhone String?
   bookedEmail String?
@@ -67,3 +67,20 @@ model MachineVideo {
   url       String
   machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
+
+
+
+model StockMovement {
+  id        String   @id @default(uuid())
+  itemType  String   // "PRODUCT" | "MACHINE"
+  itemId    String
+  type      String   // IN | OUT | RESERVE | RELEASE | DAMAGE
+  quantity  Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([itemType])
+  @@index([itemId])
+  @@index([createdAt])
+}
+
