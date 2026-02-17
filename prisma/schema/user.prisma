@@ -69,3 +69,6 @@ model OTP {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+
+// User status for account management
