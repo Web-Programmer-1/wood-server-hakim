@@ -269,26 +269,10 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
   if (result.type === "COD") {
     const order = result.order!;
 
-    // const courier = await PaperflyService.createOrder({
-    //   ...order,
-    //   weight:finalWeight,
-    // });
-
     const courierRes = await PaperflyService.createOrder({
-  ...order,
-  weight: finalWeight,
-});
-
-await prisma.order.update({
-  where: { id: order.id },
-  data: {
-    courierName: "PAPERFLY",
-    trackingNumber: courierRes.tracking_number,
-    trackingBarcode: courierRes.tracking_barcode,
-    status:OrderStatus.CONFIRMED,
-  },
-});
-
+      ...order,
+      weight: finalWeight,
+    });
 
     await prisma.order.update({
       where: { id: order.id },
@@ -296,14 +280,17 @@ await prisma.order.update({
         courierName: "PAPERFLY",
         trackingNumber: courierRes.tracking_number,
         trackingBarcode: courierRes.tracking_barcode,
-        // trackingToken: trackingToken,
+        status: OrderStatus.CONFIRMED,
       },
     });
+
+    const trackingUrl = `https://go.paperfly.com.bd/track/order/${courierRes.tracking_number}`;
 
     return {
       type: "COD",
       orderId: order.id,
       trackingNumber: courierRes.tracking_number,
+      trackingUrl,
     };
   }
 
@@ -768,7 +755,7 @@ const cancelOrder = async (userId: string, orderId: string) => {
   
   if (order.courierName === "PAPERFLY" && order.trackingNumber) {
     try {
-      await PaperflyService.cancel(order.id);
+      await PaperflyService.cancel(order.trackingNumber);
     } catch (error) {
       console.error("Paperfly cancel failed:", error);
 

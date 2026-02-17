@@ -117,16 +117,47 @@ const trackOrder = async (req: Request, res: Response) => {
     where: { id: orderId },
   });
 
-  if (!order || !order.trackingNumber) {
-    throw new Error("Tracking not available");
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: "Order not found",
+    });
   }
 
-  const tracking = await PaperflyService.track(order.trackingNumber);
+  if (!order.trackingNumber) {
+    return res.status(200).json({
+      success: true,
+      data: {
+        success: {
+          message: "Tracking not available yet",
+          trackingStatus: [],
+        },
+        response_code: 200,
+      },
+    });
+  }
 
-  res.status(200).json({
-    success: true,
-    data: tracking,
-  });
+  try {
+    const tracking = await PaperflyService.track(order.trackingNumber);
+
+    return res.status(200).json({
+      success: true,
+      data: tracking,
+    });
+  } catch (error) {
+    console.error("Paperfly tracking failed:", error);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        success: {
+          message: "Tracking not available yet",
+          trackingStatus: [],
+        },
+        response_code: 200,
+      },
+    });
+  }
 };
 
 
