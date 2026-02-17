@@ -1,8 +1,7 @@
+const isProd = process.env.NODE_ENV === "production";
+
 export const cookieOptions = {
   httpOnly: true,
-  secure: process.env.COOKIE_SECURE === "true",
-  sameSite: process.env.COOKIE_SAMESITE as
-    | "lax"
-    | "strict"
-    | "none",
+  secure: isProd,
+  sameSite: (isProd ? "none" : "lax") as "lax" | "strict" | "none",
 };

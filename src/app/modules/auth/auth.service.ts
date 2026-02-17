@@ -8,7 +8,7 @@ import { sendSMS } from "../../../utils/sendSMS";
 import { prisma } from "../../shared/prisma";
 import redis from "../../../utils/redis";
 import { IEmailVerify, IRegister, RegisterBody } from "./auth.interface";
-import {  Request, Response } from "express";
+import { Request, Response } from "express";
 
 import { cookieOptions } from "../../../jwt_token_accessbility/cookieOptions";
 import { UserRole } from "../../constants/UserRole";
@@ -314,13 +314,9 @@ async refreshToken(req: Request, res: Response) {
     );
 
     // Set it in cookies again
-    const isProd = process.env.NODE_ENV === "production";
-
     res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: isProd ? true : false,
-      sameSite: isProd ? "none" : "lax",
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000,
     });
 
     return { 
@@ -527,7 +523,17 @@ async sendOTP(body: { identifier: string }) {
 
 
     async getMe(req: Request) {
-  const token = req.cookies.accessToken;
+  let token: string | undefined;
+
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  if (!token && req.cookies.accessToken) {
+    token = req.cookies.accessToken;
+  }
+
   if (!token) throw new Error("Unauthorized");
 
   const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as any;
@@ -634,23 +640,11 @@ async deleteUser(id: string) {
 
 
 
- export const logoutService = async (res: Response) => {
-  
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: false, 
-    sameSite: "lax",
-  });
-
-  // Clear refresh token cookie
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-  });
+export const logoutService = async (res: Response) => {
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
 
   return {
     message: "Logged out successfully",
   };
 };
-
