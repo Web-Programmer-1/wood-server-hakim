@@ -143,39 +143,49 @@ async reserveProduct(payload: {
 
 
 
-async confirmSale(payload: {
-  productId: string;
-  quantity: number;
-}) {
-  const { productId, quantity } = payload;
+
+
+
+async confirmSale(payload: { productId: string; quantity: number }) {
+  const productId = payload.productId;
+
+
+  const quantity = Math.floor(Number(payload.quantity || 0));
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error("Quantity must be a positive number");
+  }
 
   return prisma.$transaction(async (tx) => {
     const product = await tx.product.findUnique({
       where: { id: productId },
     });
 
-    if (!product) {
-      throw new Error("Product not found");
+    if (!product) throw new Error("Product not found");
+
+    // ✅ reserved থেকে যতটা সম্ভব নেবে
+    const reservedToUse = Math.min(product.reservedQty, quantity);
+    const remainingToSellFromFree = quantity - reservedToUse;
+
+    // ✅ free stock = stock - damaged - reserved (reserved অন্য অর্ডারের জন্য আটকানো)
+    const freeQty =
+      product.stockQuantity - product.damagedQty - product.reservedQty;
+
+    // যদি reserved ছাড়িয়ে extra sell করতে চাও, সেটা freeQty দিয়ে সম্ভব কি না
+    if (remainingToSellFromFree > freeQty) {
+      throw new Error("Insufficient available stock");
     }
 
-    if (product.reservedQty < quantity) {
-      throw new Error("Invalid sale quantity");
-    }
-
-    // 1️⃣ Update stock
+    // ✅ Update stock
     const updated = await tx.product.update({
       where: { id: productId },
       data: {
-        stockQuantity: {
-          decrement: quantity,
-        },
-        reservedQty: {
-          decrement: quantity,
-        },
+        stockQuantity: { decrement: quantity },
+        // reserved যতটা use হয়েছে শুধু ততটাই কমবে
+        reservedQty: { decrement: reservedToUse },
       },
     });
 
-    // 2️⃣ 🔥 Movement insert
+    // ✅ Movement insert
     await tx.stockMovement.create({
       data: {
         itemType: "PRODUCT",
@@ -191,12 +201,12 @@ async confirmSale(payload: {
       stockQuantity: updated.stockQuantity,
       reservedQty: updated.reservedQty,
       availableQty:
-        updated.stockQuantity -
-        updated.reservedQty -
-        updated.damagedQty,
+        updated.stockQuantity - updated.reservedQty - updated.damagedQty,
     };
   });
 },
+
+
 
 
 
@@ -256,55 +266,6 @@ async releaseProduct(payload: {
 
 
 
-
-
-// async damageProduct(payload: {
-//   productId: string;
-//   quantity: number;
-// }) {
-//   const { productId, quantity } = payload;
-
-//   return prisma.$transaction(async (tx) => {
-//     const product = await tx.product.findUnique({
-//       where: { id: productId },
-//     });
-
-//     if (!product) {
-//       throw new Error("Product not found");
-//     }
-
-//     const available =
-//       product.stockQuantity -
-//       product.reservedQty -
-//       product.damagedQty;
-
-//     if (available < quantity) {
-//       throw new Error("Insufficient stock for damage");
-//     }
-
-//     const updated = await tx.product.update({
-//       where: { id: productId },
-//       data: {
-//         stockQuantity: {
-//           decrement: quantity,
-//         },
-//         damagedQty: {
-//           increment: quantity,
-//         },
-//       },
-//     });
-
-//     return {
-//       id: updated.id,
-//       stockQuantity: updated.stockQuantity,
-//       damagedQty: updated.damagedQty,
-//       availableQty:
-//         updated.stockQuantity -
-//         updated.reservedQty -
-//         updated.damagedQty,
-//     };
-//   });
-// },
 
 
 
