@@ -378,37 +378,90 @@ async getLowStockProducts() {
 
 
 
+// Machine Inventory Management has been started from here
 
-async getAllMachines() {
-  const machines = await prisma.machine.findMany({
-    where: { isActive: true },
-    select: {
-      id: true,
-      images:true,
-      name: true,
-      stockQuantity: true,
-      bookedQty: true,
-    },
-    orderBy:{
-      stockQuantity: "desc",
-    }
-  });
 
-  return machines.map((m) => {
-    const available =
-      m.stockQuantity - m.bookedQty;
 
-    let stockStatus = "IN_STOCK";
 
-    if (available === 0) stockStatus = "OUT_OF_STOCK";
+async getAllMachines(payload: { page: number; limit: number; search?: string }) {
+  const page = Math.max(1, payload.page || 1);
+  const limit = Math.min(50, Math.max(1, payload.limit || 10)); 
+  const skip = (page - 1) * limit;
+
+  const search = (payload.search || "").trim();
+
+  const where: any = {
+    isActive: true,
+    ...(search
+      ? {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+  };
+
+  const [total, machines] = await prisma.$transaction([
+    prisma.machine.count({ where }),
+
+    prisma.machine.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        stockQuantity: true,
+        bookedQty: true,
+
+        
+        images: {
+          select: {
+            url: true,
+            isPrimary: true,
+          },
+          orderBy: [
+            { isPrimary: "desc" },
+            { createdAt: "asc" },
+          ],
+          take: 1,
+        },
+      },
+      orderBy: { stockQuantity: "desc" },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  const items = machines.map((m) => {
+    const available = m.stockQuantity - m.bookedQty;
+    const stockStatus = available === 0 ? "OUT_OF_STOCK" : "IN_STOCK";
 
     return {
-      ...m,
+      id: m.id,
+      name: m.name,
+      stockQuantity: m.stockQuantity,
+      bookedQty: m.bookedQty,
       availableQty: available,
       stockStatus,
+
+      imageUrl: m.images?.[0]?.url ?? null,
     };
   });
+
+  return {
+    items,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+ 
+    },
+  };
 },
+
+
+
 
 
 

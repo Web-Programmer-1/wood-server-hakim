@@ -90,7 +90,7 @@ router.get(
 
 router.get("/summary",
   // authGuard(UserRole.ADMIN),
-  InventoryController.getInventorySummaryController)
+  InventoryController.getInventorySummaryController);
 
 
 

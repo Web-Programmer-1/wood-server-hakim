@@ -101,15 +101,59 @@ async getLowStockProducts(req: Request, res: Response) {
 
 
 
-async getAllMachines(req: Request, res: Response) {
-  const result =
-    await InventoryService.getAllMachines();
+// async getAllMachines(req: Request, res: Response) {
+//   const result =
+//     await InventoryService.getAllMachines();
 
-  res.status(200).json({
-    success: true,
-    data: result,
-  });
-},
+//   res.status(200).json({
+//     success: true,
+//     data: result,
+//   });
+// },
+
+
+
+
+   async getAllMachines(req: Request, res: Response) {
+    try {
+    
+      const page = Number(req.query.page ?? 1);
+      const limit = Number(req.query.limit ?? 10);
+      const search = String(req.query.search ?? "").trim();
+
+      const safePage = Number.isFinite(page) && page > 0 ? page : 1;
+      const safeLimit =
+        Number.isFinite(limit) && limit > 0 && limit <= 50
+          ? limit
+          : 10;
+
+      const result = await InventoryService.getAllMachines({
+        page: safePage,
+        limit: safeLimit,
+        search,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Machine inventory fetched successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("Get Machines Error:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: error?.message || "Failed to fetch machines",
+      });
+    }
+  },
+
+
+
+
+
+
+
 
 async restockMachine(req:Request, res:Response){
   const body = req.body;
