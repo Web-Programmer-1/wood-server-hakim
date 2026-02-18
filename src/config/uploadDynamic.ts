@@ -34,7 +34,7 @@ const createUploader = (folderName: string, allowedMimeTypes: string[], maxSize:
 // Hero Section Uploader (Image + Video)
 export const uploadHeroMedia = createUploader(
   "landing/hero",
-  ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"],
+  ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "video/quicktime"],
   50 * 1024 * 1024 // 50MB Max
 );
 
