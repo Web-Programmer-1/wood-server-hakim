@@ -3,6 +3,7 @@ model HeroSection {
   title      String
   subtitle   String?
   buttonText String?
+  buttonLink String?
 
   logoImage String
   imageUrl  String
