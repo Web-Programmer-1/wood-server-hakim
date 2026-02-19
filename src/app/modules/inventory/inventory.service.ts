@@ -464,6 +464,37 @@ async getAllMachines(payload: { page: number; limit: number; search?: string }) 
 
 
 
+ async getLowStockMachines(threshold = 5) {
+    const machines = await prisma.machine.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        stockQuantity: true,
+        bookedQty: true,
+      },
+      orderBy: { stockQuantity: "asc" },
+    });
+
+    const items = machines
+      .map((m) => {
+        const availableQty = m.stockQuantity - m.bookedQty;
+
+        let status: "LOW_STOCK" | "OUT_OF_STOCK" | "IN_STOCK" = "IN_STOCK";
+        if (availableQty <= 0) status = "OUT_OF_STOCK";
+        else if (availableQty <= threshold) status = "LOW_STOCK";
+
+        return {
+          id: m.id,
+          name: m.name,
+          availableQty,
+          status,
+        };
+      })
+      .filter((m) => m.status !== "IN_STOCK"); 
+
+    return items;
+  },
 
 
 async restockMachine(payload: {
@@ -575,6 +606,44 @@ async restockMachine(payload: {
 
 
 
+// async confirmMachineSale(payload: {
+//   machineId: string;
+//   quantity: number;
+// }) {
+//   const { machineId, quantity } = payload;
+
+//   return prisma.$transaction(async (tx) => {
+//     const machine = await tx.machine.findUnique({
+//       where: { id: machineId },
+//     });
+
+//     if (!machine) {
+//       throw new Error("Machine not found");
+//     }
+
+//     if (machine.stockQuantity < quantity) {
+//       throw new Error("Not enough machine stock");
+//     }
+
+//     const updated = await tx.machine.update({
+//       where: { id: machineId },
+//       data: {
+//         stockQuantity: {
+//           decrement: quantity,
+//         },
+//       },
+//     });
+
+//     return {
+//       id: updated.id,
+//       stockQuantity: updated.stockQuantity,
+//       availableQty: updated.stockQuantity,
+//     };
+//   });
+// },
+
+
+
 async confirmMachineSale(payload: {
   machineId: string;
   quantity: number;
@@ -590,8 +659,8 @@ async confirmMachineSale(payload: {
       throw new Error("Machine not found");
     }
 
-    if (machine.stockQuantity < quantity) {
-      throw new Error("Not enough machine stock");
+    if (machine.bookedQty < quantity) {
+      throw new Error("Not enough booked machines");
     }
 
     const updated = await tx.machine.update({
@@ -600,13 +669,28 @@ async confirmMachineSale(payload: {
         stockQuantity: {
           decrement: quantity,
         },
+        bookedQty: {
+          decrement: quantity,
+        },
+      },
+    });
+
+    await tx.stockMovement.create({
+      data: {
+        itemType: "MACHINE",
+        itemId: machineId,
+        type: "OUT",
+        quantity,
+        note: "Machine sale confirmed",
       },
     });
 
     return {
       id: updated.id,
       stockQuantity: updated.stockQuantity,
-      availableQty: updated.stockQuantity,
+      bookedQty: updated.bookedQty,
+      availableQty:
+        updated.stockQuantity - updated.bookedQty,
     };
   });
 },

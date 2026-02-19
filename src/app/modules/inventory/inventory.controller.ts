@@ -101,16 +101,6 @@ async getLowStockProducts(req: Request, res: Response) {
 
 
 
-// async getAllMachines(req: Request, res: Response) {
-//   const result =
-//     await InventoryService.getAllMachines();
-
-//   res.status(200).json({
-//     success: true,
-//     data: result,
-//   });
-// },
-
 
 
 
@@ -144,6 +134,28 @@ async getLowStockProducts(req: Request, res: Response) {
       return res.status(500).json({
         success: false,
         message: error?.message || "Failed to fetch machines",
+      });
+    }
+  },
+
+
+
+
+   async getLowStockMachines(req: Request, res: Response) {
+    try {
+      const threshold = Math.max(0, Number(req.query.threshold ?? 5));
+
+      const result = await InventoryService.getLowStockMachines(threshold);
+
+      return res.status(200).json({
+        success: true,
+        message: "Low stock machines fetched successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error?.message || "Failed to fetch low stock machines",
       });
     }
   },

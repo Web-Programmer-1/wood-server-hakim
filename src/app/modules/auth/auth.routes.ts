@@ -4,6 +4,8 @@ import express from "express";
 import { AuthController, logout, updateUserCon } from "./auth.controller";
 import { strictLimiter } from "../../middlewares/strictFixTimeSecurity";
 import { uploadUserAvatar } from "../../middlewares/uploadUserAvatar";
+import { authGuard } from "../../middlewares/auth";
+import { UserRole } from "@prisma/client";
 
 
 export const authRouter = express.Router();
@@ -45,7 +47,7 @@ authRouter.post("/reset-password",strictLimiter, AuthController.resetPassword);
 authRouter.get("/me", strictLimiter, AuthController.getMe);
 
 // USER CRUD
-authRouter.get("/users", strictLimiter,  AuthController.getAllUsers);
+authRouter.get("/users", strictLimiter,authGuard(UserRole.ADMIN),  AuthController.getAllUsers);
 authRouter.get("/users/:id", strictLimiter,  AuthController.getUserById);
 
 

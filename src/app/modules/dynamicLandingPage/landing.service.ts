@@ -35,7 +35,7 @@ const createHeroSlide = async (data: any) => {
       title: data.title,
       subtitle: data.subtitle || null,
       buttonText: data.buttonText || null,
-      buttonLink: data.buttonLink || null,
+      // buttonLink: data.buttonLink || null,
       
       logoImage: data.logoImage,
       imageUrl: data.imageUrl,

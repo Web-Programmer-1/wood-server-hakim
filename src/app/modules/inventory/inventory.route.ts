@@ -58,6 +58,9 @@ router.get(
   InventoryController.getAllMachines
 );
 
+router.get("/machines/low-stock", InventoryController.getLowStockMachines);
+
+
 router.post(
   "/machines/restock",
   InventoryController.restockMachine

@@ -68,35 +68,48 @@ export const PaperflyService = {
 
 
 
-//   async cancel(orderId: string) {
-//     const res = await axios.post(
-//       `${PAPERFLY_BASE_URL}/api/v1/cancel-order`,
-//       { order_id: orderId },
-//       { auth, headers },
-//     );
-
-//     return res.data.success;
-//   },
-// };
-
-
-
-
-
-
-
-  async cancel(referenceNumber: string) {
+  async cancel(orderId: string) {
     const res = await axios.post(
       `${PAPERFLY_BASE_URL}/api/v1/cancel-order`,
-      {
-        order_id: referenceNumber,
-      },
-      {
-        auth,
-        headers,
-      },
+      { order_id: orderId },
+      { auth, headers },
     );
 
     return res.data.success;
   },
-};
+}
+
+
+
+
+
+
+export const trackPaperflyOrder = async (ReferenceNumber: string) => {
+  const username = process.env.PAPERFLY_USERNAME!;
+  const password = process.env.PAPERFLY_PASSWORD!;
+  const key = process.env.PAPERFLY_KEY!;
+
+  const basicAuth = Buffer.from(`${username}:${password}`).toString("base64");
+
+  const res = await axios.post(
+    `${PAPERFLY_BASE_URL}/API-Order-Tracking`,
+    { ReferenceNumber: ReferenceNumber },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${basicAuth}`,
+        paperflykey: key, // ✅ docs says header
+      },
+      timeout: 20000,
+    }
+  );
+
+  return res.data;
+}
+
+
+
+
+
+
+
