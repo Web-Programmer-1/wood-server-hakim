@@ -222,10 +222,9 @@ export const getBlogBySlug = async (slug: string) => {
     throw new Error("Slug is required");
   }
 
-  const blog = await prisma.blog.findFirst({
+  const blog = await prisma.blog.findUnique({
     where: {
       slug,
-      status: BlogStatus.PUBLISHED,
     },
     select: {
       id: true,
@@ -236,6 +235,7 @@ export const getBlogBySlug = async (slug: string) => {
       coverImage: true,
       category: true,
       highlight: true,
+      status: true,
       publishedAt: true,
     },
   });

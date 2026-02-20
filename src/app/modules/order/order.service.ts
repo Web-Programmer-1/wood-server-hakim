@@ -844,11 +844,6 @@ const cancelOrder = async (userId: string, orderId: string) => {
 
 
 
-
-
-
-
-
 // const getAllOrdersAdmin = async (query: any) => {
 //   const {
 //     page = 1,
@@ -929,16 +924,6 @@ const cancelOrder = async (userId: string, orderId: string) => {
 //     data: orders,
 //   };
 // };
-
-
-
-
-
-
-
-
-
-
 
 
 const getAllOrdersAdmin = async (query: any) => {
@@ -1049,17 +1034,6 @@ const getAllOrdersAdmin = async (query: any) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 const getOrderDetailsAdmin = async (orderId: string) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -1155,8 +1129,7 @@ const deleteOrder = async (orderId: string) => {
 
 
 
- const getMyOrderTracking = async (userId: string, orderId: string) => {
-  // ✅ 1) order must belong to this user
+const getMyOrderTracking = async (userId: string, orderId: string) => {
   const order = await prisma.order.findFirst({
     where: { id: orderId, userId },
     select: {
@@ -1170,37 +1143,46 @@ const deleteOrder = async (orderId: string) => {
     },
   });
 
-  if (!order) {
-    throw new Error( "Order not found");
+  if (!order || order.courierName !== "PAPERFLY") {
+    return {
+      order: order || null,
+      referenceNumber: null,
+      tracking: {
+        success: {
+          message: "Tracking not available yet",
+          trackingStatus: [],
+        },
+        response_code: 200,
+      },
+    };
   }
 
-  // ✅ 2) courier check
-  if (order.courierName !== "PAPERFLY") {
-    throw new Error("Tracking available only for PAPERFLY orders");
-  }
-
-  // ✅ 3) ReferenceNumber determine
-  // BEST: order.id (because you sent merchantOrderReference = order.id)
   const referenceNumber = order.trackingToken || order.id;
 
-  // ✅ 4) call paperfly tracking
-  const tracking = await PaperflyService.track(referenceNumber);
+  try {
+    const tracking = await PaperflyService.track(referenceNumber);
 
-  return {
-    order,
-    referenceNumber,
-    tracking,
-  };
+    return {
+      order,
+      referenceNumber,
+      tracking,
+    };
+  } catch (error) {
+    console.error("Paperfly tracking failed:", error);
+
+    return {
+      order,
+      referenceNumber,
+      tracking: {
+        success: {
+          message: "Tracking not available yet",
+          trackingStatus: [],
+        },
+        response_code: 200,
+      },
+    };
+  }
 };
-
-
-
-
-
-
-
-
-
 
 
 export const OrderService = {
