@@ -6,6 +6,7 @@ import { SSLCommerzService } from "../payment/payment.service";
 import { BkashService } from "../bkashPayment/bkash.service";
 import { PaperflyService } from "../courier/courier.service";
 import { tr } from "zod/v4/locales";
+import { getDhakaDayRangeUtc, getDhakaRangeUtcInclusive, getDhakaThisMonthRangeUtc, getDhakaThisWeekRangeUtc, toInt } from "./OrderCustomDate";
 
 const applyCoupon = async (
   tx: any,
@@ -781,6 +782,98 @@ const cancelOrder = async (userId: string, orderId: string) => {
 
 
 
+// const getAllOrdersAdmin = async (query: any) => {
+//   const {
+//     page = 1,
+//     limit = 10,
+//     status,
+//     paymentStatus,
+//     paymentMethod,
+//     sort,
+//   } = query;
+
+//   const where: any = {};
+
+//   if (status) where.status = { in: String(status).split(",") };
+//   if (paymentStatus)
+//     where.paymentStatus = { in: String(paymentStatus).split(",") };
+//   if (paymentMethod)
+//     where.paymentMethod = { in: String(paymentMethod).split(",") };
+
+//   let orderBy: any = { createdAt: "desc" };
+//   if (sort === "oldest") orderBy = { createdAt: "asc" };
+
+//   const skip = (Number(page) - 1) * Number(limit);
+
+//   const [orders, total] = await Promise.all([
+//     prisma.order.findMany({
+//       where,
+//       orderBy,
+//       skip,
+//       take: Number(limit),
+      
+//       select: {
+//         id: true,
+//         userId: true,
+      
+//         status: true,
+//         paymentMethod: true,
+//         paymentStatus: true,
+//         subTotal: true,
+//         shippingFee: true,
+      
+//         totalAmount: true,
+//         createdAt: true,
+//         customerName: true,
+//         phone: true,
+//         city: true,
+
+
+
+//               items: {
+//         select: {
+//           id: true,
+//           productId: true,
+//           productName: true,
+//           productSlug: true,
+//           quantity: true,
+//           unitPrice: true,
+//           lineTotal: true,
+//         },
+//       },
+
+
+
+
+//         _count: {
+//           select: { items: true },
+//         },
+//       },
+//     }),
+//     prisma.order.count({ where }),
+//   ]);
+
+//   return {
+//     meta: {
+//       page: Number(page),
+//       limit: Number(limit),
+//       total,
+//     },
+//     data: orders,
+//   };
+// };
+
+
+
+
+
+
+
+
+
+
+
+
 const getAllOrdersAdmin = async (query: any) => {
   const {
     page = 1,
@@ -789,15 +882,50 @@ const getAllOrdersAdmin = async (query: any) => {
     paymentStatus,
     paymentMethod,
     sort,
+
+    // ✅ new
+    date,       // "YYYY-MM-DD"
+    startDate,  // "YYYY-MM-DD"
+    endDate,    // "YYYY-MM-DD" (inclusive)
+    period,     // "weekly" | "monthly"
+    weekStart,  // 0..6 (optional)
   } = query;
 
   const where: any = {};
 
   if (status) where.status = { in: String(status).split(",") };
-  if (paymentStatus)
-    where.paymentStatus = { in: String(paymentStatus).split(",") };
-  if (paymentMethod)
-    where.paymentMethod = { in: String(paymentMethod).split(",") };
+  if (paymentStatus) where.paymentStatus = { in: String(paymentStatus).split(",") };
+  if (paymentMethod) where.paymentMethod = { in: String(paymentMethod).split(",") };
+
+  // ✅ createdAt filter
+  const createdAt: any = {};
+
+  if (period === "weekly") {
+    const ws = Math.min(6, Math.max(0, toInt(weekStart, 1))); // default Monday=1
+    const { start, end } = getDhakaThisWeekRangeUtc(ws);
+    createdAt.gte = start;
+    createdAt.lt = end;
+  } else if (period === "monthly") {
+    const { start, end } = getDhakaThisMonthRangeUtc();
+    createdAt.gte = start;
+    createdAt.lt = end;
+  } else if (date) {
+    const r = getDhakaDayRangeUtc(String(date));
+    if (r) {
+      createdAt.gte = r.start;  
+      createdAt.lt = r.end;
+    }
+  } else if (startDate && endDate) {
+    const r = getDhakaRangeUtcInclusive(String(startDate), String(endDate));
+    if (r) {
+      createdAt.gte = r.start;
+      createdAt.lt = r.end;
+    }
+  }
+
+  if (Object.keys(createdAt).length) {
+    where.createdAt = createdAt;
+  }
 
   let orderBy: any = { createdAt: "desc" };
   if (sort === "oldest") orderBy = { createdAt: "asc" };
@@ -810,43 +938,31 @@ const getAllOrdersAdmin = async (query: any) => {
       orderBy,
       skip,
       take: Number(limit),
-      
       select: {
         id: true,
         userId: true,
-      
         status: true,
         paymentMethod: true,
         paymentStatus: true,
         subTotal: true,
         shippingFee: true,
-      
         totalAmount: true,
         createdAt: true,
         customerName: true,
         phone: true,
         city: true,
-
-
-
-              items: {
-        select: {
-          id: true,
-          productId: true,
-          productName: true,
-          productSlug: true,
-          quantity: true,
-          unitPrice: true,
-          lineTotal: true,
+        items: {
+          select: {
+            id: true,
+            productId: true,
+            productName: true,
+            productSlug: true,
+            quantity: true,
+            unitPrice: true,
+            lineTotal: true,
+          },
         },
-      },
-
-
-
-
-        _count: {
-          select: { items: true },
-        },
+        _count: { select: { items: true } },
       },
     }),
     prisma.order.count({ where }),
@@ -861,6 +977,18 @@ const getAllOrdersAdmin = async (query: any) => {
     data: orders,
   };
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

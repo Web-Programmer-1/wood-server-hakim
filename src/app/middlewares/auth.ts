@@ -26,9 +26,6 @@ export const authGuard =
         token = req.cookies.accessToken;
       }
 
-      console.log("AUTH HEADER:", req.headers.authorization);
-console.log("COOKIE TOKEN:", req.cookies?.accessToken);
-
 
       if (!token) {
         return res.status(401).json({
