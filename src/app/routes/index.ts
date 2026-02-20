@@ -16,7 +16,6 @@ import { EventRoutes } from '../modules/event/event.route';
 import { LandingRoutes } from '../modules/dynamicLandingPage/landing.routes';
 import { AdminCouponRoutes } from '../modules/coupon/coupon.route';
 import { InventoryRoutes } from '../modules/inventory/inventory.route';
-import { courierRouter } from '../modules/courier/courier.route';
 
 
 const router = express.Router();
@@ -91,11 +90,6 @@ const moduleRoutes = [
         path: '/inventory',
         route: InventoryRoutes,
     },
-    {
-        path: '/courier',
-        route: courierRouter,
-    },
-
 
     
 

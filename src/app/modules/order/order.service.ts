@@ -267,33 +267,100 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
     };
   });
 
+  // if (result.type === "COD") {
+  //   const order = result.order!;
+
+  //   const courierRes = await PaperflyService.createOrder({
+  //     ...order,
+  //     weight: finalWeight,
+  //   });
+
+  //   await prisma.order.update({
+  //     where: { id: order.id },
+  //     data: {
+  //       courierName: "PAPERFLY",
+  //       trackingNumber: courierRes.tracking_number,
+  //       trackingBarcode: courierRes.tracking_barcode,
+  //       status: OrderStatus.CONFIRMED,
+  //     },
+  //   });
+
+  //   const trackingUrl = `https://go.paperfly.com.bd/track/order/${courierRes.tracking_number}`;
+
+  //   return {
+  //     type: "COD",
+  //     orderId: order.id,
+  //     trackingNumber: courierRes.tracking_number,
+  //     trackingUrl,
+  //   };
+  // }
+
+
+
   if (result.type === "COD") {
-    const order = result.order!;
+  const order = result.order!;
 
-    const courierRes = await PaperflyService.createOrder({
-      ...order,
-      weight: finalWeight,
-    });
+//   const courierRes = await PaperflyService.createOrder({
+//     ...order,
+//     weight: finalWeight,
+//   });
 
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        courierName: "PAPERFLY",
-        trackingNumber: courierRes.tracking_number,
-        trackingBarcode: courierRes.tracking_barcode,
-        status: OrderStatus.CONFIRMED,
-      },
-    });
+//   console.log("Courier Response",courierRes)
 
-    const trackingUrl = `https://go.paperfly.com.bd/track/order/${courierRes.tracking_number}`;
+//   await prisma.order.update({
+//     where: { id: order.id },
+//     data: {
+//       courierName: "PAPERFLY",
 
-    return {
-      type: "COD",
-      orderId: order.id,
-      trackingNumber: courierRes.tracking_number,
-      trackingUrl,
-    };
+//       // 👇 Z- tracking id (panel use)
+//       trackingNumber: courierRes.tracking_number,
+
+//       // 👇 Barcode
+//       trackingBarcode: courierRes.tracking_barcode,
+
+//       // 👇 🔥 IMPORTANT — UUID save করো
+//       trackingToken: courierRes.referenceNumber,
+
+//       status: OrderStatus.CONFIRMED,
+//     },
+//   });
+
+//   const trackingUrl = `https://go.paperfly.com.bd/track/order/${courierRes.tracking_number}`;
+
+//   return {
+//     type: "COD",
+//     orderId: order.id,
+//     trackingNumber: courierRes.tracking_number,
+//     trackingUrl,
+//   };
+// }
+
+const courierRes = await PaperflyService.createOrder({
+  ...order,
+  weight: finalWeight,
+});
+
+// createOrder এর response structure অনুযায়ী
+// তুমি আগে বলছিলে courierRes.data.success এর ভিতরে tracking_number আছে
+const success = courierRes?.success || courierRes?.data?.success || courierRes;
+
+await prisma.order.update({
+  where: { id: order.id },
+  data: {
+    courierName: "PAPERFLY",
+    trackingNumber: success?.tracking_number || null,
+    trackingBarcode: success?.tracking_barcode || null,
+
+    // ✅ IMPORTANT: trackingToken = order.id (merchant reference)
+    trackingToken: order.id,
+
+    status: OrderStatus.CONFIRMED,
+  },
+})
+
   }
+
+
 
 
 
@@ -1085,10 +1152,62 @@ const deleteOrder = async (orderId: string) => {
 
 
 
+
+
+
+ const getMyOrderTracking = async (userId: string, orderId: string) => {
+  // ✅ 1) order must belong to this user
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId },
+    select: {
+      id: true,
+      courierName: true,
+      trackingNumber: true,
+      trackingBarcode: true,
+      trackingToken: true,
+      status: true,
+      createdAt: true,
+    },
+  });
+
+  if (!order) {
+    throw new Error( "Order not found");
+  }
+
+  // ✅ 2) courier check
+  if (order.courierName !== "PAPERFLY") {
+    throw new Error("Tracking available only for PAPERFLY orders");
+  }
+
+  // ✅ 3) ReferenceNumber determine
+  // BEST: order.id (because you sent merchantOrderReference = order.id)
+  const referenceNumber = order.trackingToken || order.id;
+
+  // ✅ 4) call paperfly tracking
+  const tracking = await PaperflyService.track(referenceNumber);
+
+  return {
+    order,
+    referenceNumber,
+    tracking,
+  };
+};
+
+
+
+
+
+
+
+
+
+
+
 export const OrderService = {
   
   checkoutFromCart,
   getMyOrders,
+  getMyOrderTracking,
   getOrderDetails,
   cancelOrder,
   getAllOrdersAdmin,

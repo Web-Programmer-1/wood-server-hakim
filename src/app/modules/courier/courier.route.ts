@@ -1,8 +1,19 @@
-import { Router } from "express";
-import { paperflyTrackController } from "./courier.controller";
+// import { Router } from "express";
+// import { getMyOrderTracking, paperflyTrackController } from "./courier.controller";
+// import { UserRole } from "@prisma/client";
+// import { authGuard } from "../../middlewares/auth";
 
-const router = Router();
+// const router = Router();
 
-router.post("/paperfly/track", paperflyTrackController);
+// router.post("/paperfly/track", paperflyTrackController);
 
-export const courierRouter = router;
+
+// router.get(
+//   "/:orderId/tracking",
+//   authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+//   getMyOrderTracking
+// );
+
+
+
+// export const courierRouter = router;

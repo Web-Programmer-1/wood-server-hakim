@@ -32,6 +32,40 @@ const getMyOrders = async (req: Request, res: Response) => {
 
 
 
+
+
+
+const getMyOrderTracking = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    // Handle the case where userId is undefined
+    return res.status(400).json({
+      success: false,
+      message: "User ID is missing",
+    });
+  }
+
+  const { orderId } = req.params;
+
+  const data = await OrderService.getMyOrderTracking(userId, orderId);
+
+  res.status(200).json({
+    success: true,
+    data,
+  });
+};
+
+
+
+
+
+
+
+
+
+
+
+
 const getOrderDetails = async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const { orderId } = req.params;
@@ -178,6 +212,7 @@ export const OrderController = {
   
   checkout ,
   getMyOrders,
+  getMyOrderTracking,
   getOrderDetails,
   cancelOrder,
   getAllOrdersAdmin,
