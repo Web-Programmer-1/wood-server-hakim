@@ -46,9 +46,6 @@ const buildRevenueSeriesLast30Days = (rows: { amount: number; createdAt: Date }[
 
 const getOverview = async () => {
   const now = new Date();
-  const todayStart = startOfDay(now);
-  const monthStart = startOfMonth(now);
-  const yearStart = startOfYear(now);
   const last30DaysStart = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
 
   const [
@@ -61,9 +58,7 @@ const getOverview = async () => {
     totalCustomers,
     totalBlogs,
     totalEvents,
-    revenueTodayAgg,
-    revenueMonthAgg,
-    revenueYearAgg,
+    totalCoupons,
     ordersByStatus,
     inquiriesByStatus,
     revenueRows,
@@ -90,27 +85,7 @@ const getOverview = async () => {
     }),
     prisma.blog.count(),
     prisma.event.count(),
-    prisma.payment.aggregate({
-      where: {
-        status: MPaymentStatus.PAID,
-        createdAt: { gte: todayStart },
-      },
-      _sum: { amount: true },
-    }),
-    prisma.payment.aggregate({
-      where: {
-        status: MPaymentStatus.PAID,
-        createdAt: { gte: monthStart },
-      },
-      _sum: { amount: true },
-    }),
-    prisma.payment.aggregate({
-      where: {
-        status: MPaymentStatus.PAID,
-        createdAt: { gte: yearStart },
-      },
-      _sum: { amount: true },
-    }),
+    prisma.coupon.count(),
     prisma.order.groupBy({
       by: ["status"],
       _count: { _all: true },
@@ -180,10 +155,6 @@ const getOverview = async () => {
     InventoryService.getLowStockProducts(),
   ]);
 
-  const revenueToday = revenueTodayAgg._sum.amount ?? 0;
-  const revenueMonthly = revenueMonthAgg._sum.amount ?? 0;
-  const revenueYearly = revenueYearAgg._sum.amount ?? 0;
-
   const revenueLast30Days = buildRevenueSeriesLast30Days(
     revenueRows.map((r) => ({
       amount: r.amount,
@@ -239,9 +210,7 @@ const getOverview = async () => {
       totalCustomers,
       totalBlogs,
       totalEvents,
-      revenueToday,
-      revenueMonthly,
-      revenueYearly,
+      totalCoupons,
     },
     charts: {
       revenueLast30Days,
@@ -271,4 +240,3 @@ const getOverview = async () => {
 export const AdminDashboardService = {
   getOverview,
 };
-
