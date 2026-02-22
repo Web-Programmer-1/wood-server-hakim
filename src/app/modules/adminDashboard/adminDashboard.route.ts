@@ -4,7 +4,7 @@ import { UserRole } from "../../constants/UserRole";
 import { getAdminDashboardOverviewController } from "./adminDashboard.controller";
 
 const router = express.Router();
-
+// admin overview
 router.get(
   "/overview",
   authGuard(UserRole.ADMIN),
