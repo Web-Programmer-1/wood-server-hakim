@@ -26,7 +26,7 @@ export const InventoryService = {
     });
 
     return products.map((p) => {
-      const available = p.stockQuantity - p.reservedQty - p.damagedQty;
+      const available = p.stockQuantity - p.reservedQty;
 
       let stockStatus = "IN_STOCK";
 
@@ -109,10 +109,7 @@ async reserveProduct(payload: {
       throw new Error("Product not found");
     }
 
-    const available =
-      product.stockQuantity -
-      product.reservedQty -
-      product.damagedQty;
+const available = product.stockQuantity - product.reservedQty;
 
     if (available < quantity) {
       throw new Error("Insufficient stock");
@@ -162,30 +159,27 @@ async confirmSale(payload: { productId: string; quantity: number }) {
 
     if (!product) throw new Error("Product not found");
 
-    // ✅ reserved থেকে যতটা সম্ভব নেবে
+    
     const reservedToUse = Math.min(product.reservedQty, quantity);
     const remainingToSellFromFree = quantity - reservedToUse;
 
-    // ✅ free stock = stock - damaged - reserved (reserved অন্য অর্ডারের জন্য আটকানো)
-    const freeQty =
-      product.stockQuantity - product.damagedQty - product.reservedQty;
+   const freeQty = product.stockQuantity - product.reservedQty;
 
-    // যদি reserved ছাড়িয়ে extra sell করতে চাও, সেটা freeQty দিয়ে সম্ভব কি না
+   
     if (remainingToSellFromFree > freeQty) {
       throw new Error("Insufficient available stock");
     }
 
-    // ✅ Update stock
+
     const updated = await tx.product.update({
       where: { id: productId },
       data: {
         stockQuantity: { decrement: quantity },
-        // reserved যতটা use হয়েছে শুধু ততটাই কমবে
+      
         reservedQty: { decrement: reservedToUse },
       },
     });
 
-    // ✅ Movement insert
     await tx.stockMovement.create({
       data: {
         itemType: "PRODUCT",
@@ -256,10 +250,7 @@ async releaseProduct(payload: {
       id: updated.id,
       stockQuantity: updated.stockQuantity,
       reservedQty: updated.reservedQty,
-      availableQty:
-        updated.stockQuantity -
-        updated.reservedQty -
-        updated.damagedQty,
+  availableQty: updated.stockQuantity - updated.reservedQty,
     };
   });
 },
@@ -284,10 +275,8 @@ async damageProduct(payload: {
       throw new Error("Product not found");
     }
 
-    const available =
-      product.stockQuantity -
-      product.reservedQty -
-      product.damagedQty;
+const available = product.stockQuantity - product.reservedQty;
+if (available < quantity) throw new Error("Insufficient stock for damage");
 
     if (available < quantity) {
       throw new Error("Insufficient stock for damage");
@@ -347,10 +336,7 @@ async getLowStockProducts() {
 
   const lowStockList = products
     .map((p) => {
-      const available =
-        p.stockQuantity -
-        p.reservedQty -
-        p.damagedQty;
+    const available = p.stockQuantity - p.reservedQty;
 
       if (available <= p.reorderLevel) {
         return {
@@ -606,72 +592,33 @@ async restockMachine(payload: {
 
 
 
-// async confirmMachineSale(payload: {
-//   machineId: string;
-//   quantity: number;
-// }) {
-//   const { machineId, quantity } = payload;
-
-//   return prisma.$transaction(async (tx) => {
-//     const machine = await tx.machine.findUnique({
-//       where: { id: machineId },
-//     });
-
-//     if (!machine) {
-//       throw new Error("Machine not found");
-//     }
-
-//     if (machine.stockQuantity < quantity) {
-//       throw new Error("Not enough machine stock");
-//     }
-
-//     const updated = await tx.machine.update({
-//       where: { id: machineId },
-//       data: {
-//         stockQuantity: {
-//           decrement: quantity,
-//         },
-//       },
-//     });
-
-//     return {
-//       id: updated.id,
-//       stockQuantity: updated.stockQuantity,
-//       availableQty: updated.stockQuantity,
-//     };
-//   });
-// },
 
 
+async confirmMachineSale(payload: { machineId: string; quantity: number }) {
+  const machineId = payload.machineId;
 
-async confirmMachineSale(payload: {
-  machineId: string;
-  quantity: number;
-}) {
-  const { machineId, quantity } = payload;
+  const quantity = Math.floor(Number(payload.quantity || 0));
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error("Quantity must be a positive number");
+  }
 
   return prisma.$transaction(async (tx) => {
     const machine = await tx.machine.findUnique({
       where: { id: machineId },
     });
 
-    if (!machine) {
-      throw new Error("Machine not found");
-    }
+    if (!machine) throw new Error("Machine not found");
 
-    if (machine.bookedQty < quantity) {
-      throw new Error("Not enough booked machines");
+    // ✅ stock থেকে sell হবে (booked না দেখেই)
+    if (machine.stockQuantity < quantity) {
+      throw new Error("Insufficient machine stock");
     }
 
     const updated = await tx.machine.update({
       where: { id: machineId },
       data: {
-        stockQuantity: {
-          decrement: quantity,
-        },
-        bookedQty: {
-          decrement: quantity,
-        },
+        stockQuantity: { decrement: quantity },
+        // ✅ bookedQty untouched
       },
     });
 
@@ -689,11 +636,12 @@ async confirmMachineSale(payload: {
       id: updated.id,
       stockQuantity: updated.stockQuantity,
       bookedQty: updated.bookedQty,
-      availableQty:
-        updated.stockQuantity - updated.bookedQty,
+      availableQty: updated.stockQuantity - updated.bookedQty,
     };
   });
 },
+
+
 
 
 
