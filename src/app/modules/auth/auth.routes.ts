@@ -17,20 +17,20 @@ authRouter.post("/register", AuthController.register);
 authRouter.post("/verify-email", strictLimiter, AuthController.verifyEmail);
 
 // VERIFY PHONE
-authRouter.post("/verify-phone", strictLimiter , AuthController.verifyPhone);
+authRouter.post("/verify-phone", strictLimiter, AuthController.verifyPhone);
 
 // LOGIN
 authRouter.post("/login", AuthController.login);
 
 // REFRESH TOKEN
-authRouter.post("/refresh-token",strictLimiter, AuthController.refreshToken);
+authRouter.post("/refresh-token", strictLimiter, AuthController.refreshToken);
 
 // SEND OTP (email or phone)
 authRouter.post("/send-otp", strictLimiter, AuthController.sendOTP);
 
 
 // logOut 
-authRouter.post("/logout",logout);
+authRouter.post("/logout", logout);
 
 
 
@@ -41,14 +41,15 @@ authRouter.post("/forgot-password", strictLimiter, AuthController.forgotPassword
 
 
 // RESET PASSWORD
-authRouter.post("/reset-password",strictLimiter, AuthController.resetPassword);
+authRouter.post("/reset-password", strictLimiter, AuthController.resetPassword);
 
 // GET CURRENT USER
 authRouter.get("/me", strictLimiter, AuthController.getMe);
 
 // USER CRUD
-authRouter.get("/users", strictLimiter,authGuard(UserRole.ADMIN),  AuthController.getAllUsers);
-authRouter.get("/users/:id", strictLimiter,  AuthController.getUserById);
+authRouter.get("/users", strictLimiter, authGuard(UserRole.ADMIN), AuthController.getAllUsers);
+authRouter.get("/users/:id", strictLimiter, AuthController.getUserById);
+authRouter.patch("/users/:id/role", strictLimiter, authGuard(UserRole.ADMIN), AuthController.updateRoleUser);
 
 
 // UPLOAD AVATAR
@@ -61,7 +62,7 @@ authRouter.post(
 
 authRouter.patch(
   "/users/:id",
-strictLimiter,
+  strictLimiter,
   updateUserCon
 );
 
@@ -72,4 +73,4 @@ strictLimiter,
 
 
 
-authRouter.delete("/users/:id",strictLimiter,  AuthController.deleteUser);
+authRouter.delete("/users/:id", strictLimiter, AuthController.deleteUser);

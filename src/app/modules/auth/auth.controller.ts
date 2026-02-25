@@ -5,7 +5,7 @@ import { AuthService, logoutService } from "./auth.service";
 import { RequestHandler } from "express";
 
 export const AuthController = {
-  async register(req:Request, res:Response) {
+  async register(req: Request, res: Response) {
     try {
       const data = await AuthService.register(req.body);
       res.json(data);
@@ -14,7 +14,7 @@ export const AuthController = {
     }
   },
 
-  async verifyEmail(req:Request, res:Response) {
+  async verifyEmail(req: Request, res: Response) {
     try {
       const data = await AuthService.verifyEmail(req.body);
       res.json(data);
@@ -23,7 +23,7 @@ export const AuthController = {
     }
   },
 
-  async verifyPhone(req:Request, res:Response) {
+  async verifyPhone(req: Request, res: Response) {
     try {
       const data = await AuthService.verifyPhone(req.body);
       res.json(data);
@@ -32,7 +32,7 @@ export const AuthController = {
     }
   },
 
-  async login(req:Request, res:Response) {
+  async login(req: Request, res: Response) {
     try {
       const data = await AuthService.login(req.body, res);
       res.json(data);
@@ -41,7 +41,7 @@ export const AuthController = {
     }
   },
 
-  async refreshToken(req:Request, res:Response) {
+  async refreshToken(req: Request, res: Response) {
     try {
       const data = await AuthService.refreshToken(req, res);
       res.json(data);
@@ -56,13 +56,13 @@ export const AuthController = {
   //  Send Single Send OTP using forgot password and reset password
 
   async sendOTP(req: Request, res: Response) {
-  try {
-    const data = await AuthService.sendOTP(req.body);
-    res.json(data);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
-  }
-},
+    try {
+      const data = await AuthService.sendOTP(req.body);
+      res.json(data);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
 
 
 
@@ -74,29 +74,29 @@ export const AuthController = {
 
 
 
-async resetPassword(req: Request, res: Response) {
-  try {
-    const { identifier, otp, newPassword } = req.body;
+  async resetPassword(req: Request, res: Response) {
+    try {
+      const { identifier, otp, newPassword } = req.body;
 
-    const data = await AuthService.resetPassword(identifier, otp, newPassword);
+      const data = await AuthService.resetPassword(identifier, otp, newPassword);
 
-    res.json(data);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
-  }
-},
+      res.json(data);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
 
-   
+
   //  Forgot Password -------------------
 
   async forgotPassword(req: Request, res: Response) {
-  try {
-    const data = await AuthService.forgotPassword(req.body);
-    res.json(data);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
-  }
-},
+    try {
+      const data = await AuthService.forgotPassword(req.body);
+      res.json(data);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
 
 
 
@@ -105,32 +105,41 @@ async resetPassword(req: Request, res: Response) {
 
 
 
-async getMe(req: Request, res: Response) {
-  try {
-    const data = await AuthService.getMe(req);
-    res.json(data);
-  } catch (err: any) {
-    res.status(401).json({ message: err.message });
-  }
-},
+  async getMe(req: Request, res: Response) {
+    try {
+      const data = await AuthService.getMe(req);
+      res.json(data);
+    } catch (err: any) {
+      res.status(401).json({ message: err.message });
+    }
+  },
 
-async getAllUsers(req: Request, res: Response) {
-  try {
-    const data = await AuthService.getAllUsers();
-    res.json(data);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
-  }
-},
+  async getAllUsers(req: Request, res: Response) {
+    try {
+      const data = await AuthService.getAllUsers();
+      res.json(data);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
 
-async getUserById(req: Request, res: Response) {
-  try {
-    const data = await AuthService.getUserById(req.params.id);
-    res.json(data);
-  } catch (err: any) {
-    res.status(404).json({ message: err.message });
-  }
-},
+  async getUserById(req: Request, res: Response) {
+    try {
+      const data = await AuthService.getUserById(req.params.id);
+      res.json(data);
+    } catch (err: any) {
+      res.status(404).json({ message: err.message });
+    }
+  },
+
+  async updateRoleUser(req: Request, res: Response) {
+    try {
+      const data = await AuthService.updateRoleUser(req.params.id, req.body.role);
+      res.json({ success: true, data });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  },
 
 
 
@@ -141,7 +150,7 @@ async getUserById(req: Request, res: Response) {
 
 
 
-async deleteUser(req: Request, res: Response) {
+  async deleteUser(req: Request, res: Response) {
     try {
       const data = await AuthService.deleteUser(req.params.id);
       res.json(data);
@@ -155,7 +164,7 @@ async deleteUser(req: Request, res: Response) {
       if (!req.file) {
         throw new Error("No file uploaded");
       }
-      
+
       // The file is already uploaded to S3 by the middleware
       // @ts-ignore - location property exists on multer-s3 file object
       const avatarUrl = (req.file as any).location;
@@ -182,7 +191,7 @@ async deleteUser(req: Request, res: Response) {
 
 
 
-  export const logout = async (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
   try {
     const data = await logoutService(res);
     res.json(data);

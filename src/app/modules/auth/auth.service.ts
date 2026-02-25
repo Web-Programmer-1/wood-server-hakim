@@ -144,12 +144,12 @@ export const AuthService = {
     });
   },
 
-  
 
 
 
-async register(body: IRegister) {
-  const { name, email, phone, password } = body;
+
+  async register(body: IRegister) {
+    const { name, email, phone, password } = body;
 
 
     const existingUser = await prisma.user.findFirst({
@@ -172,90 +172,90 @@ async register(body: IRegister) {
     }
 
 
-  if (!password) throw new Error("Password is required");
+    if (!password) throw new Error("Password is required");
 
-  const hash = await bcrypt.hash(password, 10); // hash password
+    const hash = await bcrypt.hash(password, 10); // hash password
 
-  // Perform database operations in transaction
-  // Set timeout to 30 seconds as a safety measure
-  const result = await prisma.$transaction(async (tx: any) => {
-    const user = await tx.user.create({
-      data: {
-        name,
-        email,
-        phone,
-        passwordHash: hash, // store hashed password
-        profile: {
-          create: { avatarUri: null, bio: null, gender: null },
+    // Perform database operations in transaction
+    // Set timeout to 30 seconds as a safety measure
+    const result = await prisma.$transaction(async (tx: any) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          phone,
+          passwordHash: hash, // store hashed password
+          profile: {
+            create: { avatarUri: null, bio: null, gender: null },
+          },
         },
-      },
-      include: { profile: true },
+        include: { profile: true },
+      });
+
+      await tx.loginAttempt.create({ data: { userId: user.id } });
+
+      return {
+        message: "User registered successfully. OTP sent.",
+        userId: user.id,
+
+      };
+    }, {
+      timeout: 30000, // 30 seconds timeout
     });
 
-    await tx.loginAttempt.create({ data: { userId: user.id } });
+    // Send OTPs outside the transaction to avoid timeout
+    // These are external API calls that can take time
+    // Wrap in try-catch so OTP failures don't fail registration
+    try {
+      if (email) await this.sendEmailOTP(email);
+    } catch (error: any) {
+      console.error("Failed to send email OTP:", error.message);
+      // Don't throw - user is already created, OTP can be resent later
+    }
 
-    return {
-      message: "User registered successfully. OTP sent.",
-      userId: user.id,
-    
-    };
-  }, {
-    timeout: 30000, // 30 seconds timeout
-  });
+    try {
+      if (phone) await this.sendPhoneOTP(phone);
+    } catch (error: any) {
+      console.error("Failed to send phone OTP:", error.message);
+      // Don't throw - user is already created, OTP can be resent later
+    }
 
-  // Send OTPs outside the transaction to avoid timeout
-  // These are external API calls that can take time
-  // Wrap in try-catch so OTP failures don't fail registration
-  try {
-    if (email) await this.sendEmailOTP(email);
-  } catch (error: any) {
-    console.error("Failed to send email OTP:", error.message);
-    // Don't throw - user is already created, OTP can be resent later
-  }
-
-  try {
-    if (phone) await this.sendPhoneOTP(phone);
-  } catch (error: any) {
-    console.error("Failed to send phone OTP:", error.message);
-    // Don't throw - user is already created, OTP can be resent later
-  }
-
-  return result;
-},
-
-
-  async verifyEmail(body:IEmailVerify) {
-  const { email, otp } = body;
-
-  const key = `OTP:EMAIL:${email}`;
-  const stored = await this.getOTP(key);
-
-  if (stored !== otp) throw new Error("Invalid OTP");
-
-  // STEP 1 → find user by email (email is NOT unique)
-  const user = await prisma.user.findFirst({
-    where: { email },
-  });
-
-  if (!user) throw new Error("User not found with this email");
-
-  // STEP 2 → update using unique id
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { emailVerified: true },
-  });
-
-
-  await prisma.userProfile.update({
-  where: { userId: user.id },
-  data: {
-  
+    return result;
   },
-});
 
 
-  return { message: "Email verified successfully." };
-},
+  async verifyEmail(body: IEmailVerify) {
+    const { email, otp } = body;
+
+    const key = `OTP:EMAIL:${email}`;
+    const stored = await this.getOTP(key);
+
+    if (stored !== otp) throw new Error("Invalid OTP");
+
+    // STEP 1 → find user by email (email is NOT unique)
+    const user = await prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (!user) throw new Error("User not found with this email");
+
+    // STEP 2 → update using unique id
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true },
+    });
+
+
+    await prisma.userProfile.update({
+      where: { userId: user.id },
+      data: {
+
+      },
+    });
+
+
+    return { message: "Email verified successfully." };
+  },
 
 
 
@@ -264,71 +264,71 @@ async register(body: IRegister) {
   ========================== */
 
 
-  async verifyPhone(body:any) {
-  const { phone, otp } = body;
+  async verifyPhone(body: any) {
+    const { phone, otp } = body;
 
-  const key = `OTP:PHONE:${phone}`;
-  const stored = await this.getOTP(key);
+    const key = `OTP:PHONE:${phone}`;
+    const stored = await this.getOTP(key);
 
-  if (stored !== otp) throw new Error("Invalid OTP");
+    if (stored !== otp) throw new Error("Invalid OTP");
 
-  const user = await prisma.user.findFirst({
-    where: { phone },
-  });
-
-  if (!user) throw new Error("User not found with this phone number");
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { phoneVerified: true },
-  });
-
-//   await prisma.userProfile.update({
-//   where: { userId: user.id },
-//   data: {
-//   user:user,
-//   },
-// });
-
-
-  return { message: "Phone verified." };
-},
-
-
-
-
-
-async refreshToken(req: Request, res: Response) {
-  const token = req.cookies.refreshToken;
-  if (!token) throw new Error("Unauthorized");
-
-  try {
-    // Verify refresh token
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as any;
-
-    // Create new access token
-    const newAccessToken = jwt.sign(
-      { id: decoded.id },
-      process.env.JWT_ACCESS_SECRET!,
-      { expiresIn: "1h"}
-    );
-
-    // Set it in cookies again
-    res.cookie("accessToken", newAccessToken, {
-      ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
+    const user = await prisma.user.findFirst({
+      where: { phone },
     });
 
-    return { 
-      message: "Token refreshed",
-      accessToken: newAccessToken 
-    };
+    if (!user) throw new Error("User not found with this phone number");
 
-  } catch (err) {
-    console.log("Refresh-token error =>", err);
-    throw new Error("Invalid refresh token");
-  }
-},
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { phoneVerified: true },
+    });
+
+    //   await prisma.userProfile.update({
+    //   where: { userId: user.id },
+    //   data: {
+    //   user:user,
+    //   },
+    // });
+
+
+    return { message: "Phone verified." };
+  },
+
+
+
+
+
+  async refreshToken(req: Request, res: Response) {
+    const token = req.cookies.refreshToken;
+    if (!token) throw new Error("Unauthorized");
+
+    try {
+      // Verify refresh token
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as any;
+
+      // Create new access token
+      const newAccessToken = jwt.sign(
+        { id: decoded.id },
+        process.env.JWT_ACCESS_SECRET!,
+        { expiresIn: "1h" }
+      );
+
+      // Set it in cookies again
+      res.cookie("accessToken", newAccessToken, {
+        ...cookieOptions,
+        maxAge: 15 * 60 * 1000,
+      });
+
+      return {
+        message: "Token refreshed",
+        accessToken: newAccessToken
+      };
+
+    } catch (err) {
+      console.log("Refresh-token error =>", err);
+      throw new Error("Invalid refresh token");
+    }
+  },
 
 
 
@@ -344,58 +344,58 @@ async refreshToken(req: Request, res: Response) {
 
 
 
-async login(body: any, res: Response) {
-  const { email, password } = body;
+  async login(body: any, res: Response) {
+    const { email, password } = body;
 
-  const user = await prisma.user.findFirst({ where: { email } });
-  if (!user) throw new Error("Invalid credentials");
+    const user = await prisma.user.findFirst({ where: { email } });
+    if (!user) throw new Error("Invalid credentials");
 
-  await this.validateLoginAttempt(user.id);
+    await this.validateLoginAttempt(user.id);
 
-  const match = await bcrypt.compare(password, user.passwordHash);
-  if (!match) {
-    await this.registerFailedAttempt(user.id);
-    throw new Error("Invalid credentials");
-  }
+    const match = await bcrypt.compare(password, user.passwordHash);
+    if (!match) {
+      await this.registerFailedAttempt(user.id);
+      throw new Error("Invalid credentials");
+    }
 
-  await this.resetLoginAttempt(user.id);
-
-
-  const accessToken = jwt.sign(
-  { id: user.id, role: user.role },
-  process.env.JWT_ACCESS_SECRET!,
-  { expiresIn: "90d" }
-);
-
-console.log(user.role, user.id)
+    await this.resetLoginAttempt(user.id);
 
 
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_ACCESS_SECRET!,
+      { expiresIn: "90d" }
+    );
 
-const refreshToken = jwt.sign(
-  { id: user.id, role: user.role },
-  process.env.JWT_REFRESH_SECRET!,
-  { expiresIn: "7d" }
-);
-
-
-  // Set Cookies
-  res.cookie("accessToken", accessToken, {
-    ...cookieOptions,
-     maxAge: 30 * 24 * 60 * 60 * 1000,
-  });
-
-  res.cookie("refreshToken", refreshToken, {
-    ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+    console.log(user.role, user.id)
 
 
-  return {
-    message: "Logged in successfully.",
-    accessToken,
-    refreshToken,
-  };
-},
+
+    const refreshToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_REFRESH_SECRET!,
+      { expiresIn: "7d" }
+    );
+
+
+    // Set Cookies
+    res.cookie("accessToken", accessToken, {
+      ...cookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+
+    return {
+      message: "Logged in successfully.",
+      accessToken,
+      refreshToken,
+    };
+  },
 
 
 
@@ -406,168 +406,115 @@ const refreshToken = jwt.sign(
   ========================== */
 
 
-async forgotPassword(body: { identifier: string }) {
-  const { identifier } = body;
+  async forgotPassword(body: { identifier: string }) {
+    const { identifier } = body;
 
-  if (!identifier) throw new Error("Email or phone is required");
+    if (!identifier) throw new Error("Email or phone is required");
 
-  // Find user by email OR phone
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { email: identifier },
-        { phone: identifier },
-      ]
+    // Find user by email OR phone
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { phone: identifier },
+        ]
+      }
+    });
+
+    if (!user) {
+      throw new Error("No user found with this email or phone");
     }
-  });
 
-  if (!user) {
-    throw new Error("No user found with this email or phone");
-  }
-
-  // Send OTP to email or phone
-  if (identifier.includes("@")) {
-    await this.sendEmailOTP(identifier);
-  } else {
-    await this.sendPhoneOTP(identifier);
-  }
-
-  return { 
-    message: "OTP sent for password reset",
-    identifier 
-  };
-},
-
-
-
-
-//  Send single OTP using forgot password and reset password
-
-async sendOTP(body: { identifier: string }) {
-  const { identifier } = body;
-
-  if (!identifier) throw new Error("Email or phone is required");
-
-  // Check user exists
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { email: identifier },
-        { phone: identifier }
-      ]
+    // Send OTP to email or phone
+    if (identifier.includes("@")) {
+      await this.sendEmailOTP(identifier);
+    } else {
+      await this.sendPhoneOTP(identifier);
     }
-  });
 
-  if (!user) throw new Error("No user found with this email/phone");
-
-  // Send OTP
-  if (identifier.includes("@")) {
-    await this.sendEmailOTP(identifier);
-  } else {
-    await this.sendPhoneOTP(identifier);
-  }
-
-  return { message: "OTP sent successfully" };
-},
+    return {
+      message: "OTP sent for password reset",
+      identifier
+    };
+  },
 
 
 
 
+  //  Send single OTP using forgot password and reset password
 
+  async sendOTP(body: { identifier: string }) {
+    const { identifier } = body;
 
+    if (!identifier) throw new Error("Email or phone is required");
 
+    // Check user exists
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { phone: identifier }
+        ]
+      }
+    });
 
+    if (!user) throw new Error("No user found with this email/phone");
 
-
-    async resetPassword(identifier: string, otp: string, newPassword: string) {
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [{ email: identifier }, { phone: identifier }]
+    // Send OTP
+    if (identifier.includes("@")) {
+      await this.sendEmailOTP(identifier);
+    } else {
+      await this.sendPhoneOTP(identifier);
     }
-  });
 
-  if (!user) throw new Error("User not found");
+    return { message: "OTP sent successfully" };
+  },
 
-  // Find OTP
-  const savedOTP = await prisma.oTP.findFirst({
-    where: {
-      OR: [
-        { email: user.email ?? undefined },
-        { phone: user.phone ?? undefined }
-      ]
-    },
-    orderBy: { createdAt: "desc" }
-  });
 
-  if (!savedOTP || savedOTP.code !== otp) {
-    throw new Error("Invalid OTP");
-  }
 
-  // Update password
-  const hashed = await bcrypt.hash(newPassword, 10);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      passwordHash: hashed
+
+
+
+
+
+
+  async resetPassword(identifier: string, otp: string, newPassword: string) {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: identifier }, { phone: identifier }]
+      }
+    });
+
+    if (!user) throw new Error("User not found");
+
+    // Find OTP
+    const savedOTP = await prisma.oTP.findFirst({
+      where: {
+        OR: [
+          { email: user.email ?? undefined },
+          { phone: user.phone ?? undefined }
+        ]
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    if (!savedOTP || savedOTP.code !== otp) {
+      throw new Error("Invalid OTP");
     }
-  });
 
-  return { message: "Password reset successful" };
-},
+    // Update password
+    const hashed = await bcrypt.hash(newPassword, 10);
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: hashed
+      }
+    });
 
-
-
-
-
-
-    async getMe(req: Request) {
-  let token: string | undefined;
-
-  const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  }
-
-  if (!token && req.cookies.accessToken) {
-    token = req.cookies.accessToken;
-  }
-
-  if (!token) throw new Error("Unauthorized");
-
-  const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as any;
-
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.id },
-    include: { profile: true },
-  });
-
-  return user;
-},
-
-
-//      ----------- Get All Users -------------
-
-async getAllUsers() {
-  return await prisma.user.findMany({
-    include: { profile: true },
-  });
-},
-
-
-//  ---------GetUserById ----------
-
-
-async getUserById(id: string) {
-  const user = await prisma.user.findUnique({
-    where: { id },
-    include: { profile: true },
-  });
-
-  if (!user) throw new Error("User not found");
-  return user;
-},
+    return { message: "Password reset successful" };
+  },
 
 
 
@@ -575,43 +522,106 @@ async getUserById(id: string) {
 
 
 
-async updateUser(
-  targetUserId: string,
-  body: any
-) {
- 
-  const updatedUser = await prisma.user.update({
-    where: { id: targetUserId },
-    data: {
-      name: body.name,
-      email: body.email,
-      phone: body.phone,
+  async getMe(req: Request) {
+    let token: string | undefined;
+
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    if (!token && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
+    if (!token) throw new Error("Unauthorized");
+
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as any;
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      include: { profile: true },
+    });
+
+    return user;
+  },
 
 
-      ...(body.role ? { role: body.role as UserRole } : {}),
+  //      ----------- Get All Users -------------
 
-      ...(body.status ? { status: body.status } : {}),
+  async getAllUsers() {
+    return await prisma.user.findMany({
+      include: { profile: true },
+    });
+  },
 
-      profile: body.profile
-        ? {
+
+  //  ---------GetUserById ----------
+
+
+  async getUserById(id: string) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { profile: true },
+    });
+
+    if (!user) throw new Error("User not found");
+    return user;
+  },
+
+
+
+
+
+
+
+  async updateUser(
+    targetUserId: string,
+    body: any
+  ) {
+
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: {
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+
+
+        ...(body.role ? { role: body.role as UserRole } : {}),
+
+        ...(body.status ? { status: body.status } : {}),
+
+        profile: body.profile
+          ? {
             upsert: {
               create: {
                 ...body.profile,
-            
+
               },
               update: {
                 ...body.profile,
-           
+
               },
             },
           }
-        : undefined,
-    },
-    include: { profile: true },
-  });
+          : undefined,
+      },
+      include: { profile: true },
+    });
 
-  return updatedUser;
-},
+    return updatedUser;
+  },
+
+  async updateRoleUser(targetUserId: string, role: string) {
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: role as UserRole },
+      include: { profile: true },
+    });
+
+    return updatedUser;
+  },
 
 
 
@@ -619,13 +629,13 @@ async updateUser(
 
 
 
-async deleteUser(id: string) {
-  await prisma.user.delete({
-    where: { id }
-  });
+  async deleteUser(id: string) {
+    await prisma.user.delete({
+      where: { id }
+    });
 
-  return { message: "User deleted successfully" };
-}
+    return { message: "User deleted successfully" };
+  }
 
 
 };
