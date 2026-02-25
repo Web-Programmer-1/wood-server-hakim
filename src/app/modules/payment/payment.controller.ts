@@ -111,7 +111,25 @@ const retryPayment = async (req: Request, res: Response) => {
 
 
 
+const updatePaymentStatus = async (req: Request, res: Response) => {
+  const adminId = req.user!.id;
+  const { paymentId } = req.params;
 
+  const { status, note } = req.body as { status: MPaymentStatus; note?: string };
+
+  const data = await SSLCommerzService.updatePaymentStatusManual({
+    paymentId,
+    status,
+    note,
+    updatedBy: adminId,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Payment status updated",
+    data,
+  });
+};
 
 
 
@@ -127,4 +145,5 @@ export const PaymentController = {
   getMyPayments,
   getPaymentByOrder,
   retryPayment,
+  updatePaymentStatus,
 };

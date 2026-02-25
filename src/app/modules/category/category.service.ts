@@ -116,10 +116,7 @@ const updateCategory = async (id: string, payload: any) => {
     data: {
       name: payload.name ?? category.name,
       slug: payload.slug ?? category.slug,
-      parentId:
-        payload.parentId !== undefined
-          ? payload.parentId
-          : category.parentId,
+        parentId:null,
     },
   });
 };

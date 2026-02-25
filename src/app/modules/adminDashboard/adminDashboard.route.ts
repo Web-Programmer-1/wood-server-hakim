@@ -1,7 +1,8 @@
 import express from "express";
 import { authGuard } from "../../middlewares/auth";
-import { UserRole } from "../../constants/UserRole";
+
 import { getAdminDashboardOverviewController } from "./adminDashboard.controller";
+import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 // admin overview

@@ -2,7 +2,7 @@ import axios from "axios";
 
 import qs from "qs";
 import { prisma } from "../../shared/prisma";
-import { MPaymentStatus, PaymentProvider } from "@prisma/client";
+import { MPaymentStatus, OrderStatus, PaymentProvider, PaymentStatus } from "@prisma/client";
 import { sslCommerzHttpsAgent } from "../../../utils/sandboxPermission";
 
 type SSLSessionInput = {
@@ -458,6 +458,147 @@ const retryPayment = async (userId: string, orderId: string) => {
 
 
 
+
+
+type ManualUpdateInput = {
+  paymentId: string;
+  status: MPaymentStatus; // Payment table enum
+  note?: string;
+  updatedBy: string; // adminId
+};
+
+const mapPaymentToOrderPaymentStatus = (p: MPaymentStatus): PaymentStatus => {
+  // MPaymentStatus: INITIATED | PENDING | PAID | FAILED | REFUNDED
+  // Order PaymentStatus: INITIATED | PENDING | PAID | UNPAID | FAILED | REFUNDED
+  switch (p) {
+    case MPaymentStatus.INITIATED:
+      return PaymentStatus.INITIATED;
+    case MPaymentStatus.PENDING:
+      return PaymentStatus.PENDING;
+    case MPaymentStatus.PAID:
+      return PaymentStatus.PAID;
+    case MPaymentStatus.FAILED:
+      return PaymentStatus.FAILED;
+    case MPaymentStatus.REFUNDED:
+      return PaymentStatus.REFUNDED;
+    default:
+      return PaymentStatus.UNPAID;
+  }
+};
+
+// Basic transition rules (তুমি চাইলে আরও strict করতে পারো)
+const canTransition = (from: MPaymentStatus, to: MPaymentStatus) => {
+  if (from === to) return true;
+
+  // already paid -> initiated/pending/failed disallow
+  if (from === MPaymentStatus.PAID && (to === MPaymentStatus.INITIATED || to === MPaymentStatus.PENDING || to === MPaymentStatus.FAILED))
+    return false;
+
+  // refunded -> paid disallow
+  if (from === MPaymentStatus.REFUNDED && to === MPaymentStatus.PAID) return false;
+
+  return true;
+};
+
+const updatePaymentStatusManual = async (input: ManualUpdateInput) => {
+  const { paymentId, status: newStatus, note, updatedBy } = input;
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { order: true },
+  });
+
+  if (!payment) throw new Error("Payment not found");
+
+  // (Optional) only SSLCOMMERZ
+  if (payment.provider !== PaymentProvider.SSLCOMMERZ) {
+    throw new Error("Only SSLCOMMERZ payment can be updated here");
+  }
+
+  // Order guards
+  if (payment.order.status === OrderStatus.CANCELLED) {
+    throw new Error("Order is cancelled. Payment update not allowed.");
+  }
+  if (payment.order.status === OrderStatus.DELIVERED && newStatus !== MPaymentStatus.REFUNDED) {
+    
+    throw new Error("Order already delivered. Only REFUNDED is allowed.");
+  }
+
+  // Transition guard
+  if (!canTransition(payment.status, newStatus)) {
+    throw new Error(`Invalid transition: ${payment.status} -> ${newStatus}`);
+  }
+
+
+
+  const orderPaymentStatus = mapPaymentToOrderPaymentStatus(newStatus);
+
+  // Order status update policy
+  // - payment PAID => order CONFIRMED (যদি এখনো PENDING থাকে)
+  // - payment FAILED => order paymentStatus FAILED (order status untouched)
+  // - payment REFUNDED => order paymentStatus REFUNDED (order status untouched)
+  const orderUpdate: any = {
+    paymentStatus: orderPaymentStatus,
+  };
+
+  if (newStatus === MPaymentStatus.PAID) {
+    // PENDING থাকলে CONFIRMED করে দাও
+    if (payment.order.status === OrderStatus.PENDING) {
+      orderUpdate.status = OrderStatus.CONFIRMED;
+    }
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedPayment = await tx.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: newStatus,
+        rawResponse: {
+          ...(payment.rawResponse as any),
+          manualUpdate: {
+            status: newStatus,
+            note: note || null,
+            updatedBy,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      },
+      select: {
+        id: true,
+        orderId: true,
+        provider: true,
+        status: true,
+        amount: true,
+        updatedAt: true,
+      },
+    });
+
+    const updatedOrder = await tx.order.update({
+      where: { id: payment.orderId },
+      data: orderUpdate,
+      select: {
+        id: true,
+        status: true,
+        paymentStatus: true,
+        totalAmount: true,
+      },
+    });
+
+    return { updatedPayment, updatedOrder };
+  });
+
+  return result;
+};
+
+
+
+
+
+
+
+
+
+
 export const SSLCommerzService = {
   createSession,
   handleSuccess,
@@ -467,4 +608,5 @@ export const SSLCommerzService = {
   getMyPayments,
   getPaymentByOrder,
   retryPayment,
+  updatePaymentStatusManual,
 };

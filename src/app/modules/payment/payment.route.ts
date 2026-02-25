@@ -42,7 +42,11 @@ router.post(
 
 
 
-
+router.patch(
+  "/:paymentId/status",
+  authGuard(UserRole.ADMIN),
+  PaymentController.updatePaymentStatus
+);
 
 
 

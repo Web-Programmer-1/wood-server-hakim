@@ -3,7 +3,7 @@ import { getShippingFee } from "../../../helper/Shipping";
 import { prisma } from "../../shared/prisma";
 
 import { SSLCommerzService } from "../payment/payment.service";
-import { BkashService } from "../bkashPayment/bkash.service";
+
 import { PaperflyService } from "../courier/courier.service";
 import { tr } from "zod/v4/locales";
 import { getDhakaDayRangeUtc, getDhakaRangeUtcInclusive, getDhakaThisMonthRangeUtc, getDhakaThisWeekRangeUtc, toInt } from "./OrderCustomDate";
@@ -205,32 +205,7 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       return { type: "COD", order };
     }
 
-    // BKASH
-    if (paymentMethod === "BKASH") {
-      const bkash = await BkashService.createBkashPayment(
-        userId,
-        order.id,
-        totalAmount
-      );
-
-      await tx.payment.create({
-        data: {
-          orderId: order.id,
-          provider: "BKASH",
-          amount: totalAmount,
-          transactionId: bkash.paymentID,
-          status: "PENDING",
-          redirectUrl: bkash.bkashURL,
-        },
-      });
-
-      return {
-        type: "REDIRECT",
-        provider: "BKASH",
-        redirectUrl: bkash.bkashURL,
-        orderId: order.id,
-      };
-    }
+   
 
     // SSLCOMMERZ
     const payment = await tx.payment.create({
