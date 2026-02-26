@@ -394,6 +394,7 @@ export const AuthService = {
       message: "Logged in successfully.",
       accessToken,
       refreshToken,
+      user,
     };
   },
 
