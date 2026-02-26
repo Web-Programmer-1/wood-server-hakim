@@ -1,9 +1,77 @@
 import { Request, Response } from "express";
 import { createInquiryService, deleteInquiryService, getInquiriesService, getInquiryByIdService, sendQuotationEmailService, updateInquiryStatusService } from "./inquiry.service";
+import { sendEmail } from "../../../utils/nodeMailer";
+
+
+// export const createInquiry = async (req: Request, res: Response) => {
+//   try {
+//     const inquiry = await createInquiryService(req.body);
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Inquiry created successfully",
+//       data: inquiry,
+//     });
+//   } catch (error: any) {
+//     if (error.message === "VALIDATION_ERROR") {
+//       return res.status(400).json({
+//         success: false,
+//         message: "name, email, subject, message are required",
+//       });
+//     }
+
+//     console.error("Create Inquiry Error:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
+
+
+
+
+
 
 export const createInquiry = async (req: Request, res: Response) => {
   try {
     const inquiry = await createInquiryService(req.body);
+
+    // ✅ Company Gmail এ notification যাবে
+    const businessEmail = process.env.BUSINESS_EMAIL || process.env.EMAIL_USER;
+
+    if (businessEmail) {
+      const html = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2 style="margin:0 0 10px;">New Inquiry Received</h2>
+          <p style="margin:0 0 10px;">A customer has submitted a new inquiry.</p>
+
+          <div style="border:1px solid #eee; padding:12px; border-radius:8px;">
+            <p><b>Code:</b> ${inquiry.code}</p>
+            <p><b>Name:</b> ${inquiry.name}</p>
+            <p><b>Email:</b> ${inquiry.email}</p>
+            <p><b>Phone:</b> ${inquiry.phone ?? "-"}</p>
+            <p><b>Subject:</b> ${inquiry.subject}</p>
+            <p><b>Message:</b><br/>${inquiry.message.replace(/\n/g, "<br/>")}</p>
+          </div>
+
+          <p style="margin-top:14px; color:#666; font-size:12px;">
+            Auto notification from WTS Wood inquiry system.
+          </p>
+        </div>
+      `;
+
+      // ⚠️ Email fail হলেও inquiry create যেন success থাকে
+      sendEmail(
+        businessEmail,
+        `New Inquiry: ${inquiry.code}`,
+        `New inquiry received from ${inquiry.name}`,
+        html
+      ).catch((err) => console.error("Business email failed:", err));
+    }
 
     return res.status(201).json({
       success: true,
@@ -26,6 +94,7 @@ export const createInquiry = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 
 
