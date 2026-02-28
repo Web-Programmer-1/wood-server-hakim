@@ -2,7 +2,12 @@ import axios from "axios";
 
 import qs from "qs";
 import { prisma } from "../../shared/prisma";
-import { MPaymentStatus, OrderStatus, PaymentProvider, PaymentStatus } from "@prisma/client";
+import {
+  MPaymentStatus,
+  OrderStatus,
+  PaymentProvider,
+  PaymentStatus,
+} from "@prisma/client";
 import { sslCommerzHttpsAgent } from "../../../utils/sandboxPermission";
 
 type SSLSessionInput = {
@@ -15,12 +20,7 @@ type SSLSessionInput = {
   city?: string;
   area?: string;
   note?: string;
-
 };
-
-
-
-
 
 const createSession = async (input: SSLSessionInput) => {
   const payload = {
@@ -43,9 +43,9 @@ const createSession = async (input: SSLSessionInput) => {
     cus_name: input.customerName,
     cus_email: input.email || "test@example.com",
     cus_phone: input.phone,
-    cus_add1: input.addressLine1 || "N/A",      // ✅ MUST
-    cus_city: input.city || "Dhaka",             // ✅ MUST
-    cus_country: "Bangladesh",                   // ✅ MUST
+    cus_add1: input.addressLine1 || "N/A", // ✅ MUST
+    cus_city: input.city || "Dhaka", // ✅ MUST
+    cus_country: "Bangladesh", // ✅ MUST
 
     // 📦 Product info
     product_name: "Order Payment",
@@ -64,7 +64,7 @@ const createSession = async (input: SSLSessionInput) => {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       httpsAgent: sslCommerzHttpsAgent,
-    }
+    },
   );
 
   // 🔴 Defensive check
@@ -76,14 +76,6 @@ const createSession = async (input: SSLSessionInput) => {
   return res.data;
 };
 
-
-
-
-
-
-
-
-
 const handleSuccess = async (body: any) => {
   const { tran_id, val_id, amount } = body;
 
@@ -94,7 +86,7 @@ const handleSuccess = async (body: any) => {
     {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       httpsAgent: sslCommerzHttpsAgent,
-    }
+    },
   );
 
   if (validationRes.data.status !== "VALID") {
@@ -120,6 +112,137 @@ const handleSuccess = async (body: any) => {
   });
 
   return true;
+};
+
+// const getReceiptByTranId = async (tranId: string) => {
+//   const payment = await prisma.payment.findFirst({
+//    where: { orderId: tranId, provider: "SSLCOMMERZ" },
+//   orderBy: { createdAt: "desc" },
+//     include: {
+//       order: {
+//         select: {
+//           id: true,
+
+//           user:{
+//             select:{
+//               email:true,
+//               name:true,
+//               phone:true,
+//               profile: {
+//                 select: {
+//                   avatarUri: true,
+//                   gender: true,
+//                   profession: true,
+//                   occupationType: true,
+//                   bio: true,
+//                 },
+//               },
+
+//             }
+//           },
+//           addressLine1: true,
+//           city: true,
+//           area: true,
+
+//           totalAmount: true,
+//           status: true,
+//           createdAt: true,
+//         },
+//       },
+//     },
+//   });
+
+//   if (!payment) throw new Error("Receipt not found");
+
+//   const raw: any = payment.rawResponse || {}; // validationRes.data (তুমি save করছো)
+
+//   return {
+//     orderId: payment.orderId,
+//     invoiceNo: raw?.invoice_no || null,
+//     transactionId: payment.gatewayRef || raw?.bank_tran_id || null,
+//     paymentMethod: raw?.card_type || raw?.card_issuer || raw?.payment_type || "SSLCOMMERZ",
+//     amount: payment.amount,
+//     currency: raw?.currency || "BDT",
+//     paidAt: payment.updatedAt,
+//     status: payment.status,
+
+//     order: {
+//       id: payment.order.id,
+//       user: payment.order.user.email,
+//       addressLine1: payment.order.addressLine1,
+//       city: payment.order.city,
+//       area: payment.order.area,
+//       totalAmount: payment.order.totalAmount,
+//       status: payment.order.status,
+//       createdAt: payment.order.createdAt,
+//     },
+//   };
+// };
+
+const getReceiptByTranId = async (tranId: string) => {
+  const include = {
+    order: {
+      select: {
+        id: true,
+        user: {
+          select: {
+            email: true,
+            name: true,
+            phone: true,
+          },
+        },
+
+        addressLine1: true,
+        city: true,
+        area: true,
+        totalAmount: true,
+        status: true,
+        createdAt: true,
+      },
+    },
+  };
+
+  // ✅ 1) Prefer PAID
+  let payment = await prisma.payment.findFirst({
+    where: { orderId: tranId, provider: "SSLCOMMERZ", status: "PAID" },
+    orderBy: { updatedAt: "desc" },
+    include,
+  });
+
+  // ✅ 2) fallback latest
+  if (!payment) {
+    payment = await prisma.payment.findFirst({
+      where: { orderId: tranId, provider: "SSLCOMMERZ" },
+      orderBy: { updatedAt: "desc" },
+      include,
+    });
+  }
+
+  if (!payment) throw new Error("Receipt not found");
+
+  const raw: any = payment.rawResponse || {};
+
+  return {
+    orderId: payment.orderId,
+
+    invoiceNo:
+      raw?.invoice_no || `INV-${payment.orderId.slice(0, 8).toUpperCase()}`,
+    transactionId: payment.gatewayRef || raw?.bank_tran_id || null,
+    paymentMethod:
+      raw?.card_type || raw?.card_issuer || raw?.payment_type || "SSLCOMMERZ",
+    amount: payment.amount,
+    currency: raw?.currency || "BDT",
+    paidAt: payment.updatedAt,
+    status: payment.status,
+
+    order: {
+      name: payment.order.user.email,
+      phone: payment.order.user.phone,
+
+      status: payment.order.status,
+      createdAt: payment.order.createdAt,
+    },
+  };
 };
 
 const handleFail = async (body: any) => {
@@ -176,7 +299,7 @@ const handleIpn = async (body: any) => {
     }&store_passwd=${process.env.SSLCOMMERZ_STORE_PASSWORD}&format=json`,
     {
       httpsAgent: sslCommerzHttpsAgent,
-    }
+    },
   );
 
   const validation = validationRes.data;
@@ -222,8 +345,6 @@ const handleIpn = async (body: any) => {
 
 // -----------------------CUSTOMAR Dashboard Api ------------------------------------------------
 
-
-
 type GetMyPaymentsParams = {
   page?: number;
   limit?: number;
@@ -244,16 +365,13 @@ const getMyPayments = async (userId: string, params: GetMyPaymentsParams) => {
     },
   };
 
-
   if (params.status) {
     where.status = params.status;
   }
 
-
   if (params.provider) {
     where.provider = params.provider;
   }
-
 
   if (params.from || params.to) {
     where.createdAt = {};
@@ -274,14 +392,12 @@ const getMyPayments = async (userId: string, params: GetMyPaymentsParams) => {
         createdAt: "desc",
       },
       select: {
-   
         id: true,
         provider: true,
         status: true,
         amount: true,
         createdAt: true,
 
-    
         order: {
           select: {
             id: true,
@@ -297,10 +413,10 @@ const getMyPayments = async (userId: string, params: GetMyPaymentsParams) => {
                   select: {
                     images: {
                       select: {
-                    imageUrl:true,
-                    isPrimary:true,
+                        imageUrl: true,
+                        isPrimary: true,
                       },
-                      take: 1, 
+                      take: 1,
                     },
                   },
                 },
@@ -324,9 +440,7 @@ const getMyPayments = async (userId: string, params: GetMyPaymentsParams) => {
   };
 };
 
-
 const getPaymentByOrder = async (userId: string, orderId: string) => {
-
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
@@ -340,15 +454,15 @@ const getPaymentByOrder = async (userId: string, orderId: string) => {
       items: {
         select: {
           productName: true,
-          product:{
-            select:{
-              images:{
-                select:{
-                  imageUrl:true,
-                  isPrimary:true,
-                }
-              }
-            }
+          product: {
+            select: {
+              images: {
+                select: {
+                  imageUrl: true,
+                  isPrimary: true,
+                },
+              },
+            },
           },
           quantity: true,
           unitPrice: true,
@@ -383,13 +497,6 @@ const getPaymentByOrder = async (userId: string, orderId: string) => {
     payment,
   };
 };
-
-
-
-
-
-
-
 
 const retryPayment = async (userId: string, orderId: string) => {
   // 1️⃣ Validate order ownership
@@ -455,11 +562,6 @@ const retryPayment = async (userId: string, orderId: string) => {
   };
 };
 
-
-
-
-
-
 type ManualUpdateInput = {
   paymentId: string;
   status: MPaymentStatus; // Payment table enum
@@ -491,11 +593,17 @@ const canTransition = (from: MPaymentStatus, to: MPaymentStatus) => {
   if (from === to) return true;
 
   // already paid -> initiated/pending/failed disallow
-  if (from === MPaymentStatus.PAID && (to === MPaymentStatus.INITIATED || to === MPaymentStatus.PENDING || to === MPaymentStatus.FAILED))
+  if (
+    from === MPaymentStatus.PAID &&
+    (to === MPaymentStatus.INITIATED ||
+      to === MPaymentStatus.PENDING ||
+      to === MPaymentStatus.FAILED)
+  )
     return false;
 
   // refunded -> paid disallow
-  if (from === MPaymentStatus.REFUNDED && to === MPaymentStatus.PAID) return false;
+  if (from === MPaymentStatus.REFUNDED && to === MPaymentStatus.PAID)
+    return false;
 
   return true;
 };
@@ -519,8 +627,10 @@ const updatePaymentStatusManual = async (input: ManualUpdateInput) => {
   if (payment.order.status === OrderStatus.CANCELLED) {
     throw new Error("Order is cancelled. Payment update not allowed.");
   }
-  if (payment.order.status === OrderStatus.DELIVERED && newStatus !== MPaymentStatus.REFUNDED) {
-    
+  if (
+    payment.order.status === OrderStatus.DELIVERED &&
+    newStatus !== MPaymentStatus.REFUNDED
+  ) {
     throw new Error("Order already delivered. Only REFUNDED is allowed.");
   }
 
@@ -528,8 +638,6 @@ const updatePaymentStatusManual = async (input: ManualUpdateInput) => {
   if (!canTransition(payment.status, newStatus)) {
     throw new Error(`Invalid transition: ${payment.status} -> ${newStatus}`);
   }
-
-
 
   const orderPaymentStatus = mapPaymentToOrderPaymentStatus(newStatus);
 
@@ -590,15 +698,6 @@ const updatePaymentStatusManual = async (input: ManualUpdateInput) => {
   return result;
 };
 
-
-
-
-
-
-
-
-
-
 export const SSLCommerzService = {
   createSession,
   handleSuccess,
@@ -609,4 +708,5 @@ export const SSLCommerzService = {
   getPaymentByOrder,
   retryPayment,
   updatePaymentStatusManual,
+  getReceiptByTranId,
 };
