@@ -4,25 +4,75 @@ import { MPaymentStatus, PaymentProvider } from "@prisma/client";
 
 
 
+// const sslSuccess = async (req: Request, res: Response) => {
+//   const result = await SSLCommerzService.handleSuccess(req.body);
+
+//   console.log(result)
+//   // frontend redirect (optional)
+//   return res.redirect(process.env.SSLCOMMERZ_FRONTEND_SUCCESS!);
+
+
+// };
+
+// const sslFail = async (req: Request, res: Response) => {
+//   await SSLCommerzService.handleFail(req.body);
+//   return res.redirect(process.env.SSLCOMMERZ_FRONTEND_FAIL!);
+// };
+
+// const sslCancel = async (req: Request, res: Response) => {
+//   await SSLCommerzService.handleCancel(req.body);
+//   return res.redirect(process.env.SSLCOMMERZ_FRONTEND_CANCEL!);
+// };
+
+
+
+
+
 const sslSuccess = async (req: Request, res: Response) => {
-  const result = await SSLCommerzService.handleSuccess(req.body);
+  await SSLCommerzService.handleSuccess(req.body);
 
-  console.log(result)
-  // frontend redirect (optional)
-  return res.redirect(process.env.SSLCOMMERZ_FRONTEND_SUCCESS!);
+  const tranId = req.body?.tran_id;
+  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_SUCCESS}?tran_id=${tranId}`);
+};
 
 
+const getSslReceipt = async (req: Request, res: Response) => {
+  try {
+    const { tranId } = req.params;
+
+    const data = await SSLCommerzService.getReceiptByTranId(tranId);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    return res.status(404).json({
+      success: false,
+      message: error.message || "Receipt not found",
+    });
+  }
 };
 
 const sslFail = async (req: Request, res: Response) => {
   await SSLCommerzService.handleFail(req.body);
-  return res.redirect(process.env.SSLCOMMERZ_FRONTEND_FAIL!);
+  const tranId = req.body?.tran_id;
+  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_FAIL}?tran_id=${tranId}`);
 };
 
 const sslCancel = async (req: Request, res: Response) => {
   await SSLCommerzService.handleCancel(req.body);
-  return res.redirect(process.env.SSLCOMMERZ_FRONTEND_CANCEL!);
+  const tranId = req.body?.tran_id;
+  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_CANCEL}?tran_id=${tranId}`);
 };
+
+
+
+
+
+
+
+
 
 
 const sslIpn = async (req: Request, res: Response) => {
@@ -146,4 +196,5 @@ export const PaymentController = {
   getPaymentByOrder,
   retryPayment,
   updatePaymentStatus,
+  getSslReceipt,
 };

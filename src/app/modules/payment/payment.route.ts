@@ -10,8 +10,10 @@ const router = express.Router();
 router.post("/ssl/success", PaymentController.sslSuccess);
 router.post("/ssl/fail", PaymentController.sslFail);
 router.post("/ssl/cancel", PaymentController.sslCancel);
-
+// Public receipt for payment pages (no auth)
+router.get("/ssl/receipt/:tranId", PaymentController.getSslReceipt);
 router.post("/ssl/ipn", PaymentController.sslIpn);
+
 
 
 
