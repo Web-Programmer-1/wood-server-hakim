@@ -244,7 +244,7 @@ const getReceiptByTranId = async (tranId: string) => {
     },
   };
 };
-
+// Comment
 const handleFail = async (body: any) => {
   const { tran_id } = body;
 
