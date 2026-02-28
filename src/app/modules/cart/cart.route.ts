@@ -12,10 +12,10 @@ router.get("/", authGuard(UserRole.CUSTOMER, UserRole.ADMIN), CartController.get
 
 
 // cart.route.ts
-router.patch("/item/:itemId", authGuard(UserRole.CUSTOMER), CartController.updateQuantity);
+router.patch("/item/:itemId", authGuard(UserRole.CUSTOMER, UserRole.ADMIN), CartController.updateQuantity);
 
 
-router.delete("/item/:itemId", authGuard(UserRole.CUSTOMER), CartController.removeItem);
+router.delete("/item/:itemId", authGuard(UserRole.CUSTOMER, UserRole.ADMIN), CartController.removeItem);
 
 
 export const CartRoutes = router;

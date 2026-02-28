@@ -989,6 +989,14 @@ const getAllOrdersAdmin = async (query: any) => {
             lineTotal: true,
           },
         },
+        payments: {
+          select: {
+            id: true,
+            status: true,
+            provider: true,
+            createdAt: true,
+          },
+        },
         _count: { select: { items: true } },
       },
     }),
