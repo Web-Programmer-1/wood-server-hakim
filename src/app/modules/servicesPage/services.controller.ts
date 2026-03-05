@@ -43,4 +43,128 @@ export const ServiceSectionController = {
       });
     }
   },
+
+
+
+
+
+
+    // ✅ GET ALL (allServices)
+  getAll: async (_req: Request, res: Response) => {
+    try {
+      const result = await ServiceSectionService.getAll();
+      return res.status(httpStatus.OK).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: error?.message || "Failed to load service sections",
+      });
+    }
+  },
+
+  // ✅ GET SINGLE (getByServices)
+  getById: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const result = await ServiceSectionService.getById(id);
+
+      return res.status(httpStatus.OK).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        success: false,
+        message: error?.message || "Service section not found",
+      });
+    }
+  },
+
+
+
+
+  update: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      // banner optional
+      const file = req.file as any;
+
+      const payload: any = {
+        heading: req.body?.heading,
+        description: req.body?.description,
+
+        primaryBtnText: req.body?.primaryBtnText,
+        primaryBtnUrl: req.body?.primaryBtnUrl,
+        secondaryBtnText: req.body?.secondaryBtnText,
+        secondaryBtnUrl: req.body?.secondaryBtnUrl,
+      };
+
+      if (req.body?.sortOrder !== undefined) {
+        payload.sortOrder = Number(req.body.sortOrder);
+      }
+
+      // if new banner uploaded -> replace bgImageUrl
+      if (file?.location) {
+        payload.bgImageUrl = file.location;
+      }
+
+      const result = await ServiceSectionService.update(id, payload);
+
+      // slider friendly: return all (optional)
+      const all = await ServiceSectionService.getAll();
+
+      return res.status(httpStatus.OK).json({
+        success: true,
+        message: "Service section updated successfully",
+        data: all,
+        updated: result,
+      });
+    } catch (error: any) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: error?.message || "Failed to update service section",
+      });
+    }
+  },
+
+
+
+
+
+
+
+
+
+   delete: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      await ServiceSectionService.delete(id);
+
+      // slider friendly: return all after delete
+      const all = await ServiceSectionService.getAll();
+
+      return res.status(httpStatus.OK).json({
+        success: true,
+        message: "Service section deleted successfully",
+       
+      });
+    } catch (error: any) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: error?.message || "Failed to delete service section",
+      });
+    }
+  },
+
+
+
+
+
+
+
 };

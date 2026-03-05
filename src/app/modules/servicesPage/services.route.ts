@@ -7,7 +7,25 @@ const router = Router();
 
 router.post(
   "/",
-  uploadServiceSectionBanner, // banner image upload
+  uploadServiceSectionBanner, 
   ServiceSectionController.create
 );
+
+
+
+
+router.get("/", ServiceSectionController.getAll);
+
+// GET SINGLE
+router.get("/:id", ServiceSectionController.getById);
+
+// UPDATE (banner optional)
+router.patch("/:id", uploadServiceSectionBanner, ServiceSectionController.update);
+
+// DELETE
+router.delete("/:id", ServiceSectionController.delete);
+
+
+
+
 export const ServiceSectionRoutes = router;
