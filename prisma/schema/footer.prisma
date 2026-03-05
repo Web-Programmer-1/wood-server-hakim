@@ -1,28 +1,22 @@
 model Footer {
-  id String @id @default(uuid())
-
+  id          String    @id @default(uuid())
   logoUrl     String
   description String
   email       String
   phone       String
-
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Office {
-  id String @id @default(uuid())
-
-  title   String
-  address String
-  phone   String
-
+  id        String    @id @default(uuid())
+  title     String
+  address   String
+  phone     String
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }

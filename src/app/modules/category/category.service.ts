@@ -52,6 +52,7 @@ const getMachinesByCategory = async (slug: string) => {
       id: true,
       name: true,
       slug: true,
+      description: true,
       thumbnailImage: true,
     },
   });
@@ -80,6 +81,7 @@ const createCategory = async (payload: any) => {
     data: {
       name: payload.name,
       slug: payload.slug,
+      description: payload.description || null,
       parentId: payload.parentId || null,
     },
   });
@@ -116,6 +118,7 @@ const updateCategory = async (id: string, payload: any) => {
     data: {
       name: payload.name ?? category.name,
       slug: payload.slug ?? category.slug,
+      description: payload.description ?? category.description,
         parentId:null,
     },
   });

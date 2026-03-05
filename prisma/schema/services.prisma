@@ -1,0 +1,23 @@
+
+model ServiceSection {
+  id String @id @default(uuid())
+
+  heading     String
+  description String?
+
+  primaryBtnText   String?
+  primaryBtnUrl    String?
+  secondaryBtnText String?
+  secondaryBtnUrl  String?
+
+  bgImageUrl String
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([createdAt])
+  @@map("service_sections")
+}

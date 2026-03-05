@@ -24,7 +24,7 @@ router.get(
 
 router.post(
   "/admin",
-  // authGuard(UserRole.ADMIN),
+  authGuard(UserRole.ADMIN),
   CategoryController.createCategory
 );
 
