@@ -22,4 +22,34 @@ export const uploadServiceSectionBanner = multer({
     if (!file.mimetype.startsWith("image/")) cb(new Error("Only image files are allowed"));
     else cb(null, true);
   },
-}).single("banner"); // ✅ banner image
+}).single("banner"); 
+
+
+
+
+
+
+export const uploadTestimonialAssets = multer({
+  storage: multerS3({
+    s3: s3 as any,
+    bucket: process.env.AWS_BUCKET_NAME!,
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: (req, file, cb) => {
+      const ext = file.originalname.split(".").pop();
+      const randomName = crypto.randomBytes(16).toString("hex");
+
+      if (file.fieldname === "video") {
+        cb(null, `testimonials/videos/${randomName}.${ext}`);
+      } else {
+        cb(null, `testimonials/images/${randomName}.${ext}`);
+      }
+    },
+  }),
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok =
+      file.mimetype.startsWith("image/") || file.mimetype.startsWith("video/");
+    if (!ok) cb(new Error("Only image/video files are allowed"));
+    else cb(null, true);
+  },
+}).any();

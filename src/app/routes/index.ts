@@ -17,6 +17,7 @@ import { AdminCouponRoutes } from '../modules/coupon/coupon.route';
 import { InventoryRoutes } from '../modules/inventory/inventory.route';
 import { AdminDashboardRoutes } from '../modules/adminDashboard/adminDashboard.route';
 import { ServiceSectionRoutes } from '../modules/servicesPage/services.route';
+import { TestimonialRoutes } from '../modules/servicesPage/testimoniral/testimoniral.route';
 
 
 const router = express.Router();
@@ -95,6 +96,10 @@ const moduleRoutes = [
     {
         path: '/services',
         route: ServiceSectionRoutes,
+    },
+    {
+        path: '/testimonial',
+        route: TestimonialRoutes,
     },
 
     

@@ -21,3 +21,30 @@ model ServiceSection {
   @@index([createdAt])
   @@map("service_sections")
 }
+
+
+
+model TestimonialSection {
+  id String @id @default(uuid())
+
+  avatarUrl String?
+  description String?
+
+  personName  String?
+  companyName String?
+
+  cardBgImageUrl String?
+
+  videoType  String? 
+  youtubeUrl String?
+  videoUrl   String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([videoType])
+  @@map("testimonial_sections")
+}

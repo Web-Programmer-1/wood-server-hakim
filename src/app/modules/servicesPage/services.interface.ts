@@ -28,3 +28,9 @@ export type IUpdateServiceSectionPayload = {
   bgImageUrl?: string; 
   sortOrder?: number;
 };
+
+
+
+
+
+
