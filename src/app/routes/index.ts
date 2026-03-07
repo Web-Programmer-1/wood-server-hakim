@@ -17,9 +17,9 @@ import { AdminCouponRoutes } from '../modules/coupon/coupon.route';
 import { InventoryRoutes } from '../modules/inventory/inventory.route';
 import { AdminDashboardRoutes } from '../modules/adminDashboard/adminDashboard.route';
 import { ServiceSectionRoutes } from '../modules/servicesPage/services.route';
-import { TestimonialRoutes } from '../modules/servicesPage/testimoniral/testimoniral.route';
-import { ConsultencyBannerRoutes } from '../modules/servicesPage/consultency/consultency.route';
-import { FoundationStoryRoutes } from '../modules/servicesPage/foundation/foundation.route';
+import { TestimonialRoutes } from '../modules/testimoniral/testimoniral.route';
+import { ConsultencyBannerRoutes } from '../modules/consultency/consultency.route';
+import { FoundationStoryRoutes } from '../modules/foundation/foundation.route';
 
 
 const router = express.Router();

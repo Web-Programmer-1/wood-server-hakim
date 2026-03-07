@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ICreateConsultencyBannerPayload, IGetAllConsultencyBannerQuery, IUpdateConsultencyBannerPayload } from "./consultency.interface";
-import { prisma } from "../../../shared/prisma";
+import { prisma } from "../../shared/prisma";
 
 export const ConsultencyBannerService = {
   create: async (payload: ICreateConsultencyBannerPayload) => {

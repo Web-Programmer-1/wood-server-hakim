@@ -28,7 +28,6 @@ export const uploadServiceSectionBanner = multer({
 
 
 
-
 export const uploadTestimonialAssets = multer({
   storage: multerS3({
     s3: s3 as any,
@@ -52,8 +51,11 @@ export const uploadTestimonialAssets = multer({
     if (!ok) cb(new Error("Only image/video files are allowed"));
     else cb(null, true);
   },
-}).any();
-
+}).fields([
+  { name: "avatar", maxCount: 1 },
+  { name: "cardBg", maxCount: 1 },
+  { name: "video", maxCount: 1 },
+]);
 
 
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { uploadConsultencyBanner } from "../../../middlewares/UploadServicesBanner";
+import { uploadConsultencyBanner } from "../../middlewares/UploadServicesBanner";
 import { ConsultencyBannerController } from "./consultency.controller";
-import { authGuard } from "../../../middlewares/auth";
+import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
 const router = Router();

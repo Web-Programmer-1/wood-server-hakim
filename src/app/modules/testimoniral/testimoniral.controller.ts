@@ -3,46 +3,42 @@ import httpStatus from "http-status";
 import { TestimonialService } from "./testimoniral.service";
 
 export const TestimonialController = {
-  create: async (req: Request, res: Response) => {
-    try {
-      const files = req.files as {
-        [fieldname: string]: Express.MulterS3.File[];
-      };
+create: async (req: Request, res: Response) => {
+  try {
+    const files = req.files as {
+      [fieldname: string]: Express.MulterS3.File[];
+    };
 
-      const avatarUrl = files?.avatar?.[0]?.location;
-      const cardBgImageUrl = files?.cardBg?.[0]?.location;
-      const videoUrl = files?.video?.[0]?.location;
+    const avatarUrl = files?.avatar?.[0]?.location;
+    const cardBgImageUrl = files?.cardBg?.[0]?.location;
+    const videoUrl = files?.video?.[0]?.location;
 
-      const payload = {
-        avatarUrl,
-        cardBgImageUrl,
+    const payload = {
+      avatarUrl,
+      cardBgImageUrl,
+      description: req.body?.description,
+      personName: req.body?.personName,
+      companyName: req.body?.companyName,
+      videoType: req.body?.videoType,
+      youtubeUrl: req.body?.youtubeUrl,
+      videoUrl,
+      sortOrder: req.body?.sortOrder ? Number(req.body.sortOrder) : 0,
+    };
 
-        description: req.body?.description,
-        personName: req.body?.personName,
-        companyName: req.body?.companyName,
+    const result = await TestimonialService.create(payload);
 
-        videoType: req.body?.videoType,     // "YOUTUBE" | "UPLOAD"
-        youtubeUrl: req.body?.youtubeUrl,
-        videoUrl: videoUrl,                 // UPLOAD হলে এখানে আসবে
-
-        sortOrder: req.body?.sortOrder ? Number(req.body.sortOrder) : 0,
-      };
-
-      const result = await TestimonialService.create(payload);
-
-      return res.status(httpStatus.CREATED).json({
-        success: true,
-        message: "Testimonial created successfully",
-        data: result,
-      });
-    } catch (error: any) {
-      return res.status(httpStatus.BAD_REQUEST).json({
-        success: false,
-        message: error?.message || "Failed to create testimonial",
-      });
-    }
-  },
-
+    return res.status(httpStatus.CREATED).json({
+      success: true,
+      message: "Testimonial created successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      success: false,
+      message: error?.message || "Failed to create testimonial",
+    });
+  }
+},
 
 
    getAll: async (req: Request, res: Response) => {

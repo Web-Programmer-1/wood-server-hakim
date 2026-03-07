@@ -1,8 +1,8 @@
 
 import express from "express";
-import { uploadFoundationStoryAssets } from "../../../middlewares/UploadServicesBanner";
+import { uploadFoundationStoryAssets } from "../../middlewares/UploadServicesBanner";
 import { FoundationStoryController } from "./foundation.controller";
-import { authGuard } from "../../../middlewares/auth";
+import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
 

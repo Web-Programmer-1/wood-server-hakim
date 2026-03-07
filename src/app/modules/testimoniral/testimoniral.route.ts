@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { uploadTestimonialAssets } from "../../../middlewares/UploadServicesBanner";
+import { uploadTestimonialAssets } from "../../middlewares/UploadServicesBanner";
 import { TestimonialController } from "./testimoniral.controller";
-import { authGuard } from "../../../middlewares/auth";
+import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
 const router = Router();
