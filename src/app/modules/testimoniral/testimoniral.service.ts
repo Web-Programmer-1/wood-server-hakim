@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ICreateTestimonialPayload, IGetAllTestimonialQuery } from "./testimoniral.interface";
-import { prisma } from "../../../shared/prisma";
+import { prisma } from "../../shared/prisma";
 
 export const TestimonialService = {
   create: async (payload: ICreateTestimonialPayload) => {
@@ -31,8 +31,8 @@ export const TestimonialService = {
     }
 
     if (vt === "UPLOAD" && (!payload.videoUrl || payload.videoUrl.trim().length === 0)) {
-      throw new Error("videoUrl is required when videoType is UPLOAD");
-    }
+  throw new Error("videoUrl is required when videoType is UPLOAD");
+}
 
     if (payload.sortOrder !== undefined && payload.sortOrder < 0) {
       throw new Error("sortOrder must be a positive number");

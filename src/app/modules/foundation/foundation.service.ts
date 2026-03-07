@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ICreateFoundationStoryPayload, IGetAllFoundationStoryQuery } from "./foundation.interface";
-import { prisma } from "../../../shared/prisma";
+import { prisma } from "../../shared/prisma";
 
 export const FoundationStoryService = {
 
