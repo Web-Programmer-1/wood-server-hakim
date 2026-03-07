@@ -1,49 +1,46 @@
 model Category {
-  id        String     @id @default(uuid())
-  name      String
-  slug      String     @unique
-  parentId  String?
-  createdAt DateTime   @default(now())
-  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryTree")
-  machines  Machine[]
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  parentId    String?
+  createdAt   DateTime   @default(now())
+  description String?    @default("")
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  machines    Machine[]
 }
 
 model Machine {
-  id             String         @id @default(uuid())
-  name           String
-  slug           String         @unique
-  shortDesc      String?
-  description    String?
-  thumbnailImage String?
-  bannerImage    String?
-  isActive       Boolean        @default(true)
-  isFeatured     Boolean        @default(false)
-  categoryId     String
-  brand          String?
-  model          String?
-  features       Json?
-  specifications Json?
-  workSections   Json?
-  dynamicButtons Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  stockQuantity  Int            @default(0)
-  category       Category       @relation(fields: [categoryId], references: [id])
-  images         MachineImage[]
-  videos         MachineVideo[]
-
-  // ===== Pricing (NEW) =====
-  listPrice       Int // mandatory
-  discountPercent Int? // 0–100
-  discountPrice   Int? // auto-calculated
-  bookedQty       Int  @default(0)
-
-  // ----------------  Last Booking Info (simple) ----------------
-  bookedName  String?
-  bookedPhone String?
-  bookedEmail String?
-  bookedNote  String?
+  id              String         @id @default(uuid())
+  name            String
+  slug            String         @unique
+  shortDesc       String?
+  description     String?
+  thumbnailImage  String?
+  bannerImage     String?
+  isActive        Boolean        @default(true)
+  isFeatured      Boolean        @default(false)
+  categoryId      String
+  brand           String?
+  model           String?
+  features        Json?
+  specifications  Json?
+  workSections    Json?
+  dynamicButtons  Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  stockQuantity   Int            @default(0)
+  bookedQty       Int            @default(0)
+  discountPercent Int?
+  discountPrice   Int?
+  listPrice       Int
+  bookedEmail     String?
+  bookedName      String?
+  bookedNote      String?
+  bookedPhone     String?
+  category        Category       @relation(fields: [categoryId], references: [id])
+  images          MachineImage[]
+  videos          MachineVideo[]
 
   @@index([categoryId])
   @@index([id])
@@ -68,13 +65,11 @@ model MachineVideo {
   machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
 
-
-
 model StockMovement {
   id        String   @id @default(uuid())
-  itemType  String   // "PRODUCT" | "MACHINE"
+  itemType  String
   itemId    String
-  type      String   // IN | OUT | RESERVE | RELEASE | DAMAGE
+  type      String
   quantity  Int
   note      String?
   createdAt DateTime @default(now())
@@ -83,4 +78,3 @@ model StockMovement {
   @@index([itemId])
   @@index([createdAt])
 }
-

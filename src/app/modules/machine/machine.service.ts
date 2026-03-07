@@ -3,78 +3,430 @@
 import httpStatus from "http-status";
 import { ApiError } from "../../errors/ApiError";
 import { prisma } from "../../shared/prisma";
-import { GetMachinesParams, IMachine } from "./machine.interface";
+
 import PDFDocument from "pdfkit";
 import { Response } from "express";
+import { Prisma } from "@prisma/client";
 
 
 
-const getMachines = async (params: GetMachinesParams) => {
-  const {
-    page,
-    limit,
-    search,
-    categoryId,
-    sortBy,
-    sortOrder,
-  } = params;
+// const getMachines = async (params: GetMachinesParams) => {
+//   const {
+//     page,
+//     limit,
+//     search,
+//     categoryId,
+//     sortBy,
+//     sortOrder,
+//   } = params;
 
-  const skip = (page - 1) * limit;
+//   const skip = (page - 1) * limit;
 
-  const where: any = {
+//   const where: any = {
+//     isActive: true,
+//   };
+
+//   // 🔍 Search by name OR slug
+//   if (search) {
+//     where.OR = [
+//       { name: { contains: search, mode: "insensitive" } },
+//       { slug: { contains: search, mode: "insensitive" } },
+//     ];
+//   }
+
+//   // 🎯 Category filter
+//   if (categoryId) {
+//     where.categoryId = categoryId;
+//   }
+
+//   // 📦 Query data
+//   const [data, total] = await Promise.all([
+//     prisma.machine.findMany({
+//       where,
+//       skip,
+//       take: limit,
+//       select: {
+//         id: true,
+//         name: true,
+//         slug: true,
+//         thumbnailImage: true,
+//         stockQuantity: true,
+//         images:{
+//           select: {
+//             id: true,
+//             url: true,
+//             isPrimary: true,
+//           },
+//         },
+//        videos:{
+//         select:{
+//           id:true,
+//           url:true,
+//         },
+//        },
+//         createdAt: true,
+//         category: {
+//           select: {
+//             id: true,
+//             name: true,
+//             slug: true,
+//           },
+//         },
+//       },
+//       orderBy: {
+//         [sortBy]: sortOrder,
+//       },
+//     }),
+//     prisma.machine.count({ where }),
+//   ]);
+
+//   return {
+//     data,
+//     meta: {
+//       page,
+//       limit,
+//       total,
+//       totalPage: Math.ceil(total / limit),
+//     },
+//   };
+// };
+
+
+
+// type SortBy = "createdAt" | "name";
+// type SortOrder = "asc" | "desc";
+
+// type GetMachinesParams = {
+//   page: number;
+//   limit: number;
+//   search?: string;
+//   categoryId?: string;
+//   sortBy: SortBy;
+//   sortOrder: SortOrder;
+//   grouped?: boolean; // ✅ same API flag
+// };
+
+// export const getMachines = async (params: GetMachinesParams) => {
+//   const {
+//     page,
+//     limit,
+//     search,
+//     categoryId,
+//     sortBy,
+//     sortOrder,
+//     grouped,
+//   } = params;
+
+//   const safeSortBy: SortBy = sortBy === "name" ? "name" : "createdAt";
+//   const safeSortOrder: SortOrder = sortOrder === "asc" ? "asc" : "desc";
+
+//   const trimmedSearch = search?.trim();
+//   const searchWhere =
+//     trimmedSearch && trimmedSearch.length > 0
+//       ? {
+//           OR: [
+//             { name: { contains: trimmedSearch, mode: "insensitive" } },
+//             { slug: { contains: trimmedSearch, mode: "insensitive" } },
+//           ],
+//         }
+//       : {};
+
+//   // ✅ MODE-1: grouped=true => প্রতি category তে 6টা করে
+// if (grouped) {
+//   const PER_CATEGORY_LIMIT = 6;
+
+//   const categories = await prisma.category.findMany({
+//     where: { parentId: null },
+//     select: {
+//       id: true,
+//       name: true,
+//       slug: true,
+//       description: true,
+//       children: { select: { id: true, name: true, slug: true } },
+//     },
+//     orderBy: { name: "asc" },
+//   });
+
+//   const data = await Promise.all(
+//     categories.map(async (cat) => {
+//       // ✅ strongly typed where
+//       const where: Prisma.MachineWhereInput = {
+//         isActive: true,
+//         categoryId: cat.id,
+//       };
+
+//       // ✅ only add OR when search exists (no undefined)
+//       if (trimmedSearch) {
+//         where.OR = [
+//           {
+//             name: {
+//               contains: trimmedSearch,
+//               mode: Prisma.QueryMode.insensitive,
+//             },
+//           },
+//           {
+//             slug: {
+//               contains: trimmedSearch,
+//               mode: Prisma.QueryMode.insensitive,
+//             },
+//           },
+//         ];
+//       }
+
+//       const [machines, total] = await Promise.all([
+//         prisma.machine.findMany({
+//           where,
+//           take: PER_CATEGORY_LIMIT,
+//           select: {
+//             id: true,
+//             name: true,
+//             slug: true,
+//             thumbnailImage: true,
+//             stockQuantity: true,
+//             listPrice: true,
+//             discountPercent: true,
+//             discountPrice: true,
+//             createdAt: true,
+//             category: { select: { id: true, name: true, slug: true } },
+//             images: { select: { id: true, url: true, isPrimary: true } },
+//             videos: { select: { id: true, url: true } },
+//           },
+//           orderBy: { [safeSortBy]: safeSortOrder },
+//         }),
+//         // ✅ count must use same where
+//         prisma.machine.count({ where }),
+//       ]);
+
+//       return {
+//         category: cat,
+//         machines,
+//         meta: {
+//           total,
+//           limit: PER_CATEGORY_LIMIT,
+//           totalPage: Math.ceil(total / PER_CATEGORY_LIMIT),
+//           hasMore: total > PER_CATEGORY_LIMIT,
+//         },
+//       };
+//     })
+//   );
+
+//   const filtered = trimmedSearch ? data.filter((x) => x.meta.total > 0) : data;
+
+//   return {
+//     data: filtered,
+//     meta: {
+//       grouped: true,
+//       perCategoryLimit: PER_CATEGORY_LIMIT,
+//       totalCategory: filtered.length,
+//     },
+//   };
+// }
+
+//   // ✅ MODE-2: single list (existing behavior) + pagination + search
+//   const safePage = Math.max(1, Number(page) || 1);
+
+//   // Single list mode এ limit কে clamp করে দাও (UI তে 6 চাইলে 6 পাঠাবে)
+//   const safeLimit = Math.max(1, Math.min(Number(limit) || 10, 50));
+//   const skip = (safePage - 1) * safeLimit;
+
+//   const where: any = {
+//     isActive: true,
+//     ...searchWhere,
+//   };
+
+//   if (categoryId) where.categoryId = categoryId;
+
+//   const [data, total] = await Promise.all([
+//     prisma.machine.findMany({
+//       where,
+//       skip,
+//       take: safeLimit,
+//       select: {
+//         id: true,
+//         name: true,
+//         slug: true,
+//         thumbnailImage: true,
+//         stockQuantity: true,
+//         listPrice: true,
+//         discountPercent: true,
+//         discountPrice: true,
+//         createdAt: true,
+//         category: { select: { id: true, name: true, slug: true } },
+//         images: { select: { id: true, url: true, isPrimary: true } },
+//         videos: { select: { id: true, url: true } },
+//       },
+//       orderBy: { [safeSortBy]: safeSortOrder },
+//     }),
+//     prisma.machine.count({ where }),
+//   ]);
+
+//   return {
+//     data,
+//     meta: {
+//       grouped: false,
+//       page: safePage,
+//       limit: safeLimit,
+//       total,
+//       totalPage: Math.ceil(total / safeLimit),
+//     },
+//   };
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+type SortBy = "createdAt" | "name";
+type SortOrder = "asc" | "desc";
+
+type GetMachinesParams = {
+  page: number;
+  limit: number;
+  search?: string;
+  categoryId?: string;
+  sortBy: SortBy;
+  sortOrder: SortOrder;
+  grouped?: boolean;
+};
+
+export const getMachines = async (params: GetMachinesParams) => {
+  const { page, limit, search, categoryId, sortBy, sortOrder, grouped } = params;
+
+  const safeSortBy: SortBy = sortBy === "name" ? "name" : "createdAt";
+  const safeSortOrder: SortOrder = sortOrder === "asc" ? "asc" : "desc";
+
+  const trimmedSearch = search?.trim();
+
+  const searchWhere: Prisma.MachineWhereInput =
+    trimmedSearch
+      ? {
+          OR: [
+            { name: { contains: trimmedSearch, mode: Prisma.QueryMode.insensitive } },
+            { slug: { contains: trimmedSearch, mode: Prisma.QueryMode.insensitive } },
+          ],
+        }
+      : {};
+
+  // ✅ MODE-1: grouped=true
+  if (grouped) {
+    const PER_CATEGORY_LIMIT = 6;
+
+    const categories = await prisma.category.findMany({
+      where: { parentId: null },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        children: { select: { id: true, name: true, slug: true } },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    const data = await Promise.all(
+      categories.map(async (cat) => {
+        const where: Prisma.MachineWhereInput = {
+          isActive: true,
+          categoryId: cat.id,
+          ...searchWhere,
+        };
+
+        const [machines, total] = await Promise.all([
+          prisma.machine.findMany({
+            where,
+            take: PER_CATEGORY_LIMIT,
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              thumbnailImage: true,
+              stockQuantity: true,
+              listPrice: true,
+              discountPercent: true,
+              discountPrice: true,
+              createdAt: true,
+              category: { select: { id: true, name: true, slug: true } },
+              images: { select: { id: true, url: true, isPrimary: true } },
+              videos: { select: { id: true, url: true } },
+            },
+            orderBy: { [safeSortBy]: safeSortOrder },
+          }),
+          prisma.machine.count({ where }),
+        ]);
+
+        return {
+          category: cat,
+          machines,
+          meta: {
+            total,
+            limit: PER_CATEGORY_LIMIT,
+            totalPage: Math.ceil(total / PER_CATEGORY_LIMIT),
+            hasMore: total > PER_CATEGORY_LIMIT,
+          },
+        };
+      })
+    );
+
+    const filtered = trimmedSearch ? data.filter((x) => x.meta.total > 0) : data;
+
+    return {
+      data: filtered,
+      meta: {
+        grouped: true,
+        perCategoryLimit: PER_CATEGORY_LIMIT,
+        totalCategory: filtered.length,
+      },
+    };
+  }
+
+  // ✅ MODE-2: single list (pagination)
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 10, 50));
+  const skip = (safePage - 1) * safeLimit;
+
+  const where: Prisma.MachineWhereInput = {
     isActive: true,
+    ...searchWhere,
   };
 
-  // 🔍 Search by name OR slug
-  if (search) {
-    where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { slug: { contains: search, mode: "insensitive" } },
-    ];
-  }
+  if (categoryId) where.categoryId = categoryId;
 
-  // 🎯 Category filter
-  if (categoryId) {
-    where.categoryId = categoryId;
-  }
-
-  // 📦 Query data
   const [data, total] = await Promise.all([
     prisma.machine.findMany({
       where,
       skip,
-      take: limit,
+      take: safeLimit,
       select: {
         id: true,
         name: true,
         slug: true,
         thumbnailImage: true,
         stockQuantity: true,
-        images:{
-          select: {
-            id: true,
-            url: true,
-            isPrimary: true,
-          },
-        },
-       videos:{
-        select:{
-          id:true,
-          url:true,
-        },
-       },
+        listPrice: true,
+        discountPercent: true,
+        discountPrice: true,
         createdAt: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
+        category: { select: { id: true, name: true, slug: true } },
+        images: { select: { id: true, url: true, isPrimary: true } },
+        videos: { select: { id: true, url: true } },
       },
-      orderBy: {
-        [sortBy]: sortOrder,
-      },
+      orderBy: { [safeSortBy]: safeSortOrder },
     }),
     prisma.machine.count({ where }),
   ]);
@@ -82,15 +434,14 @@ const getMachines = async (params: GetMachinesParams) => {
   return {
     data,
     meta: {
-      page,
-      limit,
+ 
+      page: safePage,
+      limit: safeLimit,
       total,
-      totalPage: Math.ceil(total / limit),
+      totalPage: Math.ceil(total / safeLimit),
     },
   };
 };
-
-
 
 
 

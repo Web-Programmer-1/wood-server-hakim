@@ -1,14 +1,9 @@
-enum UserRole {
-  ADMIN
-  CUSTOMER
-}
-
 model User {
   id            String        @id @default(uuid())
   name          String
   email         String?       @unique
   phone         String?       @unique
-  passwordHash  String // Hashed password
+  passwordHash  String
   role          UserRole      @default(CUSTOMER)
   status        UserStatus    @default(ACTIVE)
   emailVerified Boolean       @default(false)
@@ -16,12 +11,12 @@ model User {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   Cart          Cart?
+  couponUsages  CouponUsage[] @relation("userCouponUsages")
   inquiries     Inquiry[]
   orders        Order[]
   review        Review[]
   loginAttempt  LoginAttempt?
   profile       UserProfile?
-  couponUsages  CouponUsage[] @relation("userCouponUsages")
 
   @@index([status])
   @@index([email])
@@ -70,5 +65,7 @@ model OTP {
   createdAt DateTime @default(now())
 }
 
-
-// User status for account management
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}

@@ -2,7 +2,7 @@ export type ICreateFoundationStoryPayload = {
   title: string;
   slug: string;
   description?: string;
-//   cardImage: string;
+
   cardImageUrl: string;
 
   videoType?: string;

@@ -1,0 +1,111 @@
+
+model ServiceSection {
+  id String @id @default(uuid())
+
+  heading     String
+  description String?
+
+  primaryBtnText   String?
+  primaryBtnUrl    String?
+  secondaryBtnText String?
+  secondaryBtnUrl  String?
+
+  bgImageUrl String
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([createdAt])
+  @@map("service_sections")
+}
+
+
+
+model TestimonialSection {
+  id String @id @default(uuid())
+
+  avatarUrl String?
+  description String?
+
+  personName  String?
+  companyName String?
+
+  cardBgImageUrl String?
+
+  videoType  String? 
+  youtubeUrl String?
+  videoUrl   String?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([videoType])
+  @@map("testimonial_sections")
+}
+
+
+
+
+
+
+
+model ConsultencyBanner {
+  id String @id @default(uuid())
+
+  subHeading String? @unique
+  heading    String @unique
+  buttonText String?
+  buttonUrl  String?
+
+  tagOne   String? @unique
+  tagTwo   String?
+  tagThree String?
+
+  bgImageUrl String
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("slider_banners")
+}
+
+
+
+
+
+
+
+model FoundationStory {
+  id String @id @default(uuid())
+
+  title       String
+  slug        String   @unique
+  description String?
+
+  cardImageUrl String
+
+  videoType  String? // "YOUTUBE" | "UPLOAD"
+  youtubeUrl String?
+  videoUrl   String?
+
+  galleryImages Json?
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([sortOrder])
+  @@index([videoType])
+  @@map("foundation_stories")
+}

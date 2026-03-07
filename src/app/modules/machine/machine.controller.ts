@@ -8,11 +8,12 @@ import { ApiError } from "../../errors/ApiError";
 const getMachines = async (req: Request, res: Response) => {
   const {
     page = "1",
-    limit = "10",
+    limit = "6",
     search,
     categoryId,
     sortBy = "createdAt",
     sortOrder = "desc",
+   grouped = "false", 
   } = req.query;
 
   const result = await MachineService.getMachines({
@@ -22,6 +23,7 @@ const getMachines = async (req: Request, res: Response) => {
     categoryId: categoryId as string | undefined,
     sortBy: sortBy as "createdAt" | "name",
     sortOrder: sortOrder as "asc" | "desc",
+        grouped: grouped === "true", 
   });
 
   res.status(httpStatus.OK).json({

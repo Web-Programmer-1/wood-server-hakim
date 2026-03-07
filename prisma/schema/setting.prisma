@@ -1,8 +1,6 @@
 model MegaOffer {
-  id String @id @default(uuid())
-
-  imageUrl String
-
+  id        String   @id @default(uuid())
+  imageUrl  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -10,12 +8,9 @@ model MegaOffer {
 }
 
 model GalleryImage {
-  id String @id @default(uuid())
-
-  imageUrl String
-
-  isActive Boolean @default(true)
-
+  id        String   @id @default(uuid())
+  imageUrl  String
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -23,28 +18,23 @@ model GalleryImage {
   @@map("gallery_images")
 }
 
-enum LandingVideoSource {
-  YOUTUBE
-  UPLOAD
-}
-
 model LandingVideo {
-  id String @id @default(uuid())
-
+  id           String             @id @default(uuid())
   title        String
   thumbnailUrl String
-
-  sourceType LandingVideoSource
-
-  youtubeUrl String?
-  videoUrl   String?
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sourceType   LandingVideoSource
+  youtubeUrl   String?
+  videoUrl     String?
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@index([isActive])
   @@index([sourceType])
   @@map("landing_videos")
+}
+
+enum LandingVideoSource {
+  YOUTUBE
+  UPLOAD
 }

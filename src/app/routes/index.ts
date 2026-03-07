@@ -6,7 +6,6 @@ import { ProductCategoryRoutes } from '../modules/productCategory/productCategor
 import { ProductRoutes } from '../modules/products/product.route';
 import { CartRoutes } from '../modules/cart/cart.route';
 import { OrderRoutes } from '../modules/order/order.route';
-import { ShippingRateRoutes } from '../modules/shipping/shipping.route';
 import { ReviewRoutes } from '../modules/review/review.route';
 import { InquiryRoutes } from '../modules/inquiry/inquiry.route';
 import { PaymentRoutes } from '../modules/payment/payment.route';
@@ -17,6 +16,10 @@ import { LandingRoutes } from '../modules/dynamicLandingPage/landing.routes';
 import { AdminCouponRoutes } from '../modules/coupon/coupon.route';
 import { InventoryRoutes } from '../modules/inventory/inventory.route';
 import { AdminDashboardRoutes } from '../modules/adminDashboard/adminDashboard.route';
+import { ServiceSectionRoutes } from '../modules/servicesPage/services.route';
+import { TestimonialRoutes } from '../modules/servicesPage/testimoniral/testimoniral.route';
+import { ConsultencyBannerRoutes } from '../modules/servicesPage/consultency/consultency.route';
+import { FoundationStoryRoutes } from '../modules/servicesPage/foundation/foundation.route';
 
 
 const router = express.Router();
@@ -51,10 +54,7 @@ const moduleRoutes = [
         path: '/orders',
         route: OrderRoutes,
     },
-    {
-        path: '/shipping-rates',
-        route: ShippingRateRoutes,
-    },
+
     {
         path: '/review',
         route: ReviewRoutes,
@@ -94,6 +94,22 @@ const moduleRoutes = [
     {
         path: '/dashboard',
         route: AdminDashboardRoutes,
+    },
+    {
+        path: '/services',
+        route: ServiceSectionRoutes,
+    },
+    {
+        path: '/testimonial',
+        route: TestimonialRoutes,
+    },
+    {
+        path: '/consultency',
+        route: ConsultencyBannerRoutes,
+    },
+    {
+        path: '/foundation',
+        route: FoundationStoryRoutes,
     },
 
     
