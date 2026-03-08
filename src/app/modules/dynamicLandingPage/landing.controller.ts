@@ -374,11 +374,16 @@ const createGalleryImages = async (req: Request, res: Response) => {
 
 
 const getGalleryImages = async (req: Request, res: Response) => {
-  const images = await LandingService.getGalleryImages();
+  const search = req.query.search ? String(req.query.search) : undefined;
+  const page = req.query.page ? Number(req.query.page) : 1;
+  const limit = req.query.limit ? Number(req.query.limit) : 9;
+
+  const result = await LandingService.getGalleryImages(search, page, limit);
 
   res.status(200).json({
     message: "Gallery images fetched successfully",
-    data: images,
+    meta: result.meta,
+    data: result.data,
   });
 };
 

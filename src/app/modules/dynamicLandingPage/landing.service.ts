@@ -362,11 +362,53 @@ const createGalleryImages = async (imageUrls: string[]) => {
 };
 
 
-const getGalleryImages = async () => {
-  return prisma.galleryImage.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: "desc" },
-  });
+const getGalleryImages = async (
+  search?: string,
+  page = 1,
+  limit = 9
+) => {
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    isActive: true,
+  };
+
+  if (search) {
+    where.OR = [
+      {
+        title: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.galleryImage.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.galleryImage.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+    data,
+  };
 };
 
 const deleteGalleryImage = async (id: string) => {
