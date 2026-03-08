@@ -362,11 +362,10 @@ const createGalleryImages = async (imageUrls: string[]) => {
 };
 
 
-const getGalleryImages = async (limit = 9) => {
+const getGalleryImages = async () => {
   return prisma.galleryImage.findMany({
     where: { isActive: true },
     orderBy: { createdAt: "desc" },
-    take: limit,
   });
 };
 
