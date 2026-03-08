@@ -2,3 +2,9 @@ enum UserStatus {
   ACTIVE
   INACTIVE
 }
+
+enum FoundationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}

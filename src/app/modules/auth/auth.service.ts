@@ -547,6 +547,48 @@ export const AuthService = {
     return user;
   },
 
+  async isLoggedIn(req: Request) {
+    try {
+      let token: string | undefined;
+
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      }
+
+      if (!token && req.cookies.accessToken) {
+        token = req.cookies.accessToken;
+      }
+
+      if (!token) {
+        return { isLoggedIn: false };
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as any;
+
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        }
+      });
+
+      if (!user) {
+        return { isLoggedIn: false };
+      }
+
+      return {
+        isLoggedIn: true,
+        user
+      };
+    } catch (error) {
+      return { isLoggedIn: false };
+    }
+  },
+
 
   //      ----------- Get All Users -------------
 

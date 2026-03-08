@@ -11,9 +11,6 @@ router.post(
   ServiceSectionController.create
 );
 
-
-
-
 router.get("/", ServiceSectionController.getAll);
 
 // GET SINGLE

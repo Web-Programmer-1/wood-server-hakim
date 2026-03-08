@@ -108,9 +108,15 @@ export const FoundationStoryService = {
   },
 
   getById: async (id: string) => {
-    const result = await prisma.foundationStory.findUnique({
+    let result = await prisma.foundationStory.findUnique({
       where: { id },
     });
+
+    if (!result) {
+      result = await prisma.foundationStory.findUnique({
+        where: { slug: id },
+      });
+    }
 
     if (!result) {
       throw new Error("Foundation story not found");

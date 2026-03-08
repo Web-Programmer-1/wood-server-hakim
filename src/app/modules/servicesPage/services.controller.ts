@@ -145,13 +145,9 @@ export const ServiceSectionController = {
 
       await ServiceSectionService.delete(id);
 
-      // slider friendly: return all after delete
-      const all = await ServiceSectionService.getAll();
-
       return res.status(httpStatus.OK).json({
         success: true,
         message: "Service section deleted successfully",
-       
       });
     } catch (error: any) {
       return res.status(httpStatus.BAD_REQUEST).json({

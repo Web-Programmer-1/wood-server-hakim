@@ -99,6 +99,14 @@ model FoundationStory {
 
   galleryImages Json?
 
+  content      String? 
+  status       FoundationStatus @default(DRAFT)
+  isFeatured   Boolean @default(false)
+  publishedAt  DateTime?
+  tags         String[]
+  metaTitle    String?
+  metaDescription String?
+
   sortOrder Int @default(0)
 
   createdAt DateTime @default(now())

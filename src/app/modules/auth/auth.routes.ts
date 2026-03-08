@@ -46,6 +46,9 @@ authRouter.post("/reset-password", strictLimiter, AuthController.resetPassword);
 // GET CURRENT USER
 authRouter.get("/me", strictLimiter, AuthController.getMe);
 
+// GET IS LOGGED IN
+authRouter.get("/is-logged-in", strictLimiter, AuthController.isLoggedIn);
+
 // USER CRUD
 authRouter.get("/users", strictLimiter, authGuard(UserRole.ADMIN), AuthController.getAllUsers);
 authRouter.get("/users/:id", strictLimiter, AuthController.getUserById);
