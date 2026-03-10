@@ -4,6 +4,7 @@ import { Router } from "express";
 import { CategoryController } from "./category.controller";
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
+import { uploadCategoryImage } from "../../middlewares/UploadMachineImage";
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.get(
 router.post(
   "/admin",
   authGuard(UserRole.ADMIN),
+uploadCategoryImage,
   CategoryController.createCategory
 );
 

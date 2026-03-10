@@ -2,6 +2,7 @@ model Category {
   id          String     @id @default(uuid())
   name        String
   slug        String     @unique
+  thumbnailImage String?  
   parentId    String?
   createdAt   DateTime   @default(now())
   description String?    @default("")

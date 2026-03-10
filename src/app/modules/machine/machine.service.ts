@@ -632,6 +632,113 @@ const getRelatedMachines = async (slug: string) => {
 
 
 
+// const createMachine = async (payload: any) => {
+//   const {
+//     name,
+//     slug,
+//     categoryId,
+//     listPrice,
+//     discountPercent,
+//     bookedQty,
+//   } = payload;
+
+//   if (!name || !slug || !categoryId) {
+//     throw new Error(
+    
+//       "Name, slug and categoryId are required"
+//     );
+//   }
+
+//   if (!listPrice || Number(listPrice) <= 0) {
+//     throw new Error(
+   
+//       "List price must be greater than 0"
+//     );
+//   }
+
+//   const exist = await prisma.machine.findUnique({
+//     where: { slug },
+//   });
+
+//   if (exist) {
+//     throw new Error(
+//       "Machine with this slug already exists"
+//     );
+//   }
+
+//   let discountPrice: number | null = null;
+//   if (discountPercent !== undefined && discountPercent !== null) {
+//     const percent = Number(discountPercent);
+//     if (percent < 0 || percent > 100) {
+//       throw new Error(
+  
+//         "Discount percent must be between 0 and 100"
+//       );
+//     }
+
+//     discountPrice =
+//       Number(listPrice) -
+//       Math.round((Number(listPrice) * percent) / 100);
+//   }
+
+//   const finalBookedQty =
+//     bookedQty !== undefined ? Number(bookedQty) : 0;
+
+//   if (finalBookedQty < 0) {
+    
+//     throw new ApiError(
+//       httpStatus.BAD_REQUEST,
+//       "Booked quantity cannot be negative"
+//     );
+//   }
+
+//   return prisma.machine.create({
+//     data: {
+//       name,
+//       slug,
+//       shortDesc: payload.shortDesc,
+//       description: payload.description,
+//       categoryId,
+//       thumbnailImage: payload.thumbnailImage,
+//       bannerImage: payload.bannerImage,
+
+//       brand: payload.brand,
+//       model: payload.model,
+
+//       features: payload.features || {},
+//       specifications: payload.specifications || {},
+//       workSections: payload.workSections || [],
+//       dynamicButtons: payload.dynamicButtons || [],
+
+//       listPrice: Number(listPrice),
+//       discountPercent:
+//         discountPercent !== undefined ? Number(discountPercent) : null,
+//       discountPrice,
+
+//       stockQuantity: payload.stockQuantity
+//         ? Number(payload.stockQuantity)
+//         : 0,
+
+    
+//       bookedQty: finalBookedQty,
+//       bookedName: payload.bookedName ?? null,
+//       bookedPhone: payload.bookedPhone ?? null,
+//       bookedEmail: payload.bookedEmail ?? null,
+//       bookedNote: payload.bookedNote ?? null,
+
+//       isFeatured: payload.isFeatured || false,
+//       isActive: payload.isActive ?? true,
+//     },
+//   });
+// };
+
+
+
+
+
+
+
+
 const createMachine = async (payload: any) => {
   const {
     name,
@@ -640,19 +747,31 @@ const createMachine = async (payload: any) => {
     listPrice,
     discountPercent,
     bookedQty,
+    features,
   } = payload;
 
   if (!name || !slug || !categoryId) {
-    throw new Error(
-    
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
       "Name, slug and categoryId are required"
     );
   }
 
   if (!listPrice || Number(listPrice) <= 0) {
-    throw new Error(
-   
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
       "List price must be greater than 0"
+    );
+  }
+
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+  });
+
+  if (!category) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "Category not found"
     );
   }
 
@@ -661,79 +780,100 @@ const createMachine = async (payload: any) => {
   });
 
   if (exist) {
-    throw new Error(
+    throw new ApiError(
+      httpStatus.CONFLICT,
       "Machine with this slug already exists"
     );
   }
 
   let discountPrice: number | null = null;
+
   if (discountPercent !== undefined && discountPercent !== null) {
     const percent = Number(discountPercent);
+
     if (percent < 0 || percent > 100) {
-      throw new Error(
-  
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
         "Discount percent must be between 0 and 100"
       );
     }
 
     discountPrice =
-      Number(listPrice) -
-      Math.round((Number(listPrice) * percent) / 100);
+      Number(listPrice) - Math.round((Number(listPrice) * percent) / 100);
   }
 
   const finalBookedQty =
     bookedQty !== undefined ? Number(bookedQty) : 0;
 
   if (finalBookedQty < 0) {
-    
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "Booked quantity cannot be negative"
     );
   }
 
+  if (features && !Array.isArray(features)) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Features must be an array"
+    );
+  }
+
+  if (features && Array.isArray(features)) {
+    for (const item of features) {
+      if (!item.title) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "Each feature must have a title"
+        );
+      }
+    }
+  }
+
   return prisma.machine.create({
     data: {
       name,
       slug,
-      shortDesc: payload.shortDesc,
-      description: payload.description,
+      shortDesc: payload.shortDesc || null,
+      description: payload.description || null,
       categoryId,
-      thumbnailImage: payload.thumbnailImage,
-      bannerImage: payload.bannerImage,
+      thumbnailImage: payload.thumbnailImage || null,
+      bannerImage: payload.bannerImage || null,
 
-      brand: payload.brand,
-      model: payload.model,
+      brand: payload.brand || null,
+      model: payload.model || null,
 
-      features: payload.features || {},
+      features: payload.features || [],
       specifications: payload.specifications || {},
       workSections: payload.workSections || [],
       dynamicButtons: payload.dynamicButtons || [],
 
       listPrice: Number(listPrice),
       discountPercent:
-        discountPercent !== undefined ? Number(discountPercent) : null,
+        discountPercent !== undefined && discountPercent !== null
+          ? Number(discountPercent)
+          : null,
       discountPrice,
 
-      stockQuantity: payload.stockQuantity
-        ? Number(payload.stockQuantity)
-        : 0,
+      stockQuantity:
+        payload.stockQuantity !== undefined && payload.stockQuantity !== null
+          ? Number(payload.stockQuantity)
+          : 0,
 
-    
       bookedQty: finalBookedQty,
       bookedName: payload.bookedName ?? null,
       bookedPhone: payload.bookedPhone ?? null,
       bookedEmail: payload.bookedEmail ?? null,
       bookedNote: payload.bookedNote ?? null,
 
-      isFeatured: payload.isFeatured || false,
+      isFeatured: payload.isFeatured ?? false,
       isActive: payload.isActive ?? true,
+    },
+    include: {
+      category: true,
     },
   });
 };
-
-
-
 
 
 

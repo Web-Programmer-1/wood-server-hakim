@@ -28,7 +28,15 @@ const getMachinesByCategory = async (req: Request, res: Response) => {
 };
 
 const createCategory = async (req: Request, res: Response) => {
-  const result = await CategoryService.createCategory(req.body);
+  const file = req.file as Express.MulterS3.File;
+
+  const payload = {
+    ...req.body,
+    thumbnailImage: file?.location || null,
+  };
+
+  const result = await CategoryService.createCategory(payload);
+
   res.status(httpStatus.CREATED).json({
     success: true,
     data: result,

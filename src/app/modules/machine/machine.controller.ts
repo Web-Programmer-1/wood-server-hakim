@@ -106,30 +106,67 @@ const getRelatedMachines = async (req: Request, res: Response) => {
 
 
 
+// const createMachine = async (req: Request, res: Response) => {
+//   const body = JSON.parse(req.body.data);
+
+//   const files = req.files as {
+//     thumbnail?: Express.MulterS3.File[];
+//     banner?: Express.MulterS3.File[];
+//   };
+
+//   const payload = {
+//     ...body,
+//     thumbnailImage: files?.thumbnail?.[0]?.location,
+//     bannerImage: files?.banner?.[0]?.location,
+//   };
+
+//   const result = await MachineService.createMachine(payload);
+  
+//   console.log("CreateMachine", result)
+//   res.status(201).json({
+//     success: true,
+//     data: result,
+//   });
+// };
+
+
+
+
+
+
 const createMachine = async (req: Request, res: Response) => {
   const body = JSON.parse(req.body.data);
 
   const files = req.files as {
     thumbnail?: Express.MulterS3.File[];
     banner?: Express.MulterS3.File[];
+    featureImages?: Express.MulterS3.File[];
   };
+
+  const featureImages = files?.featureImages || [];
+
+  const features =
+    Array.isArray(body.features) && body.features.length > 0
+      ? body.features.map((item: any, index: number) => ({
+          title: item.title,
+          image: featureImages[index]?.location || null,
+        }))
+      : [];
 
   const payload = {
     ...body,
     thumbnailImage: files?.thumbnail?.[0]?.location,
     bannerImage: files?.banner?.[0]?.location,
+    features,
   };
 
   const result = await MachineService.createMachine(payload);
-  
-  console.log("CreateMachine", result)
+
   res.status(201).json({
     success: true,
     data: result,
   });
 };
-
-
 
 
 

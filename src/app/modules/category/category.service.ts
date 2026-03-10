@@ -13,20 +13,65 @@ const getCategories = async () => {
   });
 };
 
+// const getCategoryTree = async () => {
+//   return prisma.category.findMany({
+//     where: {
+//       parentId: null,
+//     },
+//     include: {
+//       children: {
+//         include: {
+//           children: true,
+//         },
+//       },
+//     },
+//   });
+// };
+
+
+
+
 const getCategoryTree = async () => {
   return prisma.category.findMany({
     where: {
       parentId: null,
     },
     include: {
+      machines: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
       children: {
         include: {
-          children: true,
+          machines: {
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          children: {
+            include: {
+              machines: {
+                orderBy: {
+                  createdAt: "desc",
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       },
     },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 };
+
+
+
 
 
 
@@ -60,8 +105,8 @@ const getMachinesByCategory = async (slug: string) => {
 
 const createCategory = async (payload: any) => {
   if (!payload?.name || !payload?.slug) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
+    throw new Error(
+      
       "Category name and slug are required"
     );
   }
@@ -71,8 +116,8 @@ const createCategory = async (payload: any) => {
   });
 
   if (isExist) {
-    throw new ApiError(
-      httpStatus.CONFLICT,
+    throw new Error(
+     
       "Category with this slug already exists"
     );
   }
@@ -83,6 +128,7 @@ const createCategory = async (payload: any) => {
       slug: payload.slug,
       description: payload.description || null,
       parentId: payload.parentId || null,
+      thumbnailImage: payload.thumbnailImage || null,
     },
   });
 };
