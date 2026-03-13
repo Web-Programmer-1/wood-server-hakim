@@ -20,6 +20,7 @@ import { ServiceSectionRoutes } from '../modules/servicesPage/services.route';
 import { TestimonialRoutes } from '../modules/testimoniral/testimoniral.route';
 import { ConsultencyBannerRoutes } from '../modules/consultency/consultency.route';
 import { FoundationStoryRoutes } from '../modules/foundation/foundation.route';
+import { ShadhinotaRoutes } from '../modules/shadhinota/shadhinota.route';
 
 
 const router = express.Router();
@@ -110,6 +111,10 @@ const moduleRoutes = [
     {
         path: '/foundation',
         route: FoundationStoryRoutes,
+    },
+    {
+        path: '/shadhinota',
+        route: ShadhinotaRoutes,
     },
 
     
