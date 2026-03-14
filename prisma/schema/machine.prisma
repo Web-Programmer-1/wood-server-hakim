@@ -1,14 +1,33 @@
 model Category {
-  id          String     @id @default(uuid())
-  name        String
-  slug        String     @unique
-  thumbnailImage String?  
-  parentId    String?
-  createdAt   DateTime   @default(now())
-  description String?    @default("")
-  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryTree")
-  machines    Machine[]
+  id              String        @id @default(uuid())
+  name            String
+  slug            String        @unique
+  thumbnailImage  String?
+  parentId        String?
+  createdAt       DateTime      @default(now())
+  description     String?       @default("")
+
+  parent          Category?     @relation("CategoryTree", fields: [parentId], references: [id])
+  children        Category[]    @relation("CategoryTree")
+
+  subCategories   SubCategory[]
+  machines        Machine[]
+}
+
+model SubCategory {
+  id              String        @id @default(uuid())
+  name            String
+  slug            String        @unique
+  thumbnailImage  String?
+  description     String?       @default("")
+  categoryId      String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  category        Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  machines        Machine[]
+
+  @@index([categoryId])
 }
 
 model Machine {
@@ -21,7 +40,10 @@ model Machine {
   bannerImage     String?
   isActive        Boolean        @default(true)
   isFeatured      Boolean        @default(false)
+
   categoryId      String
+  subCategoryId   String?
+
   brand           String?
   model           String?
   features        Json?
@@ -39,16 +61,21 @@ model Machine {
   bookedName      String?
   bookedNote      String?
   bookedPhone     String?
+
   category        Category       @relation(fields: [categoryId], references: [id])
+  subCategory     SubCategory?   @relation(fields: [subCategoryId], references: [id])
+
   images          MachineImage[]
   videos          MachineVideo[]
 
   @@index([categoryId])
+  @@index([subCategoryId])
   @@index([id])
-  @@index([features])
   @@index([brand])
   @@index([model])
 }
+
+
 
 model MachineImage {
   id        String   @id @default(uuid())

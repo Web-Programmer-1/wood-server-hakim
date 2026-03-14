@@ -20,7 +20,11 @@ import { ServiceSectionRoutes } from '../modules/servicesPage/services.route';
 import { TestimonialRoutes } from '../modules/testimoniral/testimoniral.route';
 import { ConsultencyBannerRoutes } from '../modules/consultency/consultency.route';
 import { FoundationStoryRoutes } from '../modules/foundation/foundation.route';
+<<<<<<< HEAD
 import { ShadhinotaRoutes } from '../modules/shadhinota/shadhinota.route';
+=======
+import { SubCategoryRoutes } from '../modules/subCategory/subCategory.route';
+>>>>>>> b0f73fb (lastest-main-and-sub-category-fixed)
 
 
 const router = express.Router();
@@ -113,8 +117,13 @@ const moduleRoutes = [
         route: FoundationStoryRoutes,
     },
     {
+<<<<<<< HEAD
         path: '/shadhinota',
         route: ShadhinotaRoutes,
+=======
+        path: '/sub-category',
+        route: SubCategoryRoutes,
+>>>>>>> b0f73fb (lastest-main-and-sub-category-fixed)
     },
 
     

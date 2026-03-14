@@ -6,6 +6,7 @@ const getCategories = async (req: Request, res: Response) => {
   const result = await CategoryService.getCategories();
   res.status(httpStatus.OK).json({
     success: true,
+    message: "Main Category Retrieved Successfully",
     data: result,
   });
 };
@@ -42,7 +43,7 @@ const createCategory = async (req: Request, res: Response) => {
     data: result,
   });
 };
-
+// update
 const updateCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
   const result = await CategoryService.updateCategory(id, req.body);

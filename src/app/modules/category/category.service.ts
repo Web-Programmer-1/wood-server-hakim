@@ -7,26 +7,14 @@ const getCategories = async () => {
     where: {
       parentId: null,
     },
+
+
+    
     orderBy: {
       createdAt: "desc",
     },
   });
 };
-
-// const getCategoryTree = async () => {
-//   return prisma.category.findMany({
-//     where: {
-//       parentId: null,
-//     },
-//     include: {
-//       children: {
-//         include: {
-//           children: true,
-//         },
-//       },
-//     },
-//   });
-// };
 
 
 

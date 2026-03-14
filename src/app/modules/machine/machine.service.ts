@@ -739,11 +739,159 @@ const getRelatedMachines = async (slug: string) => {
 
 
 
+// const createMachine = async (payload: any) => {
+//   const {
+//     name,
+//     slug,
+//     categoryId,
+//     listPrice,
+//     discountPercent,
+//     bookedQty,
+//     features,
+//   } = payload;
+
+//   if (!name || !slug || !categoryId) {
+//     throw new ApiError(
+//       httpStatus.BAD_REQUEST,
+//       "Name, slug and categoryId are required"
+//     );
+//   }
+
+//   if (!listPrice || Number(listPrice) <= 0) {
+//     throw new ApiError(
+//       httpStatus.BAD_REQUEST,
+//       "List price must be greater than 0"
+//     );
+//   }
+
+//   const category = await prisma.category.findUnique({
+//     where: { id: categoryId },
+//   });
+
+//   if (!category) {
+//     throw new ApiError(
+//       httpStatus.NOT_FOUND,
+//       "Category not found"
+//     );
+//   }
+
+//   const exist = await prisma.machine.findUnique({
+//     where: { slug },
+//   });
+
+//   if (exist) {
+//     throw new ApiError(
+//       httpStatus.CONFLICT,
+//       "Machine with this slug already exists"
+//     );
+//   }
+
+//   let discountPrice: number | null = null;
+
+//   if (discountPercent !== undefined && discountPercent !== null) {
+//     const percent = Number(discountPercent);
+
+//     if (percent < 0 || percent > 100) {
+//       throw new ApiError(
+//         httpStatus.BAD_REQUEST,
+//         "Discount percent must be between 0 and 100"
+//       );
+//     }
+
+//     discountPrice =
+//       Number(listPrice) - Math.round((Number(listPrice) * percent) / 100);
+//   }
+
+//   const finalBookedQty =
+//     bookedQty !== undefined ? Number(bookedQty) : 0;
+
+//   if (finalBookedQty < 0) {
+//     throw new ApiError(
+//       httpStatus.BAD_REQUEST,
+//       "Booked quantity cannot be negative"
+//     );
+//   }
+
+//   if (features && !Array.isArray(features)) {
+//     throw new ApiError(
+//       httpStatus.BAD_REQUEST,
+//       "Features must be an array"
+//     );
+//   }
+
+//   if (features && Array.isArray(features)) {
+//     for (const item of features) {
+//       if (!item.title) {
+//         throw new ApiError(
+//           httpStatus.BAD_REQUEST,
+//           "Each feature must have a title"
+//         );
+//       }
+//     }
+//   }
+
+//   return prisma.machine.create({
+//     data: {
+//       name,
+//       slug,
+//       shortDesc: payload.shortDesc || null,
+//       description: payload.description || null,
+//       categoryId,
+//       thumbnailImage: payload.thumbnailImage || null,
+//       bannerImage: payload.bannerImage || null,
+
+//       brand: payload.brand || null,
+//       model: payload.model || null,
+
+//       features: payload.features || [],
+//       specifications: payload.specifications || {},
+//       workSections: payload.workSections || [],
+//       dynamicButtons: payload.dynamicButtons || [],
+
+//       listPrice: Number(listPrice),
+//       discountPercent:
+//         discountPercent !== undefined && discountPercent !== null
+//           ? Number(discountPercent)
+//           : null,
+//       discountPrice,
+
+//       stockQuantity:
+//         payload.stockQuantity !== undefined && payload.stockQuantity !== null
+//           ? Number(payload.stockQuantity)
+//           : 0,
+
+//       bookedQty: finalBookedQty,
+//       bookedName: payload.bookedName ?? null,
+//       bookedPhone: payload.bookedPhone ?? null,
+//       bookedEmail: payload.bookedEmail ?? null,
+//       bookedNote: payload.bookedNote ?? null,
+
+//       isFeatured: payload.isFeatured ?? false,
+//       isActive: payload.isActive ?? true,
+//     },
+//     include: {
+//       category: true,
+//     },
+//   });
+// };
+
+
+
+
+
+
+
+
+
+
+
+
 const createMachine = async (payload: any) => {
   const {
     name,
     slug,
     categoryId,
+    subCategoryId,
     listPrice,
     discountPercent,
     bookedQty,
@@ -773,6 +921,26 @@ const createMachine = async (payload: any) => {
       httpStatus.NOT_FOUND,
       "Category not found"
     );
+  }
+
+  if (subCategoryId) {
+    const subCategory = await prisma.subCategory.findUnique({
+      where: { id: subCategoryId },
+    });
+
+    if (!subCategory) {
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        "SubCategory not found"
+      );
+    }
+
+    if (subCategory.categoryId !== categoryId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "SubCategory does not belong to the selected category"
+      );
+    }
   }
 
   const exist = await prisma.machine.findUnique({
@@ -837,6 +1005,7 @@ const createMachine = async (payload: any) => {
       shortDesc: payload.shortDesc || null,
       description: payload.description || null,
       categoryId,
+      subCategoryId: subCategoryId || null,
       thumbnailImage: payload.thumbnailImage || null,
       bannerImage: payload.bannerImage || null,
 
@@ -871,10 +1040,10 @@ const createMachine = async (payload: any) => {
     },
     include: {
       category: true,
+      subCategory: true,
     },
   });
 };
-
 
 
 
