@@ -179,6 +179,23 @@ export const ShadhinotaController = {
     }
   },
 
+  getVideo: async (_req: Request, res: Response) => {
+    try {
+      const result = await ShadhinotaService.getGlobalVideo();
+
+      return res.status(httpStatus.OK).json({
+        success: true,
+        message: "Video retrieved successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: error?.message || "Failed to get video",
+      });
+    }
+  },
+
   uploadVideo: async (req: Request, res: Response) => {
     try {
       const file = req.file as Express.MulterS3.File | undefined;

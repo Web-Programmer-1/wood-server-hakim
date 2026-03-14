@@ -225,6 +225,13 @@ export const ShadhinotaService = {
     });
   },
 
+  getGlobalVideo: async () => {
+    const video = await prismaClient.shadhinotaUploadVideo.findUnique({
+      where: { key: "MAIN" },
+    });
+    return video;
+  },
+
   deleteGlobalVideo: async () => {
     await prismaClient.shadhinotaUploadVideo.deleteMany({
       where: { key: "MAIN" },

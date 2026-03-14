@@ -15,6 +15,7 @@ router.post(
 );
 
 router.get("/", ShadhinotaController.getAll);
+router.get("/video", ShadhinotaController.getVideo);
 router.get("/:id", ShadhinotaController.getById);
 
 router.patch("/:id", authGuard(UserRole.ADMIN), ShadhinotaController.update);
