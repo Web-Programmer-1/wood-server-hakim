@@ -12,7 +12,11 @@ router.post(
   CategoryController.createCategory
 );
 
-router.patch("/:id", CategoryController.updateCategory);
+router.patch(
+  "/:id",
+  uploadProductCategoryImage.single("coverImage"),
+  CategoryController.updateCategory
+);
 router.delete("/:id", CategoryController.deleteCategory);
 router.get("/", CategoryController.getAllCategories);
 

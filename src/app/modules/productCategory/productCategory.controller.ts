@@ -30,11 +30,20 @@ const getAllCategories = async (_req: Request, res: Response) => {
 };
 
 const updateCategory = async (req: Request, res: Response) => {
-  const result = await CategoryService.updateCategory(
-    req.params.id,
-    req.body
-  );
-  res.status(200).json({ success: true, data: result });
+  const file = req.file as Express.MulterS3.File | undefined;
+
+  const payload = {
+    ...req.body,
+    coverImage: file?.location || req.body.coverImage,
+  };
+
+  const result = await CategoryService.updateCategory(req.params.id, payload);
+
+  res.status(200).json({
+    success: true,
+    message: "Category updated successfully",
+    data: result,
+  });
 };
 
 const deleteCategory = async (req: Request, res: Response) => {

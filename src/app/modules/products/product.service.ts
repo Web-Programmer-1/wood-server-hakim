@@ -119,7 +119,7 @@ const getAllProducts = async (query: any) => {
     };
   }
 
-  //  Brand filter
+  //  Brand filter1
   if (brandType) {
     where.brandType = {
       in: brandType.split(","),
