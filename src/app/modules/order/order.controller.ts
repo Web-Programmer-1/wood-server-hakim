@@ -208,6 +208,29 @@ const deleteOrder = async (req: Request, res: Response) => {
 };
 
 
+
+
+const getTopSellingProducts = async (req: Request, res: Response) => {
+  try {
+    const result = await OrderService.getTopSellingProducts(req.query);
+
+    res.status(200).json({
+      success: true,
+      message: "Top selling products fetched successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(403).json({
+      success: false,
+      message: error?.message || "Something went wrong",
+    });
+  }
+};
+
+
+
+
+
 export const OrderController = {
   
   checkout ,
@@ -220,5 +243,6 @@ export const OrderController = {
   updateOrderStatus,
   trackOrder,
   deleteOrder,
+  getTopSellingProducts
 
 };

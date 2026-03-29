@@ -1,4 +1,4 @@
-import { CouponDiscountType, OrderStatus, PaymentMethod } from "@prisma/client";
+import { CouponDiscountType, OrderStatus, PaymentMethod, Prisma } from "@prisma/client";
 import { getShippingFee } from "../../../helper/Shipping";
 import { prisma } from "../../shared/prisma";
 
@@ -716,54 +716,6 @@ const getOrderDetails = async (userId: string, orderId: string) => {
 
 
 
-// const cancelOrder = async (userId: string, orderId: string) => {
-
-//   const order = await prisma.order.findFirst({
-//     where: {
-//       id: orderId,
-//       userId,
-//     },
-//   });
-
-//   if (!order) {
-//     throw new Error("Order not found");
-//   }
-
- 
-//   if (order.status === "CANCELLED") {
-//     throw new Error("Order already cancelled");
-//   }
-
-
-//   const cancellableStatuses = ["PENDING", "CONFIRMED"];
-
-//   if (!cancellableStatuses.includes(order.status)) {
-//     throw new Error(
-//       `Order cannot be cancelled at ${order.status} stage`
-//     );
-//   }
-
-
-  
-
-
-
-//   const updatedOrder = await prisma.order.update({
-//     where: { id: orderId },
-//     data: {
-//       status: "CANCELLED",
-//     },
-//   });
-
-//   return updatedOrder;
-// };
-
-
-
-
-
-//  -------------------------- ONLY for Admin ------------------------------------
-
 
 
 
@@ -818,87 +770,6 @@ const cancelOrder = async (userId: string, orderId: string) => {
 
 
 
-
-// const getAllOrdersAdmin = async (query: any) => {
-//   const {
-//     page = 1,
-//     limit = 10,
-//     status,
-//     paymentStatus,
-//     paymentMethod,
-//     sort,
-//   } = query;
-
-//   const where: any = {};
-
-//   if (status) where.status = { in: String(status).split(",") };
-//   if (paymentStatus)
-//     where.paymentStatus = { in: String(paymentStatus).split(",") };
-//   if (paymentMethod)
-//     where.paymentMethod = { in: String(paymentMethod).split(",") };
-
-//   let orderBy: any = { createdAt: "desc" };
-//   if (sort === "oldest") orderBy = { createdAt: "asc" };
-
-//   const skip = (Number(page) - 1) * Number(limit);
-
-//   const [orders, total] = await Promise.all([
-//     prisma.order.findMany({
-//       where,
-//       orderBy,
-//       skip,
-//       take: Number(limit),
-      
-//       select: {
-//         id: true,
-//         userId: true,
-      
-//         status: true,
-//         paymentMethod: true,
-//         paymentStatus: true,
-//         subTotal: true,
-//         shippingFee: true,
-      
-//         totalAmount: true,
-//         createdAt: true,
-//         customerName: true,
-//         phone: true,
-//         city: true,
-
-
-
-//               items: {
-//         select: {
-//           id: true,
-//           productId: true,
-//           productName: true,
-//           productSlug: true,
-//           quantity: true,
-//           unitPrice: true,
-//           lineTotal: true,
-//         },
-//       },
-
-
-
-
-//         _count: {
-//           select: { items: true },
-//         },
-//       },
-//     }),
-//     prisma.order.count({ where }),
-//   ]);
-
-//   return {
-//     meta: {
-//       page: Number(page),
-//       limit: Number(limit),
-//       total,
-//     },
-//     data: orders,
-//   };
-// };
 
 
 const getAllOrdersAdmin = async (query: any) => {
@@ -1168,6 +1039,85 @@ const getMyOrderTracking = async (userId: string, orderId: string) => {
 };
 
 
+
+//  Top Selling Products 
+
+
+
+
+const getTopSellingProducts = async (query: Record<string, any>) => {
+  const limit = Number(query.limit) || 8;
+  const categoryId = query.categoryId;
+  const brandType = query.brandType;
+  const availability = query.availability;
+
+  const productWhere: Prisma.ProductWhereInput = {
+    visibility: true,
+    ...(categoryId && { productCategoryId: categoryId }),
+    ...(brandType && { brandType }),
+    ...(availability && { availability }),
+  };
+
+  const grouped = await prisma.orderItem.groupBy({
+    by: ["productId"],
+    where: {
+      order: {
+        status: {
+          not: "CANCELLED",
+        },
+      },
+      product: productWhere,
+    },
+    _sum: {
+      quantity: true,
+    },
+    orderBy: {
+      _sum: {
+        quantity: "desc",
+      },
+    },
+    take: limit,
+  });
+
+  if (!grouped.length) {
+    return [];
+  }
+
+  const productIds = grouped.map((item) => item.productId);
+
+  const products = await prisma.product.findMany({
+    where: {
+      id: { in: productIds },
+    },
+    select: {
+      id: true,
+      images: {
+        select: {
+          imageUrl: true,
+        },
+        orderBy: [{ isPrimary: "desc" }, { orderIndex: "asc" }],
+        take: 1,
+      },
+    },
+  });
+
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  return grouped
+    .map((item) => {
+      const product = productMap.get(item.productId);
+      if (!product) return null;
+
+      return {
+        id: product.id,
+        image: product.images[0]?.imageUrl || null,
+      };
+    })
+    .filter(Boolean);
+};
+
+
+
 export const OrderService = {
   
   checkoutFromCart,
@@ -1179,5 +1129,5 @@ export const OrderService = {
   getOrderDetailsAdmin,
   updateOrderStatus,
   deleteOrder,
-  
+  getTopSellingProducts
 };

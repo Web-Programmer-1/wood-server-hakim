@@ -1,9 +1,94 @@
+import {
+  AvailabilityStatus,
+  BrandType,
+  Prisma,
+  ProductType,
+} from "@prisma/client";
 import { prisma } from "../../shared/prisma";
+import { applyMachineSizePresetFilter } from "../../../helper/machineSizeCalculate";
 
 
 
 
+// const createProduct = async (payload: any) => {
+//   const {
+//     name,
+//     slug,
+//     basePrice,
+//     discountPrice,
+//     availability,
+//     brandType,
+//     productCategoryId,
+//     description,
+//     shortDescription,
+//     productType,
+//     images,
+//     keyPoints,
+//     stockQuantity,
+//     damagedQty,
+//     reorderLevel,
+//     reservedQty,
+//     visibility,
 
+//   } = payload;
+
+//   if (
+//     !name ||
+//     !slug ||
+//     !basePrice ||
+//     !availability ||
+//     !brandType ||
+//     !productCategoryId
+//   ) {
+//     throw new Error("Missing required product fields");
+//   }
+
+//   const base = Number(basePrice);
+//   const discount = discountPrice ? Number(discountPrice) : null;
+
+//   const discountPercent =
+//     discount && discount < base
+//       ? Math.round(((base - discount) / base) * 100)
+//       : null;
+
+//   const product = await prisma.product.create({
+//     data: {
+//       name,
+//       slug,
+//       basePrice: base,
+//       discountPrice: discount,
+//       discountPercent,
+//       availability: availability as AvailabilityStatus,
+//       brandType: brandType as BrandType,
+//       productType: productType ? (productType as ProductType) : null,
+//       description,
+//       shortDescription,
+//       productCategoryId,
+//       keyPoints,
+
+//       stockQuantity: stockQuantity ? Number(stockQuantity) : 0,
+//       damagedQty: damagedQty ? Number(damagedQty) : 0,
+//       reorderLevel: reorderLevel ? Number(reorderLevel) : 5,
+//       reservedQty: reservedQty ? Number(reservedQty) : 0,
+//       visibility:
+//         visibility !== undefined
+//           ? visibility === "true" || visibility === true
+//           : true,
+//       images: {
+//         create: images || [],
+//       },
+//     },
+//     include: {
+//       images: true,
+//       productCategory: true,
+//     },
+//   });
+
+//   return {
+//     ...product,
+
+//   };
+// };
 
 const createProduct = async (payload: any) => {
   const {
@@ -19,6 +104,12 @@ const createProduct = async (payload: any) => {
     productType,
     images,
     keyPoints,
+    stockQuantity,
+    damagedQty,
+    reorderLevel,
+    reservedQty,
+    visibility,
+    variants,
   } = payload;
 
   if (
@@ -35,168 +126,198 @@ const createProduct = async (payload: any) => {
   const base = Number(basePrice);
   const discount = discountPrice ? Number(discountPrice) : null;
 
+  const discountPercent =
+    discount && discount < base
+      ? Math.round(((base - discount) / base) * 100)
+      : null;
+
+  const parsedVariants = Array.isArray(variants) ? variants : [];
+
   const product = await prisma.product.create({
     data: {
       name,
       slug,
       basePrice: base,
       discountPrice: discount,
-      availability,
-      brandType,
-      productType,
+      discountPercent,
+      availability: availability as AvailabilityStatus,
+      brandType: brandType as BrandType,
+      productType: productType ? (productType as ProductType) : null,
       description,
       shortDescription,
       productCategoryId,
       keyPoints,
-      
+
+      stockQuantity: stockQuantity ? Number(stockQuantity) : 0,
+      damagedQty: damagedQty ? Number(damagedQty) : 0,
+      reorderLevel: reorderLevel ? Number(reorderLevel) : 5,
+      reservedQty: reservedQty ? Number(reservedQty) : 0,
+      visibility:
+        visibility !== undefined
+          ? visibility === "true" || visibility === true
+          : true,
 
       images: {
         create: images || [],
       },
 
-     
-
+      variants: {
+        create: parsedVariants.map((variant: any) => ({
+          label: variant.label || null,
+          workingWidthMm: Number(variant.workingWidthMm),
+          workingLengthMm: Number(variant.workingLengthMm),
+          price: Number(variant.price),
+          discountPrice: variant.discountPrice
+            ? Number(variant.discountPrice)
+            : null,
+          imageUrl: variant.imageUrl || null,
+          stockQuantity: variant.stockQuantity
+            ? Number(variant.stockQuantity)
+            : 0,
+          isDefault: variant.isDefault === true || variant.isDefault === "true",
+        })),
+      },
     },
-
     include: {
       images: true,
-   
+      productCategory: true,
+      variants: true,
+    },
+  });
+
+  return product;
+};
+
+const getAllProducts = async (query: Record<string, any>) => {
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const {
+    searchTerm,
+    slug,
+    name,
+    brandType,
+    productType,
+    availability,
+    categorySlug,
+    minPrice,
+    maxPrice,
+    visibility,
+    minWidthMm,
+    maxWidthMm,
+    minLengthMm,
+    maxLengthMm,
+    sizePreset,
+  } = query;
+
+  const andConditions: Prisma.ProductWhereInput[] = [];
+
+  // ✅ unified search (name + slug)
+  if (searchTerm || name || slug) {
+    const searchValue = searchTerm || name || slug;
+
+    andConditions.push({
+      OR: [
+        {
+          name: {
+            contains: searchValue,
+            mode: "insensitive",
+          },
+        },
+        {
+          slug: {
+            contains: searchValue,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  // ✅ filters
+  if (brandType) {
+    andConditions.push({
+      brandType: brandType as BrandType,
+    });
+  }
+
+  if (productType) {
+    andConditions.push({
+      productType: productType as ProductType,
+    });
+  }
+
+  if (availability) {
+    andConditions.push({
+      availability: availability as AvailabilityStatus,
+    });
+  }
+
+  if (categorySlug) {
+    andConditions.push({
+      productCategory: {
+        slug: {
+          equals: String(categorySlug),
+          mode: "insensitive",
+        },
+      },
+    });
+  }
+
+  if (sizePreset) {
+    applyMachineSizePresetFilter(String(sizePreset), andConditions);
+  }
+
+  if (visibility !== undefined) {
+    andConditions.push({
+      visibility: visibility === "true" || visibility === true,
+    });
+  }
+
+  if (minPrice || maxPrice) {
+    andConditions.push({
+      basePrice: {
+        gte: minPrice ? Number(minPrice) : undefined,
+        lte: maxPrice ? Number(maxPrice) : undefined,
+      },
+    });
+  }
+
+  const whereCondition: Prisma.ProductWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const data = await prisma.product.findMany({
+    where: whereCondition,
+    skip,
+    take: limit,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      images: true,
       productCategory: true,
     },
   });
 
-  const discountPercent =
-    discount && discount < base
-      ? Math.round(((base - discount) / base) * 100)
-      : null;
+  const total = await prisma.product.count({
+    where: whereCondition,
+  });
 
-  return {
+  const formattedData = data.map((product) => ({
     ...product,
-    discountPercent,
-  };
-};
-
-
-
-
-
-
-
-
-
-
-
-
-const getAllProducts = async (query: any) => {
-  const {
-    category,
-    minPrice,
-    maxPrice,
-    availability,
-    brandType,
-    ratingGte,
-    productType,
-    sort,
-    page = 1,
-    limit = 12,
-  } = query;
-
-  const where: any = {
-    visibility: true,
-  };
-
-  //  Category filter (top cards)
-  if (category) {
-    where.productCategory = {
-      slug: category,
-    };
-  }
-
-  //  Availability filter
-  if (availability) {
-    where.availability = {
-      in: availability.split(","),
-    };
-  }
-
-  //  Brand filter1
-  if (brandType) {
-    where.brandType = {
-      in: brandType.split(","),
-    };
-  }
-
-  //  Product type
-  if (productType) {
-    where.productType = productType;
-  }
-
-  //  Rating filter
-  if (ratingGte) {
-    where.rating = {
-      gte: Number(ratingGte),
-    };
-  }
-
-  // Price filter (effective price)
-  if (minPrice || maxPrice) {
-    where.OR = [
-      {
-        discountPrice: {
-          gte: minPrice ? Number(minPrice) : undefined,
-          lte: maxPrice ? Number(maxPrice) : undefined,
-        },
-      },
-      {
-        discountPrice: null,
-        basePrice: {
-          gte: minPrice ? Number(minPrice) : undefined,
-          lte: maxPrice ? Number(maxPrice) : undefined,
-        },
-      },
-    ];
-  }
-
-  //  Sorting
-  let orderBy: any = { createdAt: "desc" };
-
-  if (sort === "price_asc") {
-    orderBy = { basePrice: "asc" };
-  }
-  if (sort === "price_desc") {
-    orderBy = { basePrice: "desc" };
-  }
-  if (sort === "rating_desc") {
-    orderBy = { rating: "desc" };
-  }
-
-  const skip = (Number(page) - 1) * Number(limit);
-
-  const [data, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        images: true,
-        productCategory: true,
-      },
-      orderBy,
-      skip,
-      take: Number(limit),
-    }),
-    prisma.product.count({ where }),
-  ]);
+  }));
 
   return {
     meta: {
-      page: Number(page),
-      limit: Number(limit),
+      page,
+      limit,
       total,
+      totalPage: Math.ceil(total / limit),
     },
-    data,
+    data: formattedData,
   };
 };
-
-
 
 const getProductDetails = async (slug: string) => {
   const product = await prisma.product.findUnique({
@@ -206,6 +327,10 @@ const getProductDetails = async (slug: string) => {
         orderBy: { orderIndex: "asc" },
       },
       productCategory: true,
+      variants: {
+        orderBy: { createdAt: "asc" },
+    
+      },
     },
   });
 
@@ -213,29 +338,42 @@ const getProductDetails = async (slug: string) => {
     throw new Error("Product not found");
   }
 
-  // 🔹 Discount calculation
-  const effectivePrice =
-    product.discountPrice ?? product.basePrice;
+  const defaultVariant =
+    product.variants.find((variant) => variant.isDefault) ||
+    product.variants[0] ||
+    null;
 
-  const discountPercent = product.discountPrice
-    ? Math.round(
-        ((product.basePrice - product.discountPrice) /
-          product.basePrice) *
-          100
-      )
+  const effectivePrice =
+    defaultVariant?.discountPrice ??
+    defaultVariant?.price ??
+    product.discountPrice ??
+    product.basePrice;
+
+  const discountPercent =
+    defaultVariant?.discountPrice && defaultVariant.price
+      ? Math.round(
+          ((defaultVariant.price - defaultVariant.discountPrice) /
+            defaultVariant.price) *
+            100
+        )
+      : product.discountPrice
+      ? Math.round(
+          ((product.basePrice - product.discountPrice) / product.basePrice) * 100
+        )
+      : null;
+
+  const machineSize = defaultVariant
+    ? `${defaultVariant.workingWidthMm} × ${defaultVariant.workingLengthMm} mm`
     : null;
 
   return {
     ...product,
+    defaultVariant,
     effectivePrice,
     discountPercent,
+    machineSize,
   };
 };
-
-
-
-
-
 
 const getRelatedProducts = async (slug: string) => {
   const current = await prisma.product.findUnique({
@@ -264,7 +402,6 @@ const getRelatedProducts = async (slug: string) => {
 
 
 
-
 const updateProduct = async (id: string, payload: any) => {
   const {
     name,
@@ -278,18 +415,17 @@ const updateProduct = async (id: string, payload: any) => {
     shortDescription,
     description,
     images,
+    variants,
   } = payload;
 
   // 🔹 update main product
-  const product = await prisma.product.update({
+  await prisma.product.update({
     where: { id },
     data: {
       name,
       slug,
       basePrice: basePrice ? Number(basePrice) : undefined,
-      discountPrice: discountPrice
-        ? Number(discountPrice)
-        : undefined,
+      discountPrice: discountPrice ? Number(discountPrice) : undefined,
       availability,
       brandType,
       productType,
@@ -299,7 +435,7 @@ const updateProduct = async (id: string, payload: any) => {
     },
   });
 
-  // 🔹 replace images if new images uploaded
+  // 🔹 replace images
   if (images && images.length > 0) {
     await prisma.productImage.deleteMany({
       where: { productId: id },
@@ -313,20 +449,55 @@ const updateProduct = async (id: string, payload: any) => {
     });
   }
 
-  const image = prisma.product.findUnique({
+  // 🔥 🔥 🔥 VARIANT UPDATE START
+
+  const parsedVariants = Array.isArray(variants)
+    ? variants
+    : variants
+    ? JSON.parse(variants)
+    : [];
+
+  if (parsedVariants.length) {
+    // delete old variants
+    await prisma.productVariant.deleteMany({
+      where: { productId: id },
+    });
+
+    // create new variants
+    await prisma.productVariant.createMany({
+      data: parsedVariants.map((variant: any) => ({
+        productId: id,
+        label: variant.label || null,
+        workingWidthMm: Number(variant.workingWidthMm),
+        workingLengthMm: Number(variant.workingLengthMm),
+        price: Number(variant.price),
+        discountPrice: variant.discountPrice
+          ? Number(variant.discountPrice)
+          : null,
+        imageUrl: variant.imageUrl || null,
+        stockQuantity: variant.stockQuantity
+          ? Number(variant.stockQuantity)
+          : 0,
+        isDefault:
+          variant.isDefault === true || variant.isDefault === "true",
+      })),
+    });
+  }
+
+  // 🔹 return updated full product
+  const updatedProduct = await prisma.product.findUnique({
     where: { id },
     include: {
       images: true,
       productCategory: true,
+      variants: true,
     },
   });
 
-  return {
-    product,
-    image,
-  }
-
+  return updatedProduct;
 };
+
+
 
 
 
@@ -338,11 +509,6 @@ const deleteProduct = async (id: string) => {
     },
   });
 };
-
-
-
-
-
 
 export const ProductService = {
   createProduct,

@@ -5,12 +5,21 @@ import { uploadProductImages } from "../../middlewares/uploadProductImage";
 
 const router = express.Router();
 
-// ADMIN
+
+
+
 router.post(
   "/",
-  uploadProductImages.array("images", 6),
+  uploadProductImages.fields([
+    { name: "images", maxCount: 10 },
+    { name: "variantImages", maxCount: 20 },
+  ]),
   ProductController.createProduct
 );
+
+
+
+
 
 router.get("/", ProductController.getAllProducts);
 
@@ -20,11 +29,12 @@ router.get("/:slug", ProductController.getProductDetails);
 router.get("/:slug/related", ProductController.getRelatedProducts);
 
 
-
-// ADMIN
 router.patch(
   "/:id",
-  uploadProductImages.array("images", 6), // optional
+  uploadProductImages.fields([
+    { name: "images", maxCount: 6 },
+    { name: "variantImages", maxCount: 20 },
+  ]),
   ProductController.updateProduct
 );
 
