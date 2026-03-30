@@ -1,8 +1,9 @@
 import {
   AvailabilityStatus,
-  BrandType,
+
   Prisma,
   ProductType,
+  SizeUnit,
 } from "@prisma/client";
 import { prisma } from "../../shared/prisma";
 import { PRODUCT_LIST_SELECT } from "./product.interface";
@@ -101,6 +102,7 @@ const createProduct = async (payload: any) => {
     description,
     shortDescription,
     productType,
+    brand,
     images,
     keyPoints,
     stockQuantity,
@@ -111,6 +113,7 @@ const createProduct = async (payload: any) => {
     variants,
   } = payload;
 
+  // ✅ required field check
   if (
     !name ||
     !slug ||
@@ -122,8 +125,20 @@ const createProduct = async (payload: any) => {
     throw new Error("Missing required product fields");
   }
 
+  // ✅ category exists check (VERY IMPORTANT)
+  const category = await prisma.productCategory.findUnique({
+    where: { id: productCategoryId },
+  });
+
+  if (!category) {
+    throw new Error("Product category not found");
+  }
+
   const base = Number(basePrice);
-  const discount = discountPrice ? Number(discountPrice) : null;
+  const discount =
+    discountPrice !== undefined && discountPrice !== null && discountPrice !== ""
+      ? Number(discountPrice)
+      : null;
 
   const discountPercent =
     discount && discount < base
@@ -131,6 +146,19 @@ const createProduct = async (payload: any) => {
       : null;
 
   const parsedVariants = Array.isArray(variants) ? variants : [];
+
+  // ✅ variant validation
+  parsedVariants.forEach((variant: any, index: number) => {
+    if (!variant.customSize) {
+      throw new Error(`Variant ${index + 1}: customSize is required`);
+    }
+    if (!variant.sizeUnit) {
+      throw new Error(`Variant ${index + 1}: sizeUnit is required (MM or FT)`);
+    }
+    if (!variant.price) {
+      throw new Error(`Variant ${index + 1}: price is required`);
+    }
+  });
 
   const product = await prisma.product.create({
     data: {
@@ -140,52 +168,68 @@ const createProduct = async (payload: any) => {
       discountPrice: discount,
       discountPercent,
       availability: availability as AvailabilityStatus,
-      brandType: brandType as BrandType,
+      brand: brand || null,
       productType: productType ? (productType as ProductType) : null,
       description,
-      shortDescription,
-      productCategoryId,
+        shortDescription,
+        productCategoryId,
       keyPoints,
 
       stockQuantity: stockQuantity ? Number(stockQuantity) : 0,
       damagedQty: damagedQty ? Number(damagedQty) : 0,
       reorderLevel: reorderLevel ? Number(reorderLevel) : 5,
       reservedQty: reservedQty ? Number(reservedQty) : 0,
+
       visibility:
         visibility !== undefined
           ? visibility === "true" || visibility === true
           : true,
 
+      // ✅ images
       images: {
         create: images || [],
       },
 
+      // ✅ variants (UPDATED)
       variants: {
         create: parsedVariants.map((variant: any) => ({
-          label: variant.label || null,
-          workingWidthMm: Number(variant.workingWidthMm),
-          workingLengthMm: Number(variant.workingLengthMm),
+          customSize: variant.customSize,
+          sizeUnit: variant.sizeUnit, // 🔥 NEW FIELD
           price: Number(variant.price),
-          discountPrice: variant.discountPrice
-            ? Number(variant.discountPrice)
-            : null,
+          discountPrice:
+            variant.discountPrice !== undefined &&
+            variant.discountPrice !== null &&
+            variant.discountPrice !== ""
+              ? Number(variant.discountPrice)
+              : null,
           imageUrl: variant.imageUrl || null,
-          stockQuantity: variant.stockQuantity
-            ? Number(variant.stockQuantity)
-            : 0,
-          isDefault: variant.isDefault === true || variant.isDefault === "true",
+          stockQuantity:
+            variant.stockQuantity !== undefined &&
+            variant.stockQuantity !== null &&
+            variant.stockQuantity !== ""
+              ? Number(variant.stockQuantity)
+              : 0,
+          isDefault:
+            variant.isDefault === true || variant.isDefault === "true",
         })),
       },
     },
     include: {
-      images: true,
+      images: {
+        orderBy: { orderIndex: "asc" },
+      },
       productCategory: true,
-      variants: true,
+      variants: {
+        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      },
     },
   });
 
   return product;
 };
+
+
+
 
 // const getAllProducts = async (query: Record<string, any>) => {
 //   const page = Number(query.page) || 1;
@@ -446,21 +490,21 @@ const getAllProducts = async (query: Record<string, any>) => {
     searchTerm,
     slug,
     name,
-    brandType,
+    brand, // ✅ FIXED
     productType,
     availability,
     categorySlug,
     minPrice,
     maxPrice,
     visibility,
-    minWidthMm,   
-    maxWidthMm,   
-    minLengthMm,  
-    maxLengthMm,  
+    customSize,
+    size,
+    sizeUnit, // 🔥 NEW
   } = query;
 
   const andConditions: Prisma.ProductWhereInput[] = [];
 
+  // visibility
   if (visibility !== undefined) {
     andConditions.push({
       visibility: visibility === "true" || visibility === true,
@@ -469,8 +513,9 @@ const getAllProducts = async (query: Record<string, any>) => {
     andConditions.push({ visibility: true });
   }
 
+  // search
   if (searchTerm || name || slug) {
-    const searchValue = (searchTerm || name || slug) as string;
+    const searchValue = String(searchTerm || name || slug);
     andConditions.push({
       OR: [
         { name: { contains: searchValue, mode: "insensitive" } },
@@ -479,18 +524,43 @@ const getAllProducts = async (query: Record<string, any>) => {
     });
   }
 
-  if (brandType) andConditions.push({ brandType: brandType as BrandType });
-  if (productType) andConditions.push({ productType: productType as ProductType });
-  if (availability) andConditions.push({ availability: availability as AvailabilityStatus });
-
-  if (categorySlug) {
+  // brand filter
+  if (brand) {
     andConditions.push({
-      productCategory: {
-        slug: { equals: String(categorySlug), mode: "insensitive" },
+      brand: {
+        contains: String(brand),
+        mode: "insensitive",
       },
     });
   }
 
+  // product type
+  if (productType) {
+    andConditions.push({
+      productType: productType as ProductType,
+    });
+  }
+
+  // availability
+  if (availability) {
+    andConditions.push({
+      availability: availability as AvailabilityStatus,
+    });
+  }
+
+  // category
+  if (categorySlug) {
+    andConditions.push({
+      productCategory: {
+        slug: {
+          equals: String(categorySlug),
+          mode: "insensitive",
+        },
+      },
+    });
+  }
+
+  // price
   if (minPrice || maxPrice) {
     andConditions.push({
       basePrice: {
@@ -500,26 +570,25 @@ const getAllProducts = async (query: Record<string, any>) => {
     });
   }
 
-  // ✅ Size filter — variant এর width/length range দিয়ে product filter
-  const hasSizeFilter = minWidthMm || maxWidthMm || minLengthMm || maxLengthMm;
+  // 🔥 size filter (customSize + sizeUnit)
+  const sizeValue = customSize || size;
+  const hasSizeFilter = Boolean(sizeValue || sizeUnit);
+
   if (hasSizeFilter) {
     andConditions.push({
       variants: {
         some: {
-          ...(minWidthMm || maxWidthMm
+          ...(sizeValue
             ? {
-                workingWidthMm: {
-                  gte: minWidthMm ? Number(minWidthMm) : undefined,
-                  lte: maxWidthMm ? Number(maxWidthMm) : undefined,
+                customSize: {
+                  contains: String(sizeValue),
+                  mode: "insensitive",
                 },
               }
             : {}),
-          ...(minLengthMm || maxLengthMm
+          ...(sizeUnit
             ? {
-                workingLengthMm: {
-                  gte: minLengthMm ? Number(minLengthMm) : undefined,
-                  lte: maxLengthMm ? Number(maxLengthMm) : undefined,
-                },
+                sizeUnit: sizeUnit as SizeUnit,
               }
             : {}),
         },
@@ -530,27 +599,25 @@ const getAllProducts = async (query: Record<string, any>) => {
   const whereCondition: Prisma.ProductWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
-  // ✅ Variant filter condition — response এ শুধু matching variants
-  const variantWhereCondition: Prisma.ProductVariantWhereInput = hasSizeFilter
-    ? {
-        ...(minWidthMm || maxWidthMm
-          ? {
-              workingWidthMm: {
-                gte: minWidthMm ? Number(minWidthMm) : undefined,
-                lte: maxWidthMm ? Number(maxWidthMm) : undefined,
-              },
-            }
-          : {}),
-        ...(minLengthMm || maxLengthMm
-          ? {
-              workingLengthMm: {
-                gte: minLengthMm ? Number(minLengthMm) : undefined,
-                lte: maxLengthMm ? Number(maxLengthMm) : undefined,
-              },
-            }
-          : {}),
-      }
-    : {};
+  // variant filter (response level)
+  const variantWhereCondition: Prisma.ProductVariantWhereInput =
+    hasSizeFilter
+      ? {
+          ...(sizeValue
+            ? {
+                customSize: {
+                  contains: String(sizeValue),
+                  mode: "insensitive",
+                },
+              }
+            : {}),
+          ...(sizeUnit
+            ? {
+                sizeUnit: sizeUnit as SizeUnit,
+              }
+            : {}),
+        }
+      : {};
 
   const [data, total] = await prisma.$transaction([
     prisma.product.findMany({
@@ -560,6 +627,7 @@ const getAllProducts = async (query: Record<string, any>) => {
       orderBy: { createdAt: "desc" },
       select: {
         ...PRODUCT_LIST_SELECT,
+
         images: {
           select: {
             id: true,
@@ -571,6 +639,7 @@ const getAllProducts = async (query: Record<string, any>) => {
           },
           orderBy: { orderIndex: "asc" },
         },
+
         productCategory: {
           select: {
             id: true,
@@ -582,21 +651,20 @@ const getAllProducts = async (query: Record<string, any>) => {
             updatedAt: true,
           },
         },
-        // ✅ Matching variants — size filter থাকলে filtered, না থাকলে সব
+
         variants: {
           where: variantWhereCondition,
           select: {
             id: true,
-            label: true,
-            workingWidthMm: true,
-            workingLengthMm: true,
+            customSize: true,
+            sizeUnit: true, // 🔥 add this
             price: true,
             discountPrice: true,
             imageUrl: true,
             stockQuantity: true,
             isDefault: true,
           },
-          orderBy: { workingWidthMm: "asc" },
+          orderBy: { customSize: "asc" },
         },
       },
     }),
@@ -604,12 +672,15 @@ const getAllProducts = async (query: Record<string, any>) => {
   ]);
 
   return {
-    meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
     data,
   };
 };
-
-
 
 
 const getProductDetails = async (slug: string) => {
@@ -622,7 +693,6 @@ const getProductDetails = async (slug: string) => {
       productCategory: true,
       variants: {
         orderBy: { createdAt: "asc" },
-    
       },
     },
   });
@@ -643,7 +713,7 @@ const getProductDetails = async (slug: string) => {
     product.basePrice;
 
   const discountPercent =
-    defaultVariant?.discountPrice && defaultVariant.price
+    defaultVariant?.discountPrice && defaultVariant?.price
       ? Math.round(
           ((defaultVariant.price - defaultVariant.discountPrice) /
             defaultVariant.price) *
@@ -655,16 +725,14 @@ const getProductDetails = async (slug: string) => {
         )
       : null;
 
-  const machineSize = defaultVariant
-    ? `${defaultVariant.workingWidthMm} × ${defaultVariant.workingLengthMm} mm`
-    : null;
+  const machineSize = defaultVariant?.customSize || null;
 
   return {
     ...product,
     defaultVariant,
     effectivePrice,
     discountPercent,
-    machineSize,
+    machineSize
   };
 };
 
@@ -702,47 +770,126 @@ const updateProduct = async (id: string, payload: any) => {
     basePrice,
     discountPrice,
     availability,
-    brandType,
+    brand,
     productType,
     productCategoryId,
     shortDescription,
     description,
     images,
     variants,
+    keyPoints,
+    stockQuantity,
+    damagedQty,
+    reorderLevel,
+    reservedQty,
+    visibility,
   } = payload;
 
-  // 🔹 update main product
+  const existingProduct = await prisma.product.findUnique({
+    where: { id },
+  });
+
+  if (!existingProduct) {
+    throw new Error("Product not found");
+  }
+
+  if (productCategoryId) {
+    const category = await prisma.productCategory.findUnique({
+      where: { id: productCategoryId },
+    });
+
+    if (!category) {
+      throw new Error("Product category not found");
+    }
+  }
+
+  const parsedBasePrice =
+    basePrice !== undefined && basePrice !== null && basePrice !== ""
+      ? Number(basePrice)
+      : existingProduct.basePrice;
+
+  const parsedDiscountPrice =
+    discountPrice !== undefined && discountPrice !== null && discountPrice !== ""
+      ? Number(discountPrice)
+      : null;
+
+  const discountPercent =
+    parsedDiscountPrice && parsedDiscountPrice < parsedBasePrice
+      ? Math.round(
+          ((parsedBasePrice - parsedDiscountPrice) / parsedBasePrice) * 100
+        )
+      : null;
+
   await prisma.product.update({
     where: { id },
     data: {
-      name,
-      slug,
-      basePrice: basePrice ? Number(basePrice) : undefined,
-      discountPrice: discountPrice ? Number(discountPrice) : undefined,
-      availability,
-      brandType,
-      productType,
-      productCategoryId,
-      shortDescription,
-      description,
+      name: name ?? undefined,
+      slug: slug ?? undefined,
+      basePrice:
+        basePrice !== undefined && basePrice !== null && basePrice !== ""
+          ? Number(basePrice)
+          : undefined,
+      discountPrice:
+        discountPrice !== undefined
+          ? discountPrice === null || discountPrice === ""
+            ? null
+            : Number(discountPrice)
+          : undefined,
+      discountPercent,
+      availability: availability ?? undefined,
+      brand: brand ?? undefined,
+      productType:
+        productType !== undefined
+          ? productType === "" || productType === null
+            ? null
+            : productType
+          : undefined,
+      productCategoryId: productCategoryId ?? undefined,
+      shortDescription: shortDescription ?? undefined,
+      description: description ?? undefined,
+      keyPoints: keyPoints !== undefined ? keyPoints : undefined,
+      stockQuantity:
+        stockQuantity !== undefined && stockQuantity !== null && stockQuantity !== ""
+          ? Number(stockQuantity)
+          : undefined,
+      damagedQty:
+        damagedQty !== undefined && damagedQty !== null && damagedQty !== ""
+          ? Number(damagedQty)
+          : undefined,
+      reorderLevel:
+        reorderLevel !== undefined && reorderLevel !== null && reorderLevel !== ""
+          ? Number(reorderLevel)
+          : undefined,
+      reservedQty:
+        reservedQty !== undefined && reservedQty !== null && reservedQty !== ""
+          ? Number(reservedQty)
+          : undefined,
+      visibility:
+        visibility !== undefined
+          ? visibility === true || visibility === "true"
+          : undefined,
     },
   });
 
-  // 🔹 replace images
-  if (images && images.length > 0) {
+  // replace images only if new images are sent
+  if (images && Array.isArray(images) && images.length > 0) {
     await prisma.productImage.deleteMany({
       where: { productId: id },
     });
 
     await prisma.productImage.createMany({
-      data: images.map((img: any) => ({
-        ...img,
+      data: images.map((img: any, index: number) => ({
         productId: id,
+        imageUrl: img.imageUrl,
+        isPrimary:
+          img.isPrimary !== undefined
+            ? img.isPrimary === true || img.isPrimary === "true"
+            : index === 0,
+        orderIndex:
+          img.orderIndex !== undefined ? Number(img.orderIndex) : index,
       })),
     });
   }
-
-  // 🔥 🔥 🔥 VARIANT UPDATE START
 
   const parsedVariants = Array.isArray(variants)
     ? variants
@@ -750,46 +897,53 @@ const updateProduct = async (id: string, payload: any) => {
     ? JSON.parse(variants)
     : [];
 
-  if (parsedVariants.length) {
-    // delete old variants
+  // replace variants only if variants field is sent
+  if (variants !== undefined) {
     await prisma.productVariant.deleteMany({
       where: { productId: id },
     });
 
-    // create new variants
-    await prisma.productVariant.createMany({
-      data: parsedVariants.map((variant: any) => ({
-        productId: id,
-        label: variant.label || null,
-        workingWidthMm: Number(variant.workingWidthMm),
-        workingLengthMm: Number(variant.workingLengthMm),
-        price: Number(variant.price),
-        discountPrice: variant.discountPrice
-          ? Number(variant.discountPrice)
-          : null,
-        imageUrl: variant.imageUrl || null,
-        stockQuantity: variant.stockQuantity
-          ? Number(variant.stockQuantity)
-          : 0,
-        isDefault:
-          variant.isDefault === true || variant.isDefault === "true",
-      })),
-    });
+    if (parsedVariants.length > 0) {
+      await prisma.productVariant.createMany({
+        data: parsedVariants.map((variant: any) => ({
+          productId: id,
+          customSize: variant.customSize,
+          price: Number(variant.price),
+          discountPrice:
+            variant.discountPrice !== undefined &&
+            variant.discountPrice !== null &&
+            variant.discountPrice !== ""
+              ? Number(variant.discountPrice)
+              : null,
+          imageUrl: variant.imageUrl || null,
+          stockQuantity:
+            variant.stockQuantity !== undefined &&
+            variant.stockQuantity !== null &&
+            variant.stockQuantity !== ""
+              ? Number(variant.stockQuantity)
+              : 0,
+          isDefault:
+            variant.isDefault === true || variant.isDefault === "true",
+        })),
+      });
+    }
   }
 
-  // 🔹 return updated full product
   const updatedProduct = await prisma.product.findUnique({
     where: { id },
     include: {
-      images: true,
+      images: {
+        orderBy: { orderIndex: "asc" },
+      },
       productCategory: true,
-      variants: true,
+      variants: {
+        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      },
     },
   });
 
   return updatedProduct;
 };
-
 
 
 

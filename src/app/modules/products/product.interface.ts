@@ -11,7 +11,7 @@ import { Prisma } from "@prisma/client";
   discountPrice: true,
   discountPercent: true,
   availability: true,
-  brandType: true,
+  brand: true,
   productType: true,
   rating: true,
   ratingCount: true,

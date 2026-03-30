@@ -30,7 +30,6 @@ import { ProductService } from "./product.service";
 
 
 
-
 const createProduct = async (req: Request, res: Response) => {
   const files = req.files as {
     [fieldname: string]: Express.MulterS3.File[];
@@ -68,9 +67,6 @@ const createProduct = async (req: Request, res: Response) => {
     data: result,
   });
 };
-
-
-
 
 
 
@@ -136,17 +132,35 @@ const getRelatedProducts = async (req: Request, res: Response) => {
 
 
 const updateProduct = async (req: Request, res: Response) => {
-  const files = req.files as any;
+  const files = req.files as {
+    [fieldname: string]: Express.MulterS3.File[];
+  };
 
-  const mainImages = (files?.images || []).map((file: any, index: number) => ({
+  const mainImages = (files?.images || []).map((file, index) => ({
     imageUrl: file.location,
     isPrimary: index === 0,
     orderIndex: index,
   }));
 
-  const parsedVariants = req.body.variants
-    ? JSON.parse(req.body.variants)
-    : [];
+  let parsedVariants: any[] = [];
+  let parsedKeyPoints: any = undefined;
+
+  try {
+    parsedVariants = req.body.variants ? JSON.parse(req.body.variants) : [];
+  } catch (error) {
+    throw new Error("Invalid JSON format in variants");
+  }
+
+  try {
+    parsedKeyPoints =
+      req.body.keyPoints !== undefined
+        ? req.body.keyPoints
+          ? JSON.parse(req.body.keyPoints)
+          : null
+        : undefined;
+  } catch (error) {
+    throw new Error("Invalid JSON format in keyPoints");
+  }
 
   const variantFiles = files?.variantImages || [];
 
@@ -157,21 +171,19 @@ const updateProduct = async (req: Request, res: Response) => {
 
   const payload = {
     ...req.body,
-    images: mainImages.length ? mainImages : undefined,
-    variants,
+    keyPoints: parsedKeyPoints,
+    images: mainImages.length > 0 ? mainImages : undefined,
+    variants: req.body.variants !== undefined ? variants : undefined,
   };
 
-  const result = await ProductService.updateProduct(
-    req.params.id,
-    payload
-  );
+  const result = await ProductService.updateProduct(req.params.id, payload);
 
   res.status(200).json({
     success: true,
+    message: "Product updated successfully",
     data: result,
   });
 };
-
 
 
 
