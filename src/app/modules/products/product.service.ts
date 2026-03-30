@@ -5,8 +5,7 @@ import {
   ProductType,
 } from "@prisma/client";
 import { prisma } from "../../shared/prisma";
-import { applyMachineSizePresetFilter } from "../../../helper/machineSizeCalculate";
-
+import { PRODUCT_LIST_SELECT } from "./product.interface";
 
 
 
@@ -188,9 +187,259 @@ const createProduct = async (payload: any) => {
   return product;
 };
 
+// const getAllProducts = async (query: Record<string, any>) => {
+//   const page = Number(query.page) || 1;
+//   const limit = Number(query.limit) || 10;
+//   const skip = (page - 1) * limit;
+
+//   const {
+//     searchTerm,
+//     slug,
+//     name,
+//     brandType,
+//     productType,
+//     availability,
+//     categorySlug,
+//     minPrice,
+//     maxPrice,
+//     visibility,
+//     minWidthMm,
+//     maxWidthMm,
+//     minLengthMm,
+//     maxLengthMm,
+//     sizePreset,
+//   } = query;
+
+//   const andConditions: Prisma.ProductWhereInput[] = [];
+
+//   // ✅ unified search (name + slug)
+//   if (searchTerm || name || slug) {
+//     const searchValue = searchTerm || name || slug;
+
+//     andConditions.push({
+//       OR: [
+//         {
+//           name: {
+//             contains: searchValue,
+//             mode: "insensitive",
+//           },
+//         },
+//         {
+//           slug: {
+//             contains: searchValue,
+//             mode: "insensitive",
+//           },
+//         },
+//       ],
+//     });
+//   }
+
+//   // ✅ filters
+//   if (brandType) {
+//     andConditions.push({
+//       brandType: brandType as BrandType,
+//     });
+//   }
+
+//   if (productType) {
+//     andConditions.push({
+//       productType: productType as ProductType,
+//     });
+//   }
+
+//   if (availability) {
+//     andConditions.push({
+//       availability: availability as AvailabilityStatus,
+//     });
+//   }
+
+//   if (categorySlug) {
+//     andConditions.push({
+//       productCategory: {
+//         slug: {
+//           equals: String(categorySlug),
+//           mode: "insensitive",
+//         },
+//       },
+//     });
+//   }
+
+
+
+//   if (visibility !== undefined) {
+//     andConditions.push({
+//       visibility: visibility === "true" || visibility === true,
+//     });
+//   }
+
+//   if (minPrice || maxPrice) {
+//     andConditions.push({
+//       basePrice: {
+//         gte: minPrice ? Number(minPrice) : undefined,
+//         lte: maxPrice ? Number(maxPrice) : undefined,
+//       },
+//     });
+//   }
+
+//   const whereCondition: Prisma.ProductWhereInput =
+//     andConditions.length > 0 ? { AND: andConditions } : {};
+
+//   const data = await prisma.product.findMany({
+//     where: whereCondition,
+//     skip,
+//     take: limit,
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//     include: {
+//       images: true,
+//       productCategory: true,
+//     },
+//   });
+
+//   const total = await prisma.product.count({
+//     where: whereCondition,
+//   });
+
+//   const formattedData = data.map((product) => ({
+//     ...product,
+//   }));
+
+//   return {
+//     meta: {
+//       page,
+//       limit,
+//       total,
+//       totalPage: Math.ceil(total / limit),
+//     },
+//     data: formattedData,
+//   };
+// };
+
+
+
+
+
+
+
+// const getAllProducts = async (query: Record<string, any>) => {
+//   const page = Math.max(1, Number(query.page) || 1);
+//   const limit = Math.min(100, Math.max(1, Number(query.limit) || 10)); // ✅ max 100 enforce
+//   const skip = (page - 1) * limit;
+
+//   // ✅ Optional includes — শুধু request করলেই load হবে
+//   const includeImages = query.include === "images" || query.include === "all";
+//   const includeCategory = query.include === "category" || query.include === "all";
+
+//   const {
+//     searchTerm,
+//     slug,
+//     name,
+//     brandType,
+//     productType,
+//     availability,
+//     categorySlug,
+//     minPrice,
+//     maxPrice,
+//     visibility,
+//   } = query;
+
+//   const andConditions: Prisma.ProductWhereInput[] = [];
+
+//   // ✅ Visibility default: শুধু visible products দেখাও (unless admin)
+//   if (visibility !== undefined) {
+//     andConditions.push({
+//       visibility: visibility === "true" || visibility === true,
+//     });
+//   } else {
+//     andConditions.push({ visibility: true }); // default: only visible
+//   }
+
+//   // ✅ Search
+//   if (searchTerm || name || slug) {
+//     const searchValue = (searchTerm || name || slug) as string;
+//     andConditions.push({
+//       OR: [
+//         { name: { contains: searchValue, mode: "insensitive" } },
+//         { slug: { contains: searchValue, mode: "insensitive" } },
+//       ],
+//     });
+//   }
+
+//   if (brandType) andConditions.push({ brandType: brandType as BrandType });
+//   if (productType) andConditions.push({ productType: productType as ProductType });
+//   if (availability) andConditions.push({ availability: availability as AvailabilityStatus });
+
+//   if (categorySlug) {
+//     andConditions.push({
+//       productCategory: {
+//         slug: { equals: String(categorySlug), mode: "insensitive" },
+//       },
+//     });
+//   }
+
+//   if (minPrice || maxPrice) {
+//     andConditions.push({
+//       basePrice: {
+//         gte: minPrice ? Number(minPrice) : undefined,
+//         lte: maxPrice ? Number(maxPrice) : undefined,
+//       },
+//     });
+//   }
+
+//   const whereCondition: Prisma.ProductWhereInput =
+//     andConditions.length > 0 ? { AND: andConditions } : {};
+
+//   // ✅ Core fix: $transaction দিয়ে দুইটা query একসাথে parallel এ চালাও
+//   const [data, total] = await prisma.$transaction([
+//     prisma.product.findMany({
+//       where: whereCondition,
+//       skip,
+//       take: limit,
+//       orderBy: { createdAt: "desc" },
+//       // ✅ শুধু দরকারি fields select করো
+//       select: {
+//         ...PRODUCT_LIST_SELECT,
+//         // ✅ Conditional includes — query param ছাড়া relation load হবে না
+//         ...(includeImages && {
+//           images: {
+//             where: { isPrimary: true }, // শুধু primary image, সব না
+//             select: { imageUrl: true, isPrimary: true },
+//             take: 1,
+//           },
+//         }),
+//         ...(includeCategory && {
+//           productCategory: {
+//             select: { id: true, name: true, slug: true },
+//           },
+//         }),
+//       },
+//     }),
+//     // count() ও একই where — same transaction এ
+//     prisma.product.count({ where: whereCondition }),
+//   ]);
+
+//   return {
+//     meta: {
+//       page,
+//       limit,
+//       total,
+//       totalPage: Math.ceil(total / limit),
+//     },
+//     data,
+//   };
+// };
+
+
+
+
+
+
+
+// ✅ Full updated service function
 const getAllProducts = async (query: Record<string, any>) => {
-  const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 10;
+  const page = Math.max(1, Number(query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
   const skip = (page - 1) * limit;
 
   const {
@@ -204,74 +453,41 @@ const getAllProducts = async (query: Record<string, any>) => {
     minPrice,
     maxPrice,
     visibility,
-    minWidthMm,
-    maxWidthMm,
-    minLengthMm,
-    maxLengthMm,
-    sizePreset,
+    minWidthMm,   
+    maxWidthMm,   
+    minLengthMm,  
+    maxLengthMm,  
   } = query;
 
   const andConditions: Prisma.ProductWhereInput[] = [];
 
-  // ✅ unified search (name + slug)
-  if (searchTerm || name || slug) {
-    const searchValue = searchTerm || name || slug;
+  if (visibility !== undefined) {
+    andConditions.push({
+      visibility: visibility === "true" || visibility === true,
+    });
+  } else {
+    andConditions.push({ visibility: true });
+  }
 
+  if (searchTerm || name || slug) {
+    const searchValue = (searchTerm || name || slug) as string;
     andConditions.push({
       OR: [
-        {
-          name: {
-            contains: searchValue,
-            mode: "insensitive",
-          },
-        },
-        {
-          slug: {
-            contains: searchValue,
-            mode: "insensitive",
-          },
-        },
+        { name: { contains: searchValue, mode: "insensitive" } },
+        { slug: { contains: searchValue, mode: "insensitive" } },
       ],
     });
   }
 
-  // ✅ filters
-  if (brandType) {
-    andConditions.push({
-      brandType: brandType as BrandType,
-    });
-  }
-
-  if (productType) {
-    andConditions.push({
-      productType: productType as ProductType,
-    });
-  }
-
-  if (availability) {
-    andConditions.push({
-      availability: availability as AvailabilityStatus,
-    });
-  }
+  if (brandType) andConditions.push({ brandType: brandType as BrandType });
+  if (productType) andConditions.push({ productType: productType as ProductType });
+  if (availability) andConditions.push({ availability: availability as AvailabilityStatus });
 
   if (categorySlug) {
     andConditions.push({
       productCategory: {
-        slug: {
-          equals: String(categorySlug),
-          mode: "insensitive",
-        },
+        slug: { equals: String(categorySlug), mode: "insensitive" },
       },
-    });
-  }
-
-  if (sizePreset) {
-    applyMachineSizePresetFilter(String(sizePreset), andConditions);
-  }
-
-  if (visibility !== undefined) {
-    andConditions.push({
-      visibility: visibility === "true" || visibility === true,
     });
   }
 
@@ -284,40 +500,117 @@ const getAllProducts = async (query: Record<string, any>) => {
     });
   }
 
+  // ✅ Size filter — variant এর width/length range দিয়ে product filter
+  const hasSizeFilter = minWidthMm || maxWidthMm || minLengthMm || maxLengthMm;
+  if (hasSizeFilter) {
+    andConditions.push({
+      variants: {
+        some: {
+          ...(minWidthMm || maxWidthMm
+            ? {
+                workingWidthMm: {
+                  gte: minWidthMm ? Number(minWidthMm) : undefined,
+                  lte: maxWidthMm ? Number(maxWidthMm) : undefined,
+                },
+              }
+            : {}),
+          ...(minLengthMm || maxLengthMm
+            ? {
+                workingLengthMm: {
+                  gte: minLengthMm ? Number(minLengthMm) : undefined,
+                  lte: maxLengthMm ? Number(maxLengthMm) : undefined,
+                },
+              }
+            : {}),
+        },
+      },
+    });
+  }
+
   const whereCondition: Prisma.ProductWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const data = await prisma.product.findMany({
-    where: whereCondition,
-    skip,
-    take: limit,
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      images: true,
-      productCategory: true,
-    },
-  });
+  // ✅ Variant filter condition — response এ শুধু matching variants
+  const variantWhereCondition: Prisma.ProductVariantWhereInput = hasSizeFilter
+    ? {
+        ...(minWidthMm || maxWidthMm
+          ? {
+              workingWidthMm: {
+                gte: minWidthMm ? Number(minWidthMm) : undefined,
+                lte: maxWidthMm ? Number(maxWidthMm) : undefined,
+              },
+            }
+          : {}),
+        ...(minLengthMm || maxLengthMm
+          ? {
+              workingLengthMm: {
+                gte: minLengthMm ? Number(minLengthMm) : undefined,
+                lte: maxLengthMm ? Number(maxLengthMm) : undefined,
+              },
+            }
+          : {}),
+      }
+    : {};
 
-  const total = await prisma.product.count({
-    where: whereCondition,
-  });
-
-  const formattedData = data.map((product) => ({
-    ...product,
-  }));
+  const [data, total] = await prisma.$transaction([
+    prisma.product.findMany({
+      where: whereCondition,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        ...PRODUCT_LIST_SELECT,
+        images: {
+          select: {
+            id: true,
+            productId: true,
+            imageUrl: true,
+            isPrimary: true,
+            orderIndex: true,
+            createdAt: true,
+          },
+          orderBy: { orderIndex: "asc" },
+        },
+        productCategory: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            coverImage: true,
+            visibility: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        // ✅ Matching variants — size filter থাকলে filtered, না থাকলে সব
+        variants: {
+          where: variantWhereCondition,
+          select: {
+            id: true,
+            label: true,
+            workingWidthMm: true,
+            workingLengthMm: true,
+            price: true,
+            discountPrice: true,
+            imageUrl: true,
+            stockQuantity: true,
+            isDefault: true,
+          },
+          orderBy: { workingWidthMm: "asc" },
+        },
+      },
+    }),
+    prisma.product.count({ where: whereCondition }),
+  ]);
 
   return {
-    meta: {
-      page,
-      limit,
-      total,
-      totalPage: Math.ceil(total / limit),
-    },
-    data: formattedData,
+    meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
+    data,
   };
 };
+
+
+
 
 const getProductDetails = async (slug: string) => {
   const product = await prisma.product.findUnique({
