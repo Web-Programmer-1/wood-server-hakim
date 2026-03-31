@@ -13,38 +13,37 @@ model ProductCategory {
 }
 
 model Product {
-  id                String             @id @default(uuid())
+  id                String              @id @default(uuid())
   name              String
-  slug              String             @unique
+  slug              String              @unique
   shortDescription  String?
   description       String?
   basePrice         Int
   discountPrice     Int?
   discountPercent   Int?
   availability      AvailabilityStatus?
-   brand             String? 
   productType       ProductType?
-  rating            Float              @default(0)
-  ratingCount       Int                @default(0)
+  rating            Float               @default(0)
+  ratingCount       Int                 @default(0)
   keyPoints         Json?
   productCategoryId String
-  visibility        Boolean            @default(true)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  stockQuantity     Int                @default(0)
-  damagedQty        Int                @default(0)
-  reorderLevel      Int                @default(5)
-  reservedQty       Int                @default(0)
+  visibility        Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  stockQuantity     Int                 @default(0)
+  damagedQty        Int                 @default(0)
+  reorderLevel      Int                 @default(5)
+  reservedQty       Int                 @default(0)
+  brand             String?
   cartItems         CartItem[]
   orderItems        OrderItem[]
-  productCategory   ProductCategory    @relation(fields: [productCategoryId], references: [id])
+  productCategory   ProductCategory     @relation(fields: [productCategoryId], references: [id])
   images            ProductImage[]
   variants          ProductVariant[]
   review            Review[]
 
   @@index([slug])
   @@index([productCategoryId])
- 
   @@index([stockQuantity])
   @@index([brand])
 }
@@ -52,8 +51,6 @@ model Product {
 model ProductVariant {
   id            String   @id @default(uuid())
   productId     String
-  customSize    String
-  sizeUnit  SizeUnit
   price         Int
   discountPrice Int?
   imageUrl      String?
@@ -61,6 +58,8 @@ model ProductVariant {
   isDefault     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  customSize    String
+  sizeUnit      SizeUnit
   product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
@@ -84,8 +83,6 @@ enum AvailabilityStatus {
   PRE_ORDER
   UPCOMING
 }
-
-
 
 enum ProductType {
   IMPORTED
