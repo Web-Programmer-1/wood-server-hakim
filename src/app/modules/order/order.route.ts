@@ -27,9 +27,7 @@ router.patch(
 
 
 
-router.get("/top-selling-products",
-    authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
-  OrderController.getTopSellingProducts);
+router.get("/top-selling-products", OrderController.getTopSellingProducts);
 
 
 router.get("/my", authGuard(UserRole.CUSTOMER, UserRole.ADMIN), OrderController.getMyOrders);

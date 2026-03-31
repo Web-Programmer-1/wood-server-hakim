@@ -97,7 +97,6 @@ const createProduct = async (payload: any) => {
     basePrice,
     discountPrice,
     availability,
-    brandType,
     productCategoryId,
     description,
     shortDescription,
@@ -119,7 +118,6 @@ const createProduct = async (payload: any) => {
     !slug ||
     !basePrice ||
     !availability ||
-    !brandType ||
     !productCategoryId
   ) {
     throw new Error("Missing required product fields");
@@ -194,7 +192,7 @@ const createProduct = async (payload: any) => {
       variants: {
         create: parsedVariants.map((variant: any) => ({
           customSize: variant.customSize,
-          sizeUnit: variant.sizeUnit, // 🔥 NEW FIELD
+          sizeUnit: variant.sizeUnit as SizeUnit,
           price: Number(variant.price),
           discountPrice:
             variant.discountPrice !== undefined &&
@@ -493,7 +491,8 @@ const getAllProducts = async (query: Record<string, any>) => {
     brand, // ✅ FIXED
     productType,
     availability,
-    categorySlug,
+    category,
+    categorySlug: categorySlugLegacy,
     minPrice,
     maxPrice,
     visibility,
@@ -501,6 +500,8 @@ const getAllProducts = async (query: Record<string, any>) => {
     size,
     sizeUnit, // 🔥 NEW
   } = query;
+
+  const effectiveCategorySlug = categorySlugLegacy ?? category;
 
   const andConditions: Prisma.ProductWhereInput[] = [];
 
@@ -513,25 +514,64 @@ const getAllProducts = async (query: Record<string, any>) => {
     andConditions.push({ visibility: true });
   }
 
-  // search
-  if (searchTerm || name || slug) {
-    const searchValue = String(searchTerm || name || slug);
+  // search (name/slug/brand/category/variant size label)
+  const normalizedSearch = String(searchTerm ?? name ?? slug ?? "").trim();
+  if (normalizedSearch) {
+    const possibleSizeUnit = ["MM", "FT"].includes(normalizedSearch.toUpperCase())
+      ? (normalizedSearch.toUpperCase() as SizeUnit)
+      : null;
+
     andConditions.push({
       OR: [
-        { name: { contains: searchValue, mode: "insensitive" } },
-        { slug: { contains: searchValue, mode: "insensitive" } },
+        { name: { contains: normalizedSearch, mode: "insensitive" } },
+        { slug: { contains: normalizedSearch, mode: "insensitive" } },
+        { brand: { contains: normalizedSearch, mode: "insensitive" } },
+        {
+          productCategory: {
+            slug: { contains: normalizedSearch, mode: "insensitive" },
+          },
+        },
+        {
+          productCategory: {
+            name: { contains: normalizedSearch, mode: "insensitive" },
+          },
+        },
+        {
+          variants: {
+            some: {
+              customSize: { contains: normalizedSearch, mode: "insensitive" },
+            },
+          },
+        },
+        ...(possibleSizeUnit
+          ? [
+              {
+                variants: {
+                  some: {
+                    sizeUnit: possibleSizeUnit,
+                  },
+                },
+              } as any,
+            ]
+          : []),
       ],
     });
   }
 
   // brand filter
   if (brand) {
-    andConditions.push({
-      brand: {
-        contains: String(brand),
-        mode: "insensitive",
-      },
-    });
+    const brandTerms = String(brand)
+      .split(",")
+      .map((b) => b.trim())
+      .filter(Boolean);
+
+    if (brandTerms.length > 0) {
+      andConditions.push({
+        OR: brandTerms.map((term) => ({
+          brand: { contains: term, mode: "insensitive" },
+        })),
+      });
+    }
   }
 
   // product type
@@ -543,17 +583,26 @@ const getAllProducts = async (query: Record<string, any>) => {
 
   // availability
   if (availability) {
-    andConditions.push({
-      availability: availability as AvailabilityStatus,
-    });
+    const availabilityTerms = String(availability)
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+
+    if (availabilityTerms.length > 0) {
+      andConditions.push({
+        OR: availabilityTerms.map((term) => ({
+          availability: term as AvailabilityStatus,
+        })),
+      });
+    }
   }
 
   // category
-  if (categorySlug) {
+  if (effectiveCategorySlug) {
     andConditions.push({
       productCategory: {
         slug: {
-          equals: String(categorySlug),
+          equals: String(effectiveCategorySlug),
           mode: "insensitive",
         },
       },
@@ -572,7 +621,14 @@ const getAllProducts = async (query: Record<string, any>) => {
 
   // 🔥 size filter (customSize + sizeUnit)
   const sizeValue = customSize || size;
-  const hasSizeFilter = Boolean(sizeValue || sizeUnit);
+  const sizeUnitTerms = sizeUnit
+    ? String(sizeUnit)
+        .split(",")
+        .map((v) => v.trim().toUpperCase())
+        .filter(Boolean)
+    : [];
+
+  const hasSizeFilter = Boolean(sizeValue || sizeUnitTerms.length > 0);
 
   if (hasSizeFilter) {
     andConditions.push({
@@ -586,9 +642,9 @@ const getAllProducts = async (query: Record<string, any>) => {
                 },
               }
             : {}),
-          ...(sizeUnit
+          ...(sizeUnitTerms.length > 0
             ? {
-                sizeUnit: sizeUnit as SizeUnit,
+                sizeUnit: { in: sizeUnitTerms as unknown as SizeUnit[] },
               }
             : {}),
         },
@@ -611,9 +667,9 @@ const getAllProducts = async (query: Record<string, any>) => {
                 },
               }
             : {}),
-          ...(sizeUnit
+          ...(sizeUnitTerms.length > 0
             ? {
-                sizeUnit: sizeUnit as SizeUnit,
+                sizeUnit: { in: sizeUnitTerms as unknown as SizeUnit[] },
               }
             : {}),
         }
@@ -908,6 +964,7 @@ const updateProduct = async (id: string, payload: any) => {
         data: parsedVariants.map((variant: any) => ({
           productId: id,
           customSize: variant.customSize,
+          sizeUnit: variant.sizeUnit as SizeUnit,
           price: Number(variant.price),
           discountPrice:
             variant.discountPrice !== undefined &&
@@ -957,9 +1014,27 @@ const deleteProduct = async (id: string) => {
   });
 };
 
+const getAllProductBrands = async () => {
+  const rows = await prisma.product.findMany({
+    where: {
+      visibility: true,
+      NOT: { brand: null },
+    },
+    distinct: ["brand"],
+    select: { brand: true },
+  });
+
+  const brands = rows
+    .map((r) => r.brand)
+    .filter((b): b is string => typeof b === "string" && b.trim().length > 0);
+
+  return brands.sort((a, b) => a.localeCompare(b));
+};
+
 export const ProductService = {
   createProduct,
   getAllProducts,
+  getAllProductBrands,
   getProductDetails,
   getRelatedProducts,
   updateProduct,

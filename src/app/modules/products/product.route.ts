@@ -25,6 +25,7 @@ router.get("/", ProductController.getAllProducts);
 
 
 
+router.get("/brands", ProductController.getAllProductBrands);
 router.get("/:slug", ProductController.getProductDetails);
 router.get("/:slug/related", ProductController.getRelatedProducts);
 

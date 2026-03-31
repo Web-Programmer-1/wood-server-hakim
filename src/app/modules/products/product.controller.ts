@@ -1,6 +1,36 @@
 import { Request, Response } from "express";
 import { ProductService } from "./product.service";
 
+function parseBodyJsonArray<T>(raw: unknown): T[] {
+  if (raw === undefined || raw === null) return [];
+  if (Array.isArray(raw)) return raw as T[];
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function mergeVariantUploads(
+  parsedVariants: any[],
+  variantFiles: Express.MulterS3.File[] = []
+) {
+  let fileIdx = 0;
+  return parsedVariants.map((variant: any) => {
+    const { hasNewImage, ...rest } = variant;
+    const needNew =
+      hasNewImage === true || hasNewImage === "true";
+    const imageUrl = needNew
+      ? variantFiles[fileIdx++]?.location ?? rest.imageUrl ?? null
+      : rest.imageUrl ?? null;
+    return { ...rest, imageUrl };
+  });
+}
+
 // const createProduct = async (req: Request, res: Response) => {
 //   const images = (req.files as any[])?.map((file, index) => ({
 //     imageUrl: file.location,
@@ -41,20 +71,19 @@ const createProduct = async (req: Request, res: Response) => {
     orderIndex: index,
   }));
 
-  const parsedVariants = req.body.variants
-    ? JSON.parse(req.body.variants)
-    : [];
+  const parsedVariants = parseBodyJsonArray(req.body.variants);
 
   const variantFiles = files?.variantImages || [];
 
-  const variants = parsedVariants.map((variant: any, index: number) => ({
-    ...variant,
-    imageUrl: variantFiles[index]?.location || null,
-  }));
+  const variants = mergeVariantUploads(parsedVariants, variantFiles);
 
   const payload = {
     ...req.body,
-    keyPoints: req.body.keyPoints ? JSON.parse(req.body.keyPoints) : null,
+    keyPoints: req.body.keyPoints
+      ? typeof req.body.keyPoints === "string"
+        ? JSON.parse(req.body.keyPoints)
+        : req.body.keyPoints
+      : null,
     images: mainImages,
     variants,
   };
@@ -84,6 +113,15 @@ const getAllProducts = async (req: Request, res: Response) => {
 
 
 
+
+const getAllProductBrands = async (_req: Request, res: Response) => {
+  const result = await ProductService.getAllProductBrands();
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+};
 
 const getProductDetails = async (req: Request, res: Response) => {
   const result = await ProductService.getProductDetails(req.params.slug);
@@ -142,32 +180,27 @@ const updateProduct = async (req: Request, res: Response) => {
     orderIndex: index,
   }));
 
-  let parsedVariants: any[] = [];
+  const parsedVariants = parseBodyJsonArray(req.body.variants);
+
   let parsedKeyPoints: any = undefined;
-
-  try {
-    parsedVariants = req.body.variants ? JSON.parse(req.body.variants) : [];
-  } catch (error) {
-    throw new Error("Invalid JSON format in variants");
-  }
-
-  try {
-    parsedKeyPoints =
-      req.body.keyPoints !== undefined
-        ? req.body.keyPoints
-          ? JSON.parse(req.body.keyPoints)
-          : null
-        : undefined;
-  } catch (error) {
-    throw new Error("Invalid JSON format in keyPoints");
+  if (req.body.keyPoints !== undefined) {
+    const kp = req.body.keyPoints;
+    if (kp === null || kp === "") {
+      parsedKeyPoints = null;
+    } else if (typeof kp === "string") {
+      try {
+        parsedKeyPoints = JSON.parse(kp);
+      } catch {
+        throw new Error("Invalid JSON format in keyPoints");
+      }
+    } else {
+      parsedKeyPoints = kp;
+    }
   }
 
   const variantFiles = files?.variantImages || [];
 
-  const variants = parsedVariants.map((variant: any, index: number) => ({
-    ...variant,
-    imageUrl: variantFiles[index]?.location || variant.imageUrl || null,
-  }));
+  const variants = mergeVariantUploads(parsedVariants, variantFiles);
 
   const payload = {
     ...req.body,
@@ -206,6 +239,7 @@ const deleteProduct = async (req: Request, res: Response) => {
 export const ProductController = {
   createProduct,
   getAllProducts,
+  getAllProductBrands,
   getProductDetails,
   getRelatedProducts,
   updateProduct,

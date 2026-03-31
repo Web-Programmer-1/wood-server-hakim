@@ -1048,13 +1048,15 @@ const getMyOrderTracking = async (userId: string, orderId: string) => {
 const getTopSellingProducts = async (query: Record<string, any>) => {
   const limit = Number(query.limit) || 8;
   const categoryId = query.categoryId;
-  const brandType = query.brandType;
+  const brand = query.brand;
   const availability = query.availability;
 
   const productWhere: Prisma.ProductWhereInput = {
     visibility: true,
     ...(categoryId && { productCategoryId: categoryId }),
-    ...(brandType && { brandType }),
+    ...(brand && {
+      brand: { contains: String(brand), mode: "insensitive" },
+    }),
     ...(availability && { availability }),
   };
 
@@ -1091,13 +1093,24 @@ const getTopSellingProducts = async (query: Record<string, any>) => {
     },
     select: {
       id: true,
+      name: true,
+      slug: true,
+      basePrice: true,
+      discountPrice: true,
+      availability: true,
+      brand: true,
+      productType: true,
       images: {
         select: {
+          id: true,
           imageUrl: true,
+          isPrimary: true,
+          orderIndex: true,
+          productId: true,
         },
         orderBy: [{ isPrimary: "desc" }, { orderIndex: "asc" }],
         take: 1,
-      },
+      }
     },
   });
 
@@ -1110,7 +1123,14 @@ const getTopSellingProducts = async (query: Record<string, any>) => {
 
       return {
         id: product.id,
-        image: product.images[0]?.imageUrl || null,
+        name: product.name,
+        slug: product.slug,
+        basePrice: product.basePrice,
+        discountPrice: product.discountPrice,
+        availability: product.availability,
+        brand: product.brand,
+        productType: product.productType,
+        images: product.images,
       };
     })
     .filter(Boolean);
