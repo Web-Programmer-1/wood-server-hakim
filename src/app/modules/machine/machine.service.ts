@@ -3,6 +3,19 @@
 import httpStatus from "http-status";
 import { ApiError } from "../../errors/ApiError";
 import { prisma } from "../../shared/prisma";
+import {
+  cacheGetOrSet,
+  stableQueryHash,
+  CacheTTL,
+  invalidateMachineReadCaches,
+  invalidateCategoryReadCaches,
+} from "../../../utils/httpCache";
+
+const bumpMachineCaches = () =>
+  Promise.all([
+    invalidateMachineReadCaches(),
+    invalidateCategoryReadCaches(),
+  ]).catch(() => undefined);
 
 import PDFDocument from "pdfkit";
 import { Response } from "express";
@@ -305,7 +318,7 @@ type GetMachinesParams = {
   grouped?: boolean;
 };
 
-export const getMachines = async (params: GetMachinesParams) => {
+const getMachinesUncached = async (params: GetMachinesParams) => {
   const { page, limit, search, categoryId, sortBy, sortOrder, grouped } = params;
 
   const safeSortBy: SortBy = sortBy === "name" ? "name" : "createdAt";
@@ -443,6 +456,12 @@ export const getMachines = async (params: GetMachinesParams) => {
   };
 };
 
+export const getMachines = async (params: GetMachinesParams) => {
+  const key = `cache:machine:list:${stableQueryHash(params as unknown as Record<string, unknown>)}`;
+  return cacheGetOrSet(key, CacheTTL.machineList, () =>
+    getMachinesUncached(params)
+  );
+};
 
 
 
@@ -453,7 +472,8 @@ export const getMachines = async (params: GetMachinesParams) => {
 
 
 
-const getFeaturedMachines = async () => {
+
+const getFeaturedMachinesUncached = async () => {
   return prisma.machine.findMany({
     where: {
       isFeatured: true,
@@ -468,7 +488,15 @@ const getFeaturedMachines = async () => {
   });
 };
 
-const searchMachines = async (keyword: string) => {
+const getFeaturedMachines = async () => {
+  return cacheGetOrSet(
+    "cache:machine:featured",
+    CacheTTL.machineFeatured,
+    getFeaturedMachinesUncached
+  );
+};
+
+const searchMachinesUncached = async (keyword: string) => {
   if (!keyword) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Search keyword is required");
   }
@@ -490,10 +518,17 @@ const searchMachines = async (keyword: string) => {
   });
 };
 
+const searchMachines = async (keyword: string) => {
+  const key = `cache:machine:search:${stableQueryHash({ q: String(keyword).trim() })}`;
+  return cacheGetOrSet(key, CacheTTL.machineSearch, () =>
+    searchMachinesUncached(keyword)
+  );
+};
 
 
 
-const getMachineBySlug = async (slug: string) => {
+
+const getMachineBySlugUncached = async (slug: string) => {
   if (!slug) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Machine slug is required");
   }
@@ -560,6 +595,14 @@ const getMachineBySlug = async (slug: string) => {
   return machine;
 };
 
+const getMachineBySlug = async (slug: string) => {
+  return cacheGetOrSet(
+    `cache:machine:detail:${slug}`,
+    CacheTTL.machineDetail,
+    () => getMachineBySlugUncached(slug)
+  );
+};
+
 
 
 
@@ -602,7 +645,7 @@ const generateMachineSpecPdf = async (machine: any, res: Response) => {
 
 
 
-const getRelatedMachines = async (slug: string) => {
+const getRelatedMachinesUncached = async (slug: string) => {
   const machine = await prisma.machine.findUnique({
     where: { slug },
   });
@@ -627,6 +670,14 @@ const getRelatedMachines = async (slug: string) => {
     },
     take: 6,
   });
+};
+
+const getRelatedMachines = async (slug: string) => {
+  return cacheGetOrSet(
+    `cache:machine:related:${slug}`,
+    CacheTTL.machineRelated,
+    () => getRelatedMachinesUncached(slug)
+  );
 };
 
 
@@ -998,7 +1049,7 @@ const createMachine = async (payload: any) => {
     }
   }
 
-  return prisma.machine.create({
+  const created = await prisma.machine.create({
     data: {
       name,
       slug,
@@ -1043,6 +1094,10 @@ const createMachine = async (payload: any) => {
       subCategory: true,
     },
   });
+
+  await bumpMachineCaches();
+
+  return created;
 };
 
 
@@ -1103,7 +1158,7 @@ const updateMachine = async (id: string, payload: any) => {
     discountPrice = null;
   }
 
-  return prisma.machine.update({
+  const updated = await prisma.machine.update({
     where: { id },
     data: {
       ...payload,
@@ -1112,6 +1167,10 @@ const updateMachine = async (id: string, payload: any) => {
       discountPrice,
     },
   });
+
+  await bumpMachineCaches();
+
+  return updated;
 };
 
 
@@ -1125,13 +1184,17 @@ const updateMachineStatus = async (id: string, payload: any) => {
     );
   }
 
-  return prisma.machine.update({
+  const statusUpdated = await prisma.machine.update({
     where: { id },
     data: {
       isActive: payload.isActive,
       isFeatured: payload.isFeatured,
     },
   });
+
+  await bumpMachineCaches();
+
+  return statusUpdated;
 };
 
 const deleteMachine = async (id: string) => {
@@ -1143,9 +1206,13 @@ const deleteMachine = async (id: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
   }
 
-  return prisma.machine.delete({
+  const deleted = await prisma.machine.delete({
     where: { id },
   });
+
+  await bumpMachineCaches();
+
+  return deleted;
 };
 
 
@@ -1243,7 +1310,7 @@ const updateMachineImage = async (
     throw new ApiError(httpStatus.BAD_REQUEST, "Nothing to update");
   }
 
-  return prisma.$transaction(async (tx) => {
+  const updatedImg = await prisma.$transaction(async (tx) => {
     // 🔴 One primary image per machine
     if (payload.isPrimary === true) {
       await tx.machineImage.updateMany({
@@ -1260,6 +1327,9 @@ const updateMachineImage = async (
       data: payload,
     });
   });
+
+  await bumpMachineCaches();
+  return updatedImg;
 };
 
 
@@ -1291,9 +1361,13 @@ const uploadMachineImages = async (
     url: file.location,
   }));
 
-  return prisma.machineImage.createMany({
+  const imgResult = await prisma.machineImage.createMany({
     data,
   });
+
+  await bumpMachineCaches();
+
+  return imgResult;
 };
 
 
@@ -1309,9 +1383,13 @@ const deleteMachineImage = async (imageId: string) => {
 
   // ❗ Optional: এখানে S3 delete করতে পারো
 
-  return prisma.machineImage.delete({
+  const delImg = await prisma.machineImage.delete({
     where: { id: imageId },
   });
+
+  await bumpMachineCaches();
+
+  return delImg;
 };
 
 
@@ -1330,12 +1408,16 @@ const uploadMachineVideo = async (
     throw new ApiError(httpStatus.BAD_REQUEST, "Video file required");
   }
 
-  return prisma.machineVideo.create({
+  const vid = await prisma.machineVideo.create({
     data: {
       machineId,
       url: file.location,
     },
   });
+
+  await bumpMachineCaches();
+
+  return vid;
 };
 
 
@@ -1397,12 +1479,16 @@ const updateMachineVideo = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Machine video not found");
   }
 
-  return prisma.machineVideo.update({
+  const vUp = await prisma.machineVideo.update({
     where: { id },
     data: {
       url: file.location,
     },
   });
+
+  await bumpMachineCaches();
+
+  return vUp;
 };
 
 
@@ -1422,6 +1508,8 @@ const deleteMachineVideo = async (id: string) => {
   await prisma.machineVideo.delete({
     where: { id },
   });
+
+  await bumpMachineCaches();
 
   return null;
 };

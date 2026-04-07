@@ -7,6 +7,12 @@ import {
 } from "@prisma/client";
 import { prisma } from "../../shared/prisma";
 import { PRODUCT_LIST_SELECT } from "./product.interface";
+import {
+  cacheGetOrSet,
+  stableQueryHash,
+  CacheTTL,
+  invalidateProductReadCaches,
+} from "../../../utils/httpCache";
 
 
 
@@ -222,6 +228,8 @@ const createProduct = async (payload: any) => {
       },
     },
   });
+
+  await invalidateProductReadCaches().catch(() => undefined);
 
   return product;
 };
@@ -479,7 +487,7 @@ const createProduct = async (payload: any) => {
 
 
 // ✅ Full updated service function
-const getAllProducts = async (query: Record<string, any>) => {
+const getAllProductsUncached = async (query: Record<string, any>) => {
   const page = Math.max(1, Number(query.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
   const skip = (page - 1) * limit;
@@ -738,8 +746,22 @@ const getAllProducts = async (query: Record<string, any>) => {
   };
 };
 
+const getAllProducts = async (query: Record<string, any>) => {
+  const key = `cache:product:list:${stableQueryHash(query as Record<string, unknown>)}`;
+  return cacheGetOrSet(key, CacheTTL.productList, () =>
+    getAllProductsUncached(query)
+  );
+};
 
 const getProductDetails = async (slug: string) => {
+  return cacheGetOrSet(
+    `cache:product:detail:${slug}`,
+    CacheTTL.productDetail,
+    async () => getProductDetailsUncached(slug)
+  );
+};
+
+const getProductDetailsUncached = async (slug: string) => {
   const product = await prisma.product.findUnique({
     where: { slug },
     include: {
@@ -792,7 +814,7 @@ const getProductDetails = async (slug: string) => {
   };
 };
 
-const getRelatedProducts = async (slug: string) => {
+const getRelatedProductsUncached = async (slug: string) => {
   const current = await prisma.product.findUnique({
     where: { slug },
     select: { id: true, productCategoryId: true },
@@ -815,6 +837,14 @@ const getRelatedProducts = async (slug: string) => {
     },
     take: 6,
   });
+};
+
+const getRelatedProducts = async (slug: string) => {
+  return cacheGetOrSet(
+    `cache:product:related:${slug}`,
+    CacheTTL.productRelated,
+    () => getRelatedProductsUncached(slug)
+  );
 };
 
 
@@ -999,6 +1029,8 @@ const updateProduct = async (id: string, payload: any) => {
     },
   });
 
+  await invalidateProductReadCaches().catch(() => undefined);
+
   return updatedProduct;
 };
 
@@ -1006,15 +1038,17 @@ const updateProduct = async (id: string, payload: any) => {
 
 
 const deleteProduct = async (id: string) => {
-  return prisma.product.update({
+  const result = await prisma.product.update({
     where: { id },
     data: {
       visibility: false,
     },
   });
+  await invalidateProductReadCaches().catch(() => undefined);
+  return result;
 };
 
-const getAllProductBrands = async () => {
+const getAllProductBrandsUncached = async () => {
   const rows = await prisma.product.findMany({
     where: {
       visibility: true,
@@ -1029,6 +1063,14 @@ const getAllProductBrands = async () => {
     .filter((b): b is string => typeof b === "string" && b.trim().length > 0);
 
   return brands.sort((a, b) => a.localeCompare(b));
+};
+
+const getAllProductBrands = async () => {
+  return cacheGetOrSet(
+    "cache:product:brands",
+    CacheTTL.productBrands,
+    getAllProductBrandsUncached
+  );
 };
 
 export const ProductService = {

@@ -10,4 +10,15 @@ if (process.env.REDIS_URL) {
   });
 }
 
+export async function disconnectRedis(): Promise<void> {
+  if (!redis) return;
+  try {
+    if (redis.isOpen) {
+      await redis.quit();
+    }
+  } catch (e) {
+    console.error("Redis quit error:", e);
+  }
+}
+
 export default redis;

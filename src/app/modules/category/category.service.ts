@@ -1,8 +1,21 @@
 import httpStatus from "http-status";
 import { prisma } from "../../shared/prisma";
 import { ApiError } from "../../errors/ApiError";
+import {
+  cacheGetOrSet,
+  stableQueryHash,
+  CacheTTL,
+  invalidateCategoryReadCaches,
+  invalidateMachineReadCaches,
+} from "../../../utils/httpCache";
 
-const getCategories = async () => {
+const bumpCategoryAndMachineCaches = () =>
+  Promise.all([
+    invalidateCategoryReadCaches(),
+    invalidateMachineReadCaches(),
+  ]).catch(() => undefined);
+
+const getCategoriesUncached = async () => {
   return prisma.category.findMany({
     where: {
       parentId: null,
@@ -16,10 +29,15 @@ const getCategories = async () => {
   });
 };
 
+const getCategories = async () => {
+  return cacheGetOrSet(
+    "cache:category:list",
+    CacheTTL.categoryList,
+    getCategoriesUncached
+  );
+};
 
-
-
-const getCategoryTree = async () => {
+const getCategoryTreeUncached = async () => {
   return prisma.category.findMany({
     where: {
       parentId: null,
@@ -58,12 +76,20 @@ const getCategoryTree = async () => {
   });
 };
 
+const getCategoryTree = async () => {
+  return cacheGetOrSet(
+    "cache:category:tree",
+    CacheTTL.categoryTree,
+    getCategoryTreeUncached
+  );
+};
 
 
 
-
-
-const getMachinesByCategory = async (slug: string) => {
+const getMachinesByCategoryUncached = async (
+  slug: string,
+  options?: { search?: string; page?: number; limit?: number }
+) => {
   if (!slug) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Category slug is required");
   }
@@ -76,19 +102,76 @@ const getMachinesByCategory = async (slug: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Category not found");
   }
 
-  return prisma.machine.findMany({
-    where: {
-      categoryId: category.id,
-      isActive: true,
+  const page = Math.max(1, Number(options?.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(options?.limit) || 9));
+  const skip = (page - 1) * limit;
+  const trimmedSearch = options?.search?.trim();
+
+  const whereClause = {
+    categoryId: category.id,
+    isActive: true,
+    ...(trimmedSearch
+      ? {
+          OR: [
+            {
+              name: {
+                contains: trimmedSearch,
+                mode: "insensitive" as const,
+              },
+            },
+            {
+              slug: {
+                contains: trimmedSearch,
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        }
+      : {}),
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.machine.findMany({
+      where: whereClause,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        thumbnailImage: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    prisma.machine.count({
+      where: whereClause,
+    }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
     },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      thumbnailImage: true,
-    },
-  });
+  };
+};
+
+const getMachinesByCategory = async (
+  slug: string,
+  options?: { search?: string; page?: number; limit?: number }
+) => {
+  const key = `cache:category:machines:${slug}:${stableQueryHash(
+    (options ?? {}) as Record<string, unknown>
+  )}`;
+  return cacheGetOrSet(key, CacheTTL.categoryMachines, () =>
+    getMachinesByCategoryUncached(slug, options)
+  );
 };
 
 const createCategory = async (payload: any) => {
@@ -110,7 +193,7 @@ const createCategory = async (payload: any) => {
     );
   }
 
-  return prisma.category.create({
+  const created = await prisma.category.create({
     data: {
       name: payload.name,
       slug: payload.slug,
@@ -119,6 +202,10 @@ const createCategory = async (payload: any) => {
       thumbnailImage: payload.thumbnailImage || null,
     },
   });
+
+  await bumpCategoryAndMachineCaches();
+
+  return created;
 };
 
 const updateCategory = async (id: string, payload: any) => {
@@ -147,7 +234,7 @@ const updateCategory = async (id: string, payload: any) => {
     }
   }
 
-  return prisma.category.update({
+  const updated = await prisma.category.update({
     where: { id },
     data: {
       name: payload.name ?? category.name,
@@ -156,6 +243,10 @@ const updateCategory = async (id: string, payload: any) => {
         parentId:null,
     },
   });
+
+  await bumpCategoryAndMachineCaches();
+
+  return updated;
 };
 
 const deleteCategory = async (id: string) => {
@@ -197,9 +288,13 @@ const deleteCategory = async (id: string) => {
     );
   }
 
-  return prisma.category.delete({
+  const removed = await prisma.category.delete({
     where: { id },
   });
+
+  await bumpCategoryAndMachineCaches();
+
+  return removed;
 };
 export const CategoryService = {
   getCategories,
