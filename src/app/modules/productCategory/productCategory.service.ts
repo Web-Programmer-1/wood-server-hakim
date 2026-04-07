@@ -1,4 +1,16 @@
 import { prisma } from "../../shared/prisma";
+import {
+  cacheGetOrSet,
+  CacheTTL,
+  invalidateProductCategoryReadCaches,
+  invalidateProductReadCaches,
+} from "../../../utils/httpCache";
+
+const bumpProductCategoryCaches = () =>
+  Promise.all([
+    invalidateProductCategoryReadCaches(),
+    invalidateProductReadCaches(),
+  ]).catch(() => undefined);
 
 
 
@@ -7,23 +19,35 @@ const createCategory = async (payload: any) => {
     throw new Error("Name and slug are required");
   }
 
-  return prisma.productCategory.create({
+  const created = await prisma.productCategory.create({
     data: {
       name: payload.name,
       slug: payload.slug,
       coverImage: payload.coverImage, 
     },
   });
+
+  await bumpProductCategoryCaches();
+
+  return created;
 };
 
 
 
 
-const getAllCategories = async () => {
+const getAllCategoriesUncached = async () => {
   return prisma.productCategory.findMany({
     where: { visibility: true },
     orderBy: { createdAt: "asc" },
   });
+};
+
+const getAllCategories = async () => {
+  return cacheGetOrSet(
+    "cache:productCategory:list",
+    CacheTTL.productCategoryList,
+    getAllCategoriesUncached
+  );
 };
 
 const updateCategory = async (id: string, payload: any) => {
@@ -56,17 +80,25 @@ const updateCategory = async (id: string, payload: any) => {
     throw new Error( "No data provided for update");
   }
 
-  return prisma.productCategory.update({
+  const updated = await prisma.productCategory.update({
     where: { id },
     data,
   });
+
+  await bumpProductCategoryCaches();
+
+  return updated;
 };
 
 const deleteCategory = async (id: string) => {
-  return prisma.productCategory.update({
+  const hidden = await prisma.productCategory.update({
     where: { id },
     data: { visibility: false },
   });
+
+  await bumpProductCategoryCaches();
+
+  return hidden;
 };
 
 export const CategoryService = {

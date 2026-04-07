@@ -2,6 +2,10 @@ import { Server } from 'http';
 import app from './app';
 import config from './config';
 import dotenv from "dotenv";
+import { prisma } from './app/shared/prisma';
+import { disconnectRedis } from './utils/redis';
+import { shutdownQueueLayer } from './queue/shutdownQueue';
+import { startQueueWorker } from './queue/queueWorker';
 
 
 const envFile =
@@ -11,39 +15,45 @@ const envFile =
 
 dotenv.config({ path: envFile });
 
-async function bootstrap() {
-    // This variable will hold our server instance
-    let server: Server;
+let server: Server | undefined;
 
+async function gracefulShutdown(signal: string, exitCode: number = 0) {
+  console.log(`${signal} received, closing server...`);
+  if (!server) {
+    process.exit(exitCode);
+    return;
+  }
+  server.close(async () => {
     try {
-        // Start the server
+      await shutdownQueueLayer();
+      await prisma.$disconnect();
+      await disconnectRedis();
+    } catch (e) {
+      console.error("Shutdown cleanup error:", e);
+    }
+    console.log("Server closed gracefully.");
+    process.exit(exitCode);
+  });
+  setTimeout(() => {
+    console.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 15_000).unref();
+}
+
+async function bootstrap() {
+    try {
         server = app.listen(config.port, () => {
             console.log(`🚀 Server is running on http://localhost:${config.port}`);
         });
 
-        // Function to gracefully shut down the server
-        const exitHandler = () => {
-            if (server) {
-                server.close(() => {
-                    console.log('Server closed gracefully.');
-                    process.exit(1); // Exit with a failure code
-                });
-            } else {
-                process.exit(1);
-            }
-        };
+        startQueueWorker();
 
-        // Handle unhandled promise rejections
+        process.on('SIGTERM', () => void gracefulShutdown('SIGTERM', 0));
+        process.on('SIGINT', () => void gracefulShutdown('SIGINT', 0));
+
         process.on('unhandledRejection', (error) => {
-            console.log('Unhandled Rejection is detected, we are closing our server...');
-            if (server) {
-                server.close(() => {
-                    console.log(error);
-                    process.exit(1);
-                });
-            } else {
-                process.exit(1);
-            }
+            console.error('Unhandled Rejection — closing server...', error);
+            void gracefulShutdown('unhandledRejection', 1);
         });
     } catch (error) {
         console.error('Error during server startup:', error);

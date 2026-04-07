@@ -21,10 +21,16 @@ const getCategoryTree = async (req: Request, res: Response) => {
 
 const getMachinesByCategory = async (req: Request, res: Response) => {
   const { slug } = req.params;
-  const result = await CategoryService.getMachinesByCategory(slug);
+  const { search, page = "1", limit = "9" } = req.query;
+  const result = await CategoryService.getMachinesByCategory(slug, {
+    search: search as string | undefined,
+    page: Number(page),
+    limit: Number(limit),
+  });
   res.status(httpStatus.OK).json({
     success: true,
-    data: result,
+    data: result.data,
+    meta: result.meta,
   });
 };
 

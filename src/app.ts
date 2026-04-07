@@ -1,4 +1,8 @@
-import express, { Application, NextFunction, Request, Response } from 'express';
+/**
+ * Stateless API: auth via JWT (Authorization / cookies), no server-side sessions.
+ * OTP/tokens use Redis when REDIS_URL is set — shared across scaled instances.
+ */
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import notFound from './app/middlewares/notFound';
 import config from './config';
@@ -6,8 +10,12 @@ import router from './app/routes';
 import cookieParser from 'cookie-parser'
 import cron from 'node-cron';
 import { globalLimiter } from './app/middlewares/rateLimit';
+import healthRoutes from './health/health.routes';
 
 const app: Application = express();
+
+// Probes before rate limit so ALB/ECS health checks are never throttled
+app.use('/health', healthRoutes);
 
 app.use(cors({
     origin: true, // Allow all origins for development
@@ -25,13 +33,16 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
-cron.schedule('* * * * *', () => {
-    try {
-        console.log("Node cron called at ", new Date())
-    } catch (err) {
-        console.error(err);
-    }
-});
+// Avoid duplicate side effects when multiple instances run (scale-out). Enable only if needed.
+if (process.env.ENABLE_DEBUG_CRON === 'true') {
+    cron.schedule('* * * * *', () => {
+        try {
+            console.log("Node cron called at ", new Date())
+        } catch (err) {
+            console.error(err);
+        }
+    });
+}
 
 app.use("/api/v1", router);
 
