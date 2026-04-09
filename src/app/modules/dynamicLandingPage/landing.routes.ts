@@ -3,7 +3,7 @@ import { LandingController } from "./landing.controller";
 
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "../../constants/UserRole";
-import { uploadCompanyLogo, uploadHeroMedia, uploadLandingSlider, uploadLandingVideo } from "../../../config/uploadDynamic";
+import { uploadCompanyLogo, uploadGalleryImages, uploadHeroMedia, uploadLandingSlider, uploadLandingVideo } from "../../../config/uploadDynamic";
 
 const router = express.Router();
 
@@ -120,7 +120,7 @@ router.delete(
 router.post(
   "/gallery",
   authGuard(UserRole.ADMIN),
-  uploadLandingSlider.array("image", 12), // max 12 images
+  uploadGalleryImages.array("image", 12), // max 12 images
   LandingController.createGalleryImages
 );
 

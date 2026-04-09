@@ -2,7 +2,7 @@ import { Router } from "express";
 import {  MachineController } from "./machine.controller";
 
 import { uploadMachineVideo } from "../../middlewares/uploadMachineVideo";
-import { uploadProductImages } from "../../middlewares/uploadProductImage";
+import { uploadMachineGalleryImages } from "../../middlewares/uploadMachineGalleryImages";
 import { uploadMachineCreate } from "../../middlewares/UploadMachineImage";
 
 const router = Router();
@@ -61,14 +61,14 @@ router.delete(
 router.post(
   "/admin/:id/images",
 //   authGuard(UserRole.ADMIN),
-  uploadProductImages.array("images", 10),
+  uploadMachineGalleryImages.array("images", 10),
   MachineController.uploadMachineImages
 );
 
 
 router.patch(
   "/machine-images/:id",
-  uploadProductImages.single("image"),
+  uploadMachineGalleryImages.single("image"),
   MachineController.updateMachineImage
 );
 

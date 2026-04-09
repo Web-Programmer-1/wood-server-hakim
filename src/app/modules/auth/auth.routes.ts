@@ -52,10 +52,11 @@ authRouter.get("/users/:id", strictLimiter, AuthController.getUserById);
 authRouter.patch("/users/:id/role", strictLimiter, authGuard(UserRole.ADMIN), AuthController.updateRoleUser);
 
 
-// UPLOAD AVATAR
+// UPLOAD AVATAR (requires login — client sends Bearer token)
 authRouter.post(
   "/upload-avatar",
   strictLimiter,
+  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
   uploadUserAvatar.single("file"),
   AuthController.uploadAvatar
 );

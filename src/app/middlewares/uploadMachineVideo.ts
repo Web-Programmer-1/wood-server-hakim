@@ -7,6 +7,7 @@ import multer from "multer";
 import multerS3 from "multer-s3";
 import crypto from "crypto";
 import { s3 } from "../../config/aws.config";
+import { MACHINE_VIDEO_MAX_BYTES } from "../../config/machineUploadLimits";
 
 
 export const uploadMachineVideo = multer({
@@ -22,7 +23,7 @@ export const uploadMachineVideo = multer({
   }),
 
   limits: {
-    fileSize: 200 * 1024 * 1024,
+    fileSize: MACHINE_VIDEO_MAX_BYTES,
   },
 
   fileFilter: (req, file, cb) => {

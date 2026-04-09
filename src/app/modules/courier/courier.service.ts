@@ -165,7 +165,7 @@ const headers = {
 export const PaperflyService = {
   async createOrder(order: any) {
     const payload = {
-      merchantOrderReference: order.id, // ✅ tracking reference (merchant uuid)
+      merchantOrderReference: order.id, 
       storeName: "Wood Shop",
       productBrief: "Wood Product",
       packagePrice: order.totalAmount,
@@ -188,10 +188,10 @@ export const PaperflyService = {
       { auth, headers }
     );
 
-    // ✅ raw response log (1-2 din রাখো debug এর জন্য)
+
     console.log("Paperfly create order raw:", res.data);
 
-    // ✅ full response return
+  
     return res.data;
   },
 
