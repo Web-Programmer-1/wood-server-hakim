@@ -4,6 +4,7 @@ import crypto from "crypto";
 
 import { Request } from "express";
 import { s3 } from "../../config/aws.config";
+import { PRODUCT_IMAGE_MAX_BYTES } from "../../config/productUploadLimits";
 
 export const uploadProductImages = multer({
   storage: multerS3({
@@ -27,7 +28,7 @@ export const uploadProductImages = multer({
   }),
 
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: PRODUCT_IMAGE_MAX_BYTES,
   },
 
   fileFilter: (req, file, cb) => {
