@@ -5,6 +5,7 @@ import multer from "multer";
 import multerS3 from "multer-s3";
 import crypto from "crypto";
 import { s3 } from "../../config/aws.config";
+import { MACHINE_IMAGE_MAX_BYTES } from "../../config/machineUploadLimits";
 
 export const uploadMachineCreate = multer({
   storage: multerS3({
@@ -17,7 +18,7 @@ export const uploadMachineCreate = multer({
       cb(null, `machines/${randomName}.${ext}`);
     },
   }),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: MACHINE_IMAGE_MAX_BYTES },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
       cb(new Error("Only image files are allowed"));

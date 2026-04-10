@@ -4,9 +4,10 @@ import crypto from "crypto";
 
 import { Request } from "express";
 import { s3 } from "../../config/aws.config";
-import { PRODUCT_IMAGE_MAX_BYTES } from "../../config/productUploadLimits";
+import { MACHINE_IMAGE_MAX_BYTES } from "../../config/machineUploadLimits";
 
-export const uploadProductImages = multer({
+/** Gallery + single-image update for machines (admin). */
+export const uploadMachineGalleryImages = multer({
   storage: multerS3({
     s3: s3 as any,
     bucket: process.env.AWS_BUCKET_NAME!,
@@ -22,13 +23,12 @@ export const uploadProductImages = multer({
       const ext = file.originalname.split(".").pop();
       const randomName = crypto.randomBytes(16).toString("hex");
 
-      // 🔥 Product image path
-      cb(null, `products/${randomName}.${ext}`);
+      cb(null, `machines/gallery/${randomName}.${ext}`);
     },
   }),
 
   limits: {
-    fileSize: PRODUCT_IMAGE_MAX_BYTES,
+    fileSize: MACHINE_IMAGE_MAX_BYTES,
   },
 
   fileFilter: (req, file, cb) => {

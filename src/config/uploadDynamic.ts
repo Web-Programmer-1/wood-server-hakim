@@ -35,7 +35,7 @@ const createUploader = (folderName: string, allowedMimeTypes: string[], maxSize:
 export const uploadHeroMedia = createUploader(
   "landing/hero",
   ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "video/quicktime"],
-  50 * 1024 * 1024 // 50MB Max
+  200 * 1024 * 1024 // 200MB Max
 );
 
 
@@ -65,3 +65,5 @@ export const uploadLandingVideo = createUploader(
 
 
 export const uploadLandingSlider = createUploader("landing/sliders", ["image/jpeg", "image/png", "image/webp"], 5 * 1024 * 1024);
+
+export const uploadGalleryImages = createUploader("landing/sliders", ["image/jpeg", "image/png", "image/webp"], 200 * 1024 * 1024);
