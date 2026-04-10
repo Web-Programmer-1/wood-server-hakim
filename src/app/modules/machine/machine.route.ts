@@ -4,6 +4,8 @@ import {  MachineController } from "./machine.controller";
 import { uploadMachineVideo } from "../../middlewares/uploadMachineVideo";
 import { uploadProductImages } from "../../middlewares/uploadProductImage";
 import { uploadMachineCreate } from "../../middlewares/UploadMachineImage";
+import { authGuard } from "../../middlewares/auth";
+import { UserRole } from "@prisma/client";
 
 const router = Router();
 
@@ -38,15 +40,23 @@ router.post(
 
 router.patch(
   "/admin/:id",
-//   authGuard(UserRole.ADMIN),
+  authGuard(UserRole.ADMIN),
+  uploadMachineCreate,
   MachineController.updateMachine
 );
 
+
 router.patch(
   "/admin/:id/status",
-//   authGuard(UserRole.ADMIN),
+  authGuard(UserRole.ADMIN),
   MachineController.updateMachineStatus
 );
+
+
+
+
+
+
 
 router.delete(
   "/admin/:id",

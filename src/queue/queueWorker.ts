@@ -26,7 +26,7 @@ export function startQueueWorker(): void {
   }
 
   const connection = createBullMQConnection();
-  worker = new Worker(APP_QUEUE_NAME, processJob, { connection });
+  worker = new Worker(APP_QUEUE_NAME, processJob, { connection: connection as any });
 
   worker.on("failed", (job, err) => {
     console.error("[queue] job failed", job?.id, job?.name, err);

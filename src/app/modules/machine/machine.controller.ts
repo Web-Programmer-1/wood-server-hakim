@@ -176,14 +176,43 @@ const createMachine = async (req: Request, res: Response) => {
 
 
 
+
 const updateMachine = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await MachineService.updateMachine(id, req.body);
+  const body = req.body.data ? JSON.parse(req.body.data) : req.body;
+  const files = req.files as {
+    thumbnail?: Express.MulterS3.File[];
+    banner?: Express.MulterS3.File[];
+    featureImages?: Express.MulterS3.File[];
+  };
+
+  const payload: Record<string, any> = { ...body };
+
+  if (files?.thumbnail?.[0]?.location) {
+    payload.thumbnailImage = files.thumbnail[0].location;
+  }
+  if (files?.banner?.[0]?.location) {
+    payload.bannerImage = files.banner[0].location;
+  }
+  if (files?.featureImages?.length && Array.isArray(body.features)) {
+    payload.features = body.features.map((item: any, index: number) => ({
+      title: item.title,
+      image: files.featureImages?.[index]?.location || item.image || null,
+    }));
+  }
+
+  const result = await MachineService.updateMachine(id, payload);
+
   res.status(httpStatus.OK).json({
     success: true,
+    message: "Machine updated successfully",
     data: result,
   });
 };
+
+
+
+
 
 const updateMachineStatus = async (req: Request, res: Response) => {
   const { id } = req.params;

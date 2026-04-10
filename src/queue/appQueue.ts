@@ -8,8 +8,7 @@ let queueInstance: Queue | null = null;
 export function getAppQueue(): Queue | null {
   if (!process.env.REDIS_URL) return null;
   if (!queueInstance) {
-    const connection = createBullMQConnection();
-    queueInstance = new Queue(APP_QUEUE_NAME, { connection });
+    queueInstance = new Queue(APP_QUEUE_NAME, { connection: { url: process.env.REDIS_URL } });
   }
   return queueInstance;
 }

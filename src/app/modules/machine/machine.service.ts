@@ -1104,67 +1104,113 @@ const createMachine = async (payload: any) => {
 
 
 
-
 const updateMachine = async (id: string, payload: any) => {
-  const machine = await prisma.machine.findUnique({
-    where: { id },
+  const updateData: Record<string, any> = {};
+
+  const stringFields = [
+    "name", "slug", "shortDesc", "description", "brand", "model",
+    "thumbnailImage", "bannerImage", "bookedName", "bookedPhone",
+    "bookedEmail", "bookedNote"
+  ];
+  stringFields.forEach((field) => {
+    if (payload[field] !== undefined) updateData[field] = payload[field];
   });
 
-  if (!machine) {
-    throw new Error( "Machine not found");
-  }
+  const jsonFields = ["features", "specifications", "workSections", "dynamicButtons"];
+  jsonFields.forEach((field) => {
+    if (payload[field] !== undefined) updateData[field] = payload[field];
+  });
 
-  // 🔴 Slug uniqueness check
-  if (payload.slug && payload.slug !== machine.slug) {
-    const slugExist = await prisma.machine.findUnique({
-      where: { slug: payload.slug },
+  if (payload.categoryId) {
+    const category = await prisma.category.findUnique({
+      where: { id: payload.categoryId },
+      select: { id: true },
     });
+    if (!category) throw new ApiError(httpStatus.NOT_FOUND, "Category not found");
+    updateData.categoryId = payload.categoryId;
+  }
 
-    if (slugExist) {
-      throw new Error(
-  
-        "Machine slug already in use"
-      );
+  if (payload.subCategoryId !== undefined) {
+    if (payload.subCategoryId) {
+      const subCategory = await prisma.subCategory.findUnique({
+        where: { id: payload.subCategoryId },
+        select: { id: true, categoryId: true },
+      });
+      if (!subCategory) throw new ApiError(httpStatus.NOT_FOUND, "SubCategory not found");
+      if (payload.categoryId && subCategory.categoryId !== payload.categoryId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "SubCategory does not belong to the selected category");
+      }
+      updateData.subCategoryId = payload.subCategoryId;
+    } else {
+      updateData.subCategoryId = null;
     }
   }
 
-  // 🧮 Price recalculation logic
-  const listPrice =
-    payload.listPrice !== undefined
-      ? Number(payload.listPrice)
-      : machine.listPrice;
-
-  const discountPercent =
-    payload.discountPercent !== undefined
-      ? payload.discountPercent !== null
-        ? Number(payload.discountPercent)
-        : null
-      : machine.discountPercent;
-
-  let discountPrice = machine.discountPrice;
-
-  if (discountPercent !== null && discountPercent !== undefined) {
-    if (discountPercent < 0 || discountPercent > 100) {
-      throw new Error(
-    
-        "Discount percent must be between 0 and 100"
-      );
-    }
-
-    discountPrice =
-      listPrice -
-      Math.round((listPrice * discountPercent) / 100);
-  } else {
-    discountPrice = null;
+  if (payload.slug && payload.slug !== (await prisma.machine.findUnique({ where: { id }, select: { slug: true } }))?.slug) {
+    const existing = await prisma.machine.findUnique({ where: { slug: payload.slug }, select: { id: true } });
+    if (existing) throw new ApiError(httpStatus.CONFLICT, "Machine slug already in use");
+    updateData.slug = payload.slug;
   }
+
+  const listPrice = payload.listPrice !== undefined ? Number(payload.listPrice) : undefined;
+  if (listPrice !== undefined && listPrice <= 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "List price must be greater than 0");
+  }
+  if (listPrice !== undefined) updateData.listPrice = listPrice;
+
+  if (payload.discountPercent !== undefined) {
+    if (payload.discountPercent === null) {
+      updateData.discountPercent = null;
+      updateData.discountPrice = null;
+    } else {
+      const percent = Number(payload.discountPercent);
+      if (percent < 0 || percent > 100) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Discount percent must be between 0 and 100");
+      }
+      updateData.discountPercent = percent;
+      updateData.discountPrice = listPrice
+        ? listPrice - Math.round((listPrice * percent) / 100)
+        : undefined;
+    }
+  }
+
+  const intFields = ["stockQuantity", "bookedQty"];
+  intFields.forEach((field) => {
+    if (payload[field] !== undefined) {
+      const val = Number(payload[field]);
+      if (val < 0 && field === "bookedQty") {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Booked quantity cannot be negative");
+      }
+      updateData[field] = val;
+    }
+  });
+
+  if (payload.isActive !== undefined) updateData.isActive = Boolean(payload.isActive);
+  if (payload.isFeatured !== undefined) updateData.isFeatured = Boolean(payload.isFeatured);
 
   const updated = await prisma.machine.update({
     where: { id },
-    data: {
-      ...payload,
-      listPrice,
-      discountPercent,
-      discountPrice,
+    data: updateData,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      thumbnailImage: true,
+      bannerImage: true,
+      listPrice: true,
+      discountPrice: true,
+      discountPercent: true,
+      stockQuantity: true,
+      isActive: true,
+      isFeatured: true,
+      categoryId: true,
+      subCategoryId: true,
+      brand: true,
+      model: true,
+      createdAt: true,
+      updatedAt: true,
+      category: { select: { id: true, name: true, slug: true } },
+      subCategory: { select: { id: true, name: true, slug: true } },
     },
   });
 
@@ -1172,6 +1218,7 @@ const updateMachine = async (id: string, payload: any) => {
 
   return updated;
 };
+
 
 
 
