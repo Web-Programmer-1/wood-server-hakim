@@ -86,10 +86,10 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
 
   const finalWeight = weight ? Number(weight) : 1;
 
+  // Ensure DB connection is alive before starting the transaction
+  await prisma.$queryRaw`SELECT 1`;
 
-  // 🔹 STEP 1: transaction result ধরছি
   const result = await prisma.$transaction(async (tx) => {
-    // 1️⃣ Load cart
     const cart = await tx.cart.findUnique({
       where: { userId },
       include: {
@@ -107,23 +107,19 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       throw new Error("Cart is empty");
     }
 
-    // 2️⃣ Validate products
     for (const item of cart.items) {
       if (!item.product || !item.product.visibility) {
-        throw new Error(`Product ${item.product?.name} unavailable`);
+        throw new Error(`Product "${item.product?.name || "unknown"}" is no longer available`);
       }
     }
 
-    // 3️⃣ Subtotal
     const subTotal = cart.items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
-    // 4️⃣ Shipping
     const shippingFee = await getShippingFee(city, paymentMethod);
 
-    // 5️⃣ Coupon
     let discountTotal = 0;
     let appliedCouponId: string | null = null;
     let appliedCouponCode: string | null = null;
@@ -141,10 +137,8 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       appliedCouponCode = couponResult.couponCode;
     }
 
-    // 6️⃣ Final total
     const totalAmount = subTotal - discountTotal + shippingFee;
 
-    // 7️⃣ Create order
     const order = await tx.order.create({
       data: {
         userId,
@@ -179,7 +173,6 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       },
     });
 
-    // 8️⃣ Coupon usage
     if (appliedCouponId) {
       await tx.couponUsage.create({
         data: {
@@ -195,19 +188,14 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       });
     }
 
-    // 9️⃣ Clear cart
     await tx.cartItem.deleteMany({
       where: { cartId: cart.id },
     });
 
-    // 🔟 Payment handling
     if (paymentMethod === "COD") {
-      return { type: "COD", order };
+      return { type: "COD" as const, order, totalAmount };
     }
 
-   
-
-    // SSLCOMMERZ
     const payment = await tx.payment.create({
       data: {
         orderId: order.id,
@@ -217,17 +205,26 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       },
     });
 
+    return {
+      type: "ONLINE_PENDING" as const,
+      order,
+      totalAmount,
+      paymentId: payment.id,
+    };
+  });
+
+  if (result.type === "ONLINE_PENDING") {
     const session = await SSLCommerzService.createSession({
-      orderId: order.id,
-      amount: totalAmount,
+      orderId: result.order.id,
+      amount: result.totalAmount,
       customerName,
       phone,
     });
 
-    await tx.payment.update({
-      where: { id: payment.id },
+    await prisma.payment.update({
+      where: { id: result.paymentId },
       data: {
-        transactionId: order.id,
+        transactionId: result.order.id,
         sessionKey: session.sessionkey,
         redirectUrl: session.GatewayPageURL,
         status: "PENDING",
@@ -238,9 +235,9 @@ export const checkoutFromCart = async (userId: string, payload: any) => {
       type: "REDIRECT",
       provider: "SSLCOMMERZ",
       redirectUrl: session.GatewayPageURL,
-      orderId: order.id,
+      orderId: result.order.id,
     };
-  });
+  }
 
   // if (result.type === "COD") {
   //   const order = result.order!;

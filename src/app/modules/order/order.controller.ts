@@ -3,8 +3,9 @@ import { OrderService } from "./order.service";
 import { PaperflyService } from "../courier/courier.service";
 import { prisma } from "../../shared/prisma";
 import { HttpStatusCode } from "axios";
+import catchAsync from "../../shared/catchAsync";
 
-const checkout = async (req: Request, res: Response) => {
+const checkout = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.id;
 
   const result = await OrderService.checkoutFromCart(userId, req.body);
@@ -14,11 +15,11 @@ const checkout = async (req: Request, res: Response) => {
     message: "Order created successfully",
     data: result,
   });
-};
+});
 
 
 
-const getMyOrders = async (req: Request, res: Response) => {
+const getMyOrders = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.id;
 
   const result = await OrderService.getMyOrders(userId, req.query);
@@ -28,17 +29,16 @@ const getMyOrders = async (req: Request, res: Response) => {
     meta: result.meta,
     data: result.data,
   });
-};
+});
 
 
 
 
 
 
-const getMyOrderTracking = async (req: Request, res: Response) => {
+const getMyOrderTracking = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   if (!userId) {
-    // Handle the case where userId is undefined
     return res.status(400).json({
       success: false,
       message: "User ID is missing",
@@ -53,7 +53,7 @@ const getMyOrderTracking = async (req: Request, res: Response) => {
     success: true,
     data,
   });
-};
+});
 
 
 
@@ -66,7 +66,7 @@ const getMyOrderTracking = async (req: Request, res: Response) => {
 
 
 
-const getOrderDetails = async (req: Request, res: Response) => {
+const getOrderDetails = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const { orderId } = req.params;
 
@@ -76,12 +76,12 @@ const getOrderDetails = async (req: Request, res: Response) => {
     success: true,
     data: result,
   });
-};
+});
 
 
 
 
-const cancelOrder = async (req: Request, res: Response) => {
+const cancelOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const { orderId } = req.params;
 
@@ -92,14 +92,14 @@ const cancelOrder = async (req: Request, res: Response) => {
     message: "Order cancelled successfully",
     data: result,
   });
-};
+});
 
 
 // ------------------- ONLY for Admin -------------------
 
 
 
-const getAllOrdersAdmin = async (req: Request, res: Response) => {
+const getAllOrdersAdmin = catchAsync(async (req: Request, res: Response) => {
   const result = await OrderService.getAllOrdersAdmin(req.query);
 
   res.status(200).json({
@@ -107,11 +107,11 @@ const getAllOrdersAdmin = async (req: Request, res: Response) => {
     meta: result.meta,
     data: result.data,
   });
-};
+});
 
 
 
-const getOrderDetailsAdmin = async (req: Request, res: Response) => {
+const getOrderDetailsAdmin = catchAsync(async (req: Request, res: Response) => {
   const { orderId } = req.params;
 
   const result = await OrderService.getOrderDetailsAdmin(orderId);
@@ -120,11 +120,11 @@ const getOrderDetailsAdmin = async (req: Request, res: Response) => {
     success: true,
     data: result,
   });
-};
+});
 
 
 
-const updateOrderStatus = async (req: Request, res: Response) => {
+const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   const { orderId } = req.params;
   const { status } = req.body;
 
@@ -135,7 +135,7 @@ const updateOrderStatus = async (req: Request, res: Response) => {
     message: "Order status updated",
     data: result,
   });
-};
+});
 
 
 
@@ -144,7 +144,7 @@ const updateOrderStatus = async (req: Request, res: Response) => {
 
 
 
-const trackOrder = async (req: Request, res: Response) => {
+const trackOrder = catchAsync(async (req: Request, res: Response) => {
   const { orderId } = req.params;
 
   const order = await prisma.order.findUnique({
@@ -192,11 +192,11 @@ const trackOrder = async (req: Request, res: Response) => {
       },
     });
   }
-};
+});
 
 
 
-const deleteOrder = async (req: Request, res: Response) => {
+const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const result = await OrderService.deleteOrder(id);
@@ -205,27 +205,19 @@ const deleteOrder = async (req: Request, res: Response) => {
     success: true,
     message: result.message,
   });
-};
+});
 
 
 
+const getTopSellingProducts = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderService.getTopSellingProducts(req.query);
 
-const getTopSellingProducts = async (req: Request, res: Response) => {
-  try {
-    const result = await OrderService.getTopSellingProducts(req.query);
-
-    res.status(200).json({
-      success: true,
-      message: "Top selling products fetched successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(403).json({
-      success: false,
-      message: error?.message || "Something went wrong",
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "Top selling products fetched successfully",
+    data: result,
+  });
+});
 
 
 

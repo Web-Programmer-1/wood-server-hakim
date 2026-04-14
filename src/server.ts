@@ -2,7 +2,7 @@ import { Server } from 'http';
 import app from './app';
 import config from './config';
 import dotenv from "dotenv";
-import { prisma } from './app/shared/prisma';
+import { prisma, warmUpPrisma } from './app/shared/prisma';
 import { disconnectRedis } from './utils/redis';
 import { shutdownQueueLayer } from './queue/shutdownQueue';
 import { startQueueWorker } from './queue/queueWorker';
@@ -42,6 +42,8 @@ async function gracefulShutdown(signal: string, exitCode: number = 0) {
 
 async function bootstrap() {
     try {
+        await warmUpPrisma();
+
         server = app.listen(config.port, () => {
             console.log(`🚀 Server is running on http://localhost:${config.port}`);
         });
