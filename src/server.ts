@@ -23,6 +23,7 @@ async function gracefulShutdown(signal: string, exitCode: number = 0) {
     process.exit(exitCode);
     return;
   }
+  // Close the server to stop accepting new connections, then clean up resources
   server.close(async () => {
     try {
       await shutdownQueueLayer();
