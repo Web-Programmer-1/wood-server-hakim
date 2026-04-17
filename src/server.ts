@@ -45,7 +45,7 @@ async function bootstrap() {
     try {
         await warmUpPrisma();
 
-        server = app.listen(config.port, () => {
+        server = app.listen(config.port || 7000, () => {
             console.log(`🚀 Server is running on http://localhost:${config.port}`);
         });
 
