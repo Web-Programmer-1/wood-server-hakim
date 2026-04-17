@@ -15,6 +15,8 @@ import healthRoutes from './health/health.routes';
 
 const app: Application = express();
 
+app.set('trust proxy', 1);
+
 // Probes before rate limit so ALB/ECS health checks are never throttled
 app.use('/health', healthRoutes);
 

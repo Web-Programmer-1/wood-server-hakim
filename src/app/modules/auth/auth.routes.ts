@@ -10,8 +10,8 @@ import { UserRole } from "@prisma/client";
 
 export const authRouter = express.Router();
 
-// REGISTER
-authRouter.post("/register", AuthController.register);
+// REGISTER (sends OTP — same throttle as other auth actions)
+authRouter.post("/register", strictLimiter, AuthController.register);
 
 //  verify email
 authRouter.post("/verify-email", strictLimiter, AuthController.verifyEmail);
