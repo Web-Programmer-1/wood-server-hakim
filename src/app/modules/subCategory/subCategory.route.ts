@@ -21,13 +21,13 @@ router.post(
 // Get all SubCategories
 router.get(
   "/",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+ 
   SubCategoryController.getSubCategories
 );
 
 router.get(
   "/:slug",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  
   SubCategoryController.getSingleSubCategory
 );
 
