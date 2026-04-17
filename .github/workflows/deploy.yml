@@ -3,40 +3,31 @@ name: Auto Deploy Backend
 on:
   push:
     branches:
-      - main
+      - main  # আপনি যদি অন্য ব্রাঞ্চ ব্যবহার করেন তবে সেটি দিন
 
 jobs:
   deploy:
-    runs-on: ubuntu-24.04 # লেটেস্ট উবুন্টু রানার
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4 # আপডেট করা হয়েছে v4 এ
+        uses: actions/checkout@v3
 
-      - name: Executing remote ssh commands via SSH
-        uses: appleboy/ssh-action@v1.0.3 # লেটেস্ট স্টেবল ভার্সন
+      - name: Executing remote ssh commands
+        uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          port: 22
-          script_stop: true # কোনো এরর হলে স্ক্রিপ্ট থামিয়ে দিবে (ভালো প্র্যাকটিস)
           script: |
             cd ~/wood-server-hakim
-            
-            # গিট পুল করার সময় কনফ্লিক্ট এড়াতে
             git pull origin main
             
-            # এনভায়রনমেন্ট পাথ সেট করা (pnpm এবং pm2 এর জন্য)
-            export PATH=$PATH:/root/.local/share/pnpm:/usr/local/bin:/root/.nvm/versions/node/$(node -v)/bin
+            # pnpm এবং node এর পাথ সেট করা (যাতে কমান্ড খুঁজে পায়)
+            export PATH=$PATH:/root/.local/share/pnpm:/usr/local/bin
             
-            # ডিপেন্ডেন্সি ইনস্টল এবং বিল্ড
             pnpm install
             pnpm build
             
             # PM2 দিয়ে রিস্টার্ট করা
-            # যদি আগে থেকে রান থাকে তবে রিস্টার্ট হবে, না থাকলে নতুন করে স্টার্ট হবে
             pm2 restart wood-server || pm2 start dist/server.js --name "wood-server"
-            
-            # সেভ করা যাতে সার্ভার রিবুট হলেও প্রসেস চালু থাকে
-            pm2 save

@@ -21,13 +21,11 @@ router.post(
 // Get all SubCategories
 router.get(
   "/",
- 
   SubCategoryController.getSubCategories
 );
 
 router.get(
   "/:slug",
-  
   SubCategoryController.getSingleSubCategory
 );
 
