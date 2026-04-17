@@ -5,7 +5,8 @@
 import axios from "axios";
 
 export async function sendSMS(mobile: string, message: string) {
-  const url = "https://smsp.piprahost.com/api/v2/SendSMS";
+  // const url = "https://smsp.piprahost.com/api/v2/SendSMS";
+  const url = "https://console.smsq.global/api/v2/SendSMS";
 
   const params = {
     SenderId: process.env.SMS_SENDER,
@@ -25,3 +26,9 @@ export async function sendSMS(mobile: string, message: string) {
 
   return res.data;
 }
+
+
+
+
+
+// comment
