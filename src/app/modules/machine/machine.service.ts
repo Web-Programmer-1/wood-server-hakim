@@ -20,6 +20,15 @@ const bumpMachineCaches = () =>
 import PDFDocument from "pdfkit";
 import { Response } from "express";
 import { Prisma } from "@prisma/client";
+import {
+  abortMultipart,
+  buildMachineVideoKey,
+  completeMultipart,
+  initiateMultipart,
+  signUploadPartUrl,
+} from "../../../utils/s3Multipart";
+import { deleteFileFromS3 } from "../../../utils/s3CleanUp";
+import { MACHINE_VIDEO_MAX_BYTES } from "../../../config/machineUploadLimits";
 
 
 
@@ -1562,6 +1571,150 @@ const deleteMachineVideo = async (id: string) => {
 };
 
 
+// ---------------- Multipart Video Upload ----------------
+
+const MIN_PART_SIZE = 5 * 1024 * 1024; // S3 minimum
+const MAX_PART_SIZE = 100 * 1024 * 1024;
+const MAX_PARTS = 10000;
+
+const initiateMachineVideoMultipart = async (params: {
+  machineId: string;
+  fileName: string;
+  fileSize: number;
+  contentType: string;
+}) => {
+  const { machineId, fileName, fileSize, contentType } = params;
+
+  if (!fileName || typeof fileName !== "string") {
+    throw new ApiError(httpStatus.BAD_REQUEST, "fileName is required");
+  }
+  if (!Number.isFinite(fileSize) || fileSize <= 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "fileSize must be > 0");
+  }
+  if (fileSize > MACHINE_VIDEO_MAX_BYTES) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `File too large. Max ${MACHINE_VIDEO_MAX_BYTES} bytes.`,
+    );
+  }
+  if (!contentType?.startsWith("video/")) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Only video files are allowed");
+  }
+
+  const machine = await prisma.machine.findUnique({
+    where: { id: machineId },
+    select: { id: true },
+  });
+  if (!machine) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
+  }
+
+  const key = buildMachineVideoKey(fileName);
+  const { uploadId } = await initiateMultipart({ key, contentType });
+
+  return { key, uploadId };
+};
+
+const signMachineVideoPart = async (params: {
+  key: string;
+  uploadId: string;
+  partNumber: number;
+}) => {
+  const { key, uploadId, partNumber } = params;
+
+  if (!key || !uploadId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "key and uploadId are required");
+  }
+  if (!key.startsWith("machine-videos/")) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid object key");
+  }
+  if (!Number.isInteger(partNumber) || partNumber < 1 || partNumber > MAX_PARTS) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `partNumber must be between 1 and ${MAX_PARTS}`,
+    );
+  }
+
+  const url = await signUploadPartUrl({ key, uploadId, partNumber });
+  return { url };
+};
+
+const completeMachineVideoMultipart = async (params: {
+  machineId: string;
+  videoId?: string | null;
+  key: string;
+  uploadId: string;
+  parts: { PartNumber: number; ETag: string }[];
+}) => {
+  const { machineId, videoId, key, uploadId, parts } = params;
+
+  if (!key?.startsWith("machine-videos/") || !uploadId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid key or uploadId");
+  }
+  if (!Array.isArray(parts) || parts.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "parts array is required");
+  }
+  for (const p of parts) {
+    if (
+      !Number.isInteger(p.PartNumber) ||
+      p.PartNumber < 1 ||
+      p.PartNumber > MAX_PARTS ||
+      typeof p.ETag !== "string" ||
+      !p.ETag
+    ) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid part entry");
+    }
+  }
+
+  const { location } = await completeMultipart({ key, uploadId, parts });
+
+  if (videoId) {
+    const existing = await prisma.machineVideo.findUnique({
+      where: { id: videoId },
+    });
+    if (!existing) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Machine video not found");
+    }
+    const updated = await prisma.machineVideo.update({
+      where: { id: videoId },
+      data: { url: location },
+    });
+    await bumpMachineCaches();
+    // best-effort delete of old S3 object
+    if (existing.url && existing.url !== location) {
+      void deleteFileFromS3(existing.url);
+    }
+    return updated;
+  }
+
+  const machine = await prisma.machine.findUnique({
+    where: { id: machineId },
+    select: { id: true },
+  });
+  if (!machine) {
+    // orphaned object — clean up
+    void deleteFileFromS3(location);
+    throw new ApiError(httpStatus.NOT_FOUND, "Machine not found");
+  }
+
+  const created = await prisma.machineVideo.create({
+    data: { machineId, url: location },
+  });
+  await bumpMachineCaches();
+  return created;
+};
+
+const abortMachineVideoMultipart = async (params: {
+  key: string;
+  uploadId: string;
+}) => {
+  const { key, uploadId } = params;
+  if (!key?.startsWith("machine-videos/") || !uploadId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid key or uploadId");
+  }
+  await abortMultipart({ key, uploadId });
+  return null;
+};
 
 
 
@@ -1584,6 +1737,10 @@ export const MachineService = {
   getAllMachineVideos,
   updateMachineVideo,
   deleteMachineVideo,
+  initiateMachineVideoMultipart,
+  signMachineVideoPart,
+  completeMachineVideoMultipart,
+  abortMachineVideoMultipart,
 };
 
 

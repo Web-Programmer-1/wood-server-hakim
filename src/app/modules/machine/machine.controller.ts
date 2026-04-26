@@ -385,6 +385,50 @@ const deleteMachineVideo = async (req: Request, res: Response) => {
 };
 
 
+// ---- Multipart video upload (direct-to-S3) ----
+
+const initiateMachineVideoMultipart = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { fileName, fileSize, contentType } = req.body ?? {};
+  const result = await MachineService.initiateMachineVideoMultipart({
+    machineId: id,
+    fileName,
+    fileSize: Number(fileSize),
+    contentType,
+  });
+  res.status(httpStatus.OK).json({ success: true, data: result });
+};
+
+const signMachineVideoPart = async (req: Request, res: Response) => {
+  const { key, uploadId, partNumber } = req.body ?? {};
+  const result = await MachineService.signMachineVideoPart({
+    key,
+    uploadId,
+    partNumber: Number(partNumber),
+  });
+  res.status(httpStatus.OK).json({ success: true, data: result });
+};
+
+const completeMachineVideoMultipart = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { videoId, key, uploadId, parts } = req.body ?? {};
+  const result = await MachineService.completeMachineVideoMultipart({
+    machineId: id,
+    videoId: videoId ?? null,
+    key,
+    uploadId,
+    parts,
+  });
+  res.status(httpStatus.OK).json({ success: true, data: result });
+};
+
+const abortMachineVideoMultipart = async (req: Request, res: Response) => {
+  const { key, uploadId } = req.body ?? {};
+  await MachineService.abortMachineVideoMultipart({ key, uploadId });
+  res.status(httpStatus.OK).json({ success: true });
+};
+
+
 
 
 
@@ -409,4 +453,8 @@ export const MachineController = {
   getAllMachineVideosController,
   updateMachineVideo,
   deleteMachineVideo,
+  initiateMachineVideoMultipart,
+  signMachineVideoPart,
+  completeMachineVideoMultipart,
+  abortMachineVideoMultipart,
 };

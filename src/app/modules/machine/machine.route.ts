@@ -110,6 +110,28 @@ router.post(
 );
 
 
+// Multipart (direct-to-S3) upload — used for large videos
+router.post(
+  "/admin/:id/video/multipart/initiate",
+  MachineController.initiateMachineVideoMultipart
+);
+
+router.post(
+  "/admin/:id/video/multipart/sign-part",
+  MachineController.signMachineVideoPart
+);
+
+router.post(
+  "/admin/:id/video/multipart/complete",
+  MachineController.completeMachineVideoMultipart
+);
+
+router.post(
+  "/admin/:id/video/multipart/abort",
+  MachineController.abortMachineVideoMultipart
+);
+
+
 
 router.get(
   "/images/videos",
