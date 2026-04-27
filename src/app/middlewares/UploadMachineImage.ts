@@ -30,6 +30,7 @@ export const uploadMachineCreate = multer({
   { name: "thumbnail", maxCount: 1 },
   { name: "banner", maxCount: 1 },
   { name: "featureImages", maxCount: 20 },
+  { name: "customerImages", maxCount: 20 },
 ]);
 
 

@@ -60,6 +60,10 @@ export interface CreateMachinePayload {
   features: Record<string, any>;
   specifications: Record<string, any>;
 
+  customerImages?: string[];
+  fileUploadLink?: string | null;
+  videoYoutubeLink?: string | null;
+
   isFeatured?: boolean;
 }
 
@@ -84,6 +88,11 @@ export interface UpdateMachinePayload {
   features?: Record<string, any>;
   specifications?: Record<string, any>;
   stockQuantity?: number;
+
+  customerImages?: string[];
+  fileUploadLink?: string | null;
+  videoYoutubeLink?: string | null;
+
   isFeatured?: boolean;
   isActive?: boolean;
 }

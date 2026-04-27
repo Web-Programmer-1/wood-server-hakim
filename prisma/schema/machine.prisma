@@ -56,6 +56,9 @@ model Machine {
   bookedName      String?
   bookedNote      String?
   bookedPhone     String?
+  customerImages  String[]       @default([])
+  fileUploadLink  String?
+  videoYoutubeLink String?
   category        Category       @relation(fields: [categoryId], references: [id])
   subCategory     SubCategory?   @relation(fields: [subCategoryId], references: [id])
   images          MachineImage[]
