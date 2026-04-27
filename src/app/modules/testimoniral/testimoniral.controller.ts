@@ -65,7 +65,7 @@ create: async (req: Request, res: Response) => {
 
   getById: async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const result = await TestimonialService.getById(id);
 
@@ -86,7 +86,7 @@ create: async (req: Request, res: Response) => {
 update: async (req: Request, res: Response) => {
   try {
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const files = req.files as {
       [fieldname: string]: Express.MulterS3.File[];
@@ -131,7 +131,7 @@ update: async (req: Request, res: Response) => {
 delete: async (req: Request, res: Response) => {
   try {
 
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const result = await TestimonialService.delete(id);
 

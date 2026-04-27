@@ -43,7 +43,7 @@ const getSubCategories = async (_req: Request, res: Response) => {
 
 const getSubCategoriesByCategory = async (req: Request, res: Response) => {
   try {
-    const { categorySlug } = req.params;
+    const categorySlug = req.params.categorySlug as string;
     const result = await SubCategoryService.getSubCategoriesByCategory(
       categorySlug
     );
@@ -63,7 +63,7 @@ const getSubCategoriesByCategory = async (req: Request, res: Response) => {
 
 const getSingleSubCategory = async (req: Request, res: Response) => {
   try {
-    const { slug } = req.params;
+    const slug = req.params.slug as string;
     const result = await SubCategoryService.getSingleSubCategory(slug);
 
     res.status(200).json({
@@ -81,7 +81,7 @@ const getSingleSubCategory = async (req: Request, res: Response) => {
 
 const updateSubCategory = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const file = req.file as Express.MulterS3.File | undefined;
 
     const payload = {
@@ -106,7 +106,7 @@ const updateSubCategory = async (req: Request, res: Response) => {
 
 const deleteSubCategory = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await SubCategoryService.deleteSubCategory(id);
 
     res.status(200).json({

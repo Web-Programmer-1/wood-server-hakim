@@ -64,7 +64,7 @@ export const ConsultencyBannerController = {
 
   getById: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await ConsultencyBannerService.getById(id);
 
@@ -83,7 +83,7 @@ export const ConsultencyBannerController = {
 
   update: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const file = req.file as any;
 
       const payload: any = {
@@ -121,7 +121,7 @@ export const ConsultencyBannerController = {
 
   delete: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await ConsultencyBannerService.delete(id);
 

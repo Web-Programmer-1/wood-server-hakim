@@ -38,7 +38,7 @@ const sslSuccess = async (req: Request, res: Response) => {
 
 const getSslReceipt = async (req: Request, res: Response) => {
   try {
-    const { tranId } = req.params;
+    const tranId = req.params.tranId as string;
 
     const data = await SSLCommerzService.getReceiptByTranId(tranId);
 
@@ -122,7 +122,7 @@ const getMyPayments = async (req: Request, res: Response) => {
 
 const getPaymentByOrder = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
 
   const result = await SSLCommerzService.getPaymentByOrder(userId, orderId);
 
@@ -139,7 +139,7 @@ const getPaymentByOrder = async (req: Request, res: Response) => {
 // payment.controller.ts
 const retryPayment = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
 
   const result = await SSLCommerzService.retryPayment(userId, orderId);
 
@@ -162,7 +162,7 @@ const retryPayment = async (req: Request, res: Response) => {
 
 const updatePaymentStatus = async (req: Request, res: Response) => {
   const adminId = req.user!.id;
-  const { paymentId } = req.params;
+  const paymentId = req.params.paymentId as string;
 
   const { status, note } = req.body as { status: MPaymentStatus; note?: string };
 

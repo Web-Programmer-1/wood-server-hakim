@@ -82,7 +82,7 @@ export const ShadhinotaController = {
 
   getById: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await ShadhinotaService.getById(id);
 
       return res.status(httpStatus.OK).json({
@@ -100,7 +100,7 @@ export const ShadhinotaController = {
 
   update: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const payload = {
         title: req.body?.title,
@@ -125,7 +125,7 @@ export const ShadhinotaController = {
 
   delete: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await ShadhinotaService.delete(id);
 
       return res.status(httpStatus.OK).json({
@@ -143,7 +143,7 @@ export const ShadhinotaController = {
 
   addImages: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const files = req.files as Express.MulterS3.File[] | undefined;
       const imageUrls = (files ?? []).map((f) => f.location).filter(Boolean);
 
@@ -164,7 +164,7 @@ export const ShadhinotaController = {
 
   deleteImage: async (req: Request, res: Response) => {
     try {
-      const { imageId } = req.params;
+      const imageId = req.params.imageId as string;
       const result = await ShadhinotaService.deleteImage(imageId);
 
       return res.status(httpStatus.OK).json({

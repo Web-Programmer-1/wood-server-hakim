@@ -60,7 +60,7 @@ const searchMachines = async (req: Request, res: Response) => {
 };
 
 const getMachineBySlug = async (req: Request, res: Response) => {
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
   const result = await MachineService.getMachineBySlug(slug);
   res.status(httpStatus.OK).json({
     success: true,
@@ -72,7 +72,7 @@ const getMachineBySlug = async (req: Request, res: Response) => {
 
 
 const downloadMachineSpecPdf = async (req: Request, res: Response) => {
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
 
   const machine = await MachineService.getMachineBySlug(slug);
 
@@ -95,7 +95,7 @@ const downloadMachineSpecPdf = async (req: Request, res: Response) => {
 
 
 const getRelatedMachines = async (req: Request, res: Response) => {
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
   const result = await MachineService.getRelatedMachines(slug);
   res.status(httpStatus.OK).json({
     success: true,
@@ -188,7 +188,7 @@ const createMachine = async (req: Request, res: Response) => {
 
 
 const updateMachine = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const body = req.body.data ? JSON.parse(req.body.data) : req.body;
   const files = req.files as {
     thumbnail?: Express.MulterS3.File[];
@@ -239,7 +239,7 @@ const updateMachine = async (req: Request, res: Response) => {
 
 
 const updateMachineStatus = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const result = await MachineService.updateMachineStatus(id, req.body);
   res.status(httpStatus.OK).json({
     success: true,
@@ -248,7 +248,7 @@ const updateMachineStatus = async (req: Request, res: Response) => {
 };
 
 const deleteMachine = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const result = await MachineService.deleteMachine(id);
   res.status(httpStatus.OK).json({
     success: true,
@@ -281,7 +281,7 @@ const getAllMachineImages = async (req: Request, res: Response) => {
 
 
 const updateMachineImage = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const file = req.file as Express.MulterS3.File | undefined;
   const { isPrimary } = req.body;
@@ -320,7 +320,7 @@ const updateMachineImage = async (req: Request, res: Response) => {
 
 
 const uploadMachineImages = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const files = req.files as Express.MulterS3.File[];
   const result = await MachineService.uploadMachineImages(id, files);
   res.status(httpStatus.OK).json({
@@ -334,7 +334,7 @@ const uploadMachineImages = async (req: Request, res: Response) => {
 
 
 const deleteMachineImage = async (req: Request, res: Response) => {
-  const { id } = req.params; // ✅ id = imageId
+  const id = req.params.id as string; // ✅ id = imageId
 
   const result = await MachineService.deleteMachineImage(id);
 
@@ -352,7 +352,7 @@ const deleteMachineImage = async (req: Request, res: Response) => {
 
 
 const uploadMachineVideo = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const file = req.file as Express.MulterS3.File;
   const result = await MachineService.uploadMachineVideo(id, file);
   res.status(httpStatus.OK).json({
@@ -383,7 +383,7 @@ const getAllMachineVideosController = async (req: Request, res: Response) => {
 
 
 const updateMachineVideo = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const file = req.file as Express.MulterS3.File;
 
   const result = await MachineService.updateMachineVideo(id, file);
@@ -398,7 +398,7 @@ const updateMachineVideo = async (req: Request, res: Response) => {
 
 
 const deleteMachineVideo = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await MachineService.deleteMachineVideo(id);
 
@@ -412,7 +412,7 @@ const deleteMachineVideo = async (req: Request, res: Response) => {
 // ---- Multipart video upload (direct-to-S3) ----
 
 const initiateMachineVideoMultipart = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { fileName, fileSize, contentType } = req.body ?? {};
   const result = await MachineService.initiateMachineVideoMultipart({
     machineId: id,
@@ -434,7 +434,7 @@ const signMachineVideoPart = async (req: Request, res: Response) => {
 };
 
 const completeMachineVideoMultipart = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { videoId, key, uploadId, parts } = req.body ?? {};
   const result = await MachineService.completeMachineVideoMultipart({
     machineId: id,

@@ -29,7 +29,7 @@ const getCart = async (req: Request, res: Response) => {
 
 const updateQuantity = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { itemId } = req.params;
+  const itemId = req.params.itemId as string;
   const { quantity } = req.body;
    console.log(userId)
   const result = await CartService.updateQuantity(userId, itemId, quantity);
@@ -45,7 +45,7 @@ const updateQuantity = async (req: Request, res: Response) => {
 
 const removeItem = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { itemId } = req.params;
+  const itemId = req.params.itemId as string;
 
   await CartService.removeItem(userId, itemId);
 

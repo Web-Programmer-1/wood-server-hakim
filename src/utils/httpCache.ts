@@ -67,10 +67,14 @@ async function deleteCacheByPattern(pattern: string): Promise<void> {
   if (!redisUsable()) return;
   try {
     const client = redis!;
-    const scanIterator = (client as unknown as { scanIterator?: (opts: { MATCH: string; COUNT: number }) => AsyncIterable<string> }).scanIterator;
+    const scanIterator = (client as unknown as { scanIterator?: (opts: { MATCH: string; COUNT: number }) => AsyncIterable<string | string[]> }).scanIterator;
     if (typeof scanIterator === "function") {
-      for await (const k of scanIterator.call(client, { MATCH: pattern, COUNT: 200 })) {
-        await client.del(k);
+      for await (const batch of scanIterator.call(client, { MATCH: pattern, COUNT: 200 })) {
+        if (Array.isArray(batch)) {
+          if (batch.length > 0) await client.del(batch);
+        } else if (batch) {
+          await client.del(batch);
+        }
       }
       return;
     }

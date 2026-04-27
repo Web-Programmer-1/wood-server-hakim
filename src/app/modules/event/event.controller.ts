@@ -168,7 +168,7 @@ export const getEventBySlugController = async (
   res: Response
 ) => {
   try {
-    const event = await getEventBySlug(req.params.slug);
+    const event = await getEventBySlug(req.params.slug as string);
 
     res.status(200).json({
       success: true,
@@ -193,7 +193,7 @@ export const updateEventController = async (
   res: Response
 ) => {
   try {
-    const event = await updateEvent(req.params.id, {
+    const event = await updateEvent(req.params.id as string, {
       ...req.body,
            bannerImage: req.file ? (req.file as Express.MulterS3.File).location : undefined,
     });
@@ -221,7 +221,7 @@ export const deleteEventController = async (
   res: Response
 ) => {
   try {
-    const event = await deleteEvent(req.params.id);
+    const event = await deleteEvent(req.params.id as string);
 
     res.status(200).json({
       success: true,

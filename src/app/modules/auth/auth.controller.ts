@@ -125,7 +125,7 @@ export const AuthController = {
 
   async getUserById(req: Request, res: Response) {
     try {
-      const data = await AuthService.getUserById(req.params.id);
+      const data = await AuthService.getUserById(req.params.id as string);
       res.json(data);
     } catch (err: any) {
       res.status(404).json({ message: err.message });
@@ -134,7 +134,7 @@ export const AuthController = {
 
   async updateRoleUser(req: Request, res: Response) {
     try {
-      const data = await AuthService.updateRoleUser(req.params.id, req.body.role);
+      const data = await AuthService.updateRoleUser(req.params.id as string, req.body.role);
       res.json({ success: true, data });
     } catch (err: any) {
       res.status(400).json({ message: err.message });
@@ -152,7 +152,7 @@ export const AuthController = {
 
   async deleteUser(req: Request, res: Response) {
     try {
-      const data = await AuthService.deleteUser(req.params.id);
+      const data = await AuthService.deleteUser(req.params.id as string);
       res.json(data);
     } catch (err: any) {
       res.status(400).json({ message: err.message });
@@ -207,7 +207,7 @@ export const logout = async (req: Request, res: Response) => {
 export const updateUserCon: RequestHandler = async (req, res) => {
   try {
     const result = await AuthService.updateUser(
-      req.params.id,
+      req.params.id as string,
       req.body
     );
 

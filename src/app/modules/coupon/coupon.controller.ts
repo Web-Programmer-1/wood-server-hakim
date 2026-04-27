@@ -13,20 +13,20 @@ const getCoupons = async (req: Request, res: Response) => {
 };
 
 const updateCoupon = async (req: Request, res: Response) => {
-  const { couponId } = req.params;
+  const couponId = req.params.couponId as string;
   const result = await AdminCouponService.update(couponId, req.body);
   res.status(200).json({ success: true, data: result });
 };
 
 const toggleCouponStatus = async (req: Request, res: Response) => {
-  const { couponId } = req.params;
+  const couponId = req.params.couponId as string;
   const { isActive } = req.body;
   const result = await AdminCouponService.toggleStatus(couponId, isActive);
   res.status(200).json({ success: true, data: result });
 };
 
 const deleteCoupon = async (req: Request, res: Response) => {
-  const { couponId } = req.params;
+  const couponId = req.params.couponId as string;
   await AdminCouponService.remove(couponId);
   res.status(200).json({ success: true, message: "Coupon deleted" });
 };
@@ -123,7 +123,7 @@ export const getCouponByIdController = async (
   res: Response
 ) => {
   try {
-    const { couponId } = req.params;
+    const couponId = req.params.couponId as string;
 
     const result =
       await getCouponById(couponId);
