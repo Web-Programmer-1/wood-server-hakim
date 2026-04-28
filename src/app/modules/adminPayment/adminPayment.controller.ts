@@ -17,7 +17,7 @@ const getPayments = async (req: Request, res: Response) => {
 
 
 const getPaymentDetailsAdmin = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const data = await AdminPaymentService.getAdminPaymentDetails(id);
 
@@ -32,7 +32,7 @@ const getPaymentDetailsAdmin = async (req: Request, res: Response) => {
 
 
 const getOrderPaymentsAdmin = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const data = await AdminPaymentService.getPaymentsByOrderIdAdmin(id);
 
@@ -45,7 +45,7 @@ const getOrderPaymentsAdmin = async (req: Request, res: Response) => {
 
 
 const markPaymentFailed = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { reason } = req.body;
   const adminId = req.user!.id;
 
@@ -66,7 +66,7 @@ const markPaymentFailed = async (req: Request, res: Response) => {
 
 
 const markPaymentPaid = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { reason } = req.body;
   const adminId = req.user!.id;
 
@@ -110,7 +110,7 @@ const getPaymentsSummary = async (req: Request, res: Response) => {
 
 
 const getPaymentAudit = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const result = await AdminPaymentService.getPaymentAudit(id);
 

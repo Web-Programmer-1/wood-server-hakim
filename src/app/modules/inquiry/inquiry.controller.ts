@@ -148,7 +148,7 @@ export const getInquiryById = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const inquiry = await getInquiryByIdService(id);
 
@@ -192,7 +192,7 @@ export const updateInquiryStatus = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status } = req.body;
 
     const updatedInquiry =
@@ -255,7 +255,7 @@ export const sendQuotationEmail = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const adminId = req.user?.id;
     const { subject, message } = req.body;
 
@@ -321,7 +321,7 @@ export const deleteInquiry = async (
   res: Response
 ) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const adminId = req.user?.id;
 
     const result = await deleteInquiryService(id, adminId!);

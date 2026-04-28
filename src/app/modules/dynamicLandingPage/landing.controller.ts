@@ -69,7 +69,7 @@ const getHeroSlides = async (req: Request, res: Response) => {
 
 const deleteHeroSlide = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const result = await LandingService.deleteHeroSlide(id);
     res.status(200).json({ success: true, message: "Deleted successfully", data: result });
   } catch (error: any) {
@@ -138,7 +138,7 @@ const getAllCompanyLogos = async (req: Request, res: Response) => {
 
 const deleteCompanyLogo = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const result = await LandingService.deleteCompanyLogo(id);
     res.status(200).json({ success: true, message: "Logo deleted successfully", data: result });
   } catch (error: any) {
@@ -192,7 +192,7 @@ const upsertFooter = async (req: Request, res: Response) => {
 
 
 const deleteFooter = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await LandingService.softDeleteFooterFromDB(id);
 
@@ -224,7 +224,7 @@ const getOffices = async (_req: Request, res: Response) => {
 };
 
 const updateOffice = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const result = await LandingService.updateOfficeIntoDB(id, req.body);
 
@@ -236,7 +236,7 @@ const updateOffice = async (req: Request, res: Response) => {
 };
 
 const deleteOffice = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await LandingService.softDeleteOfficeFromDB(id);
 
@@ -317,7 +317,7 @@ const getMegaOffers = async (_req: Request, res: Response) => {
 
 
 const deleteMegaOffer = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   await LandingService.deleteMegaOffer(id);
 
@@ -327,7 +327,7 @@ const deleteMegaOffer = async (req: Request, res: Response) => {
 };
 
 const updateMegaOffer = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const file = req.file as any;
 
   if (!file?.location) {
@@ -388,7 +388,7 @@ const getGalleryImages = async (req: Request, res: Response) => {
 };
 
 const deleteGalleryImage = async (req: Request, res: Response) => {
-  await LandingService.deleteGalleryImage(req.params.id);
+  await LandingService.deleteGalleryImage(req.params.id as string);
   res.status(204).send({
     message: "Gallery image deleted successfully",
     data: null,
@@ -492,7 +492,7 @@ const updateLandingVideo = async (req: Request, res: Response) => {
   const uploadedFiles: string[] = [];
 
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { title, sourceType, youtubeUrl, isActive } = req.body;
 
     if (!id) {
@@ -559,7 +559,7 @@ const updateLandingVideo = async (req: Request, res: Response) => {
 
 
 const deleteLandingVideo = async (req: Request, res: Response) => {
-  await LandingService.deleteLandingVideo(req.params.id);
+  await LandingService.deleteLandingVideo(req.params.id as string);
   res.status(204).json({
     message: "Landing video deleted successfully",
    

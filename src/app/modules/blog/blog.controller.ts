@@ -87,7 +87,7 @@ export const getBlogBySlugController = async (
   res: Response
 ) => {
   try {
-    const blog = await getBlogBySlug(req.params.slug);
+    const blog = await getBlogBySlug(req.params.slug as string);
 
     res.status(200).json({
       success: true,
@@ -120,7 +120,7 @@ export const updateBlogController = async (
   res: Response
 ) => {
   try {
-    const blog = await updateBlog(req.params.id, {
+    const blog = await updateBlog(req.params.id as string, {
       ...req.body,
       coverImage: (req.file as Express.MulterS3.File)?.location,
     });
@@ -150,7 +150,7 @@ export const deleteBlogController = async (
   res: Response
 ) => {
   try {
-    const blog = await deleteBlog(req.params.id);
+    const blog = await deleteBlog(req.params.id as string);
 
     res.status(200).json({
       success: true,

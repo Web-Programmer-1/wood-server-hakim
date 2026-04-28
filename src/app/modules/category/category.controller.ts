@@ -20,7 +20,7 @@ const getCategoryTree = async (req: Request, res: Response) => {
 };
 
 const getMachinesByCategory = async (req: Request, res: Response) => {
-  const { slug } = req.params;
+  const slug = req.params.slug as string;
   const { search, page = "1", limit = "9" } = req.query;
   const result = await CategoryService.getMachinesByCategory(slug, {
     search: search as string | undefined,
@@ -51,7 +51,7 @@ const createCategory = async (req: Request, res: Response) => {
 };
 // update
 const updateCategory = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const result = await CategoryService.updateCategory(id, req.body);
   res.status(httpStatus.OK).json({
     success: true,
@@ -60,7 +60,7 @@ const updateCategory = async (req: Request, res: Response) => {
 };
 
 const deleteCategory = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const result = await CategoryService.deleteCategory(id);
   res.status(httpStatus.OK).json({
     success: true,

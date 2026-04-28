@@ -45,7 +45,7 @@ const getMyOrderTracking = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
 
   const data = await OrderService.getMyOrderTracking(userId, orderId);
 
@@ -68,7 +68,7 @@ const getMyOrderTracking = catchAsync(async (req: Request, res: Response) => {
 
 const getOrderDetails = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
 
   const result = await OrderService.getOrderDetails(userId, orderId);
 
@@ -83,7 +83,7 @@ const getOrderDetails = catchAsync(async (req: Request, res: Response) => {
 
 const cancelOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
 
   const result = await OrderService.cancelOrder(userId, orderId);
 
@@ -112,7 +112,7 @@ const getAllOrdersAdmin = catchAsync(async (req: Request, res: Response) => {
 
 
 const getOrderDetailsAdmin = catchAsync(async (req: Request, res: Response) => {
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
 
   const result = await OrderService.getOrderDetailsAdmin(orderId);
 
@@ -125,7 +125,7 @@ const getOrderDetailsAdmin = catchAsync(async (req: Request, res: Response) => {
 
 
 const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
   const { status } = req.body;
 
   const result = await OrderService.updateOrderStatus(orderId, status);
@@ -145,7 +145,7 @@ const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
 
 
 const trackOrder = catchAsync(async (req: Request, res: Response) => {
-  const { orderId } = req.params;
+  const orderId = req.params.orderId as string;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -197,7 +197,7 @@ const trackOrder = catchAsync(async (req: Request, res: Response) => {
 
 
 const deleteOrder = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const result = await OrderService.deleteOrder(id);
 

@@ -20,7 +20,7 @@ export const getProductReviewsHandler = async (
   req: Request,
   res: Response
 ) => {
-  const { productId } = req.params;
+  const productId = req.params.productId as string;
 
   const reviews = await getProductReviews(productId);
 
@@ -63,7 +63,7 @@ export const deleteReviewAdminHandler = async (
   req: Request,
   res: Response
 ) => {
-  const { reviewId } = req.params;
+  const reviewId = req.params.reviewId as string;
 
   await deleteReviewAdmin(reviewId);
 

@@ -68,7 +68,7 @@ export const ServiceSectionController = {
   // ✅ GET SINGLE (getByServices)
   getById: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await ServiceSectionService.getById(id);
 
       return res.status(httpStatus.OK).json({
@@ -88,7 +88,7 @@ export const ServiceSectionController = {
 
   update: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       // banner optional
       const file = req.file as any;
@@ -141,7 +141,7 @@ export const ServiceSectionController = {
 
    delete: async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       await ServiceSectionService.delete(id);
 

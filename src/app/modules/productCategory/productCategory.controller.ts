@@ -37,7 +37,7 @@ const updateCategory = async (req: Request, res: Response) => {
     coverImage: file?.location || req.body.coverImage,
   };
 
-  const result = await CategoryService.updateCategory(req.params.id, payload);
+  const result = await CategoryService.updateCategory(req.params.id as string, payload);
 
   res.status(200).json({
     success: true,
@@ -47,7 +47,7 @@ const updateCategory = async (req: Request, res: Response) => {
 };
 
 const deleteCategory = async (req: Request, res: Response) => {
-  const result = await CategoryService.deleteCategory(req.params.id);
+  const result = await CategoryService.deleteCategory(req.params.id as string);
   res.status(200).json({ success: true,
     
     data: "Category deleted successfully" });

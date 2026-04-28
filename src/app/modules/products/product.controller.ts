@@ -124,7 +124,7 @@ const getAllProductBrands = async (_req: Request, res: Response) => {
 };
 
 const getProductDetails = async (req: Request, res: Response) => {
-  const result = await ProductService.getProductDetails(req.params.slug);
+  const result = await ProductService.getProductDetails(req.params.slug as string);
 
   res.status(200).json({
     success: true,
@@ -133,7 +133,7 @@ const getProductDetails = async (req: Request, res: Response) => {
 };
 
 const getRelatedProducts = async (req: Request, res: Response) => {
-  const result = await ProductService.getRelatedProducts(req.params.slug);
+  const result = await ProductService.getRelatedProducts(req.params.slug as string);
 
   res.status(200).json({
     success: true,
@@ -209,7 +209,7 @@ const updateProduct = async (req: Request, res: Response) => {
     variants: req.body.variants !== undefined ? variants : undefined,
   };
 
-  const result = await ProductService.updateProduct(req.params.id, payload);
+  const result = await ProductService.updateProduct(req.params.id as string, payload);
 
   res.status(200).json({
     success: true,
@@ -224,7 +224,7 @@ const updateProduct = async (req: Request, res: Response) => {
 
 
 const deleteProduct = async (req: Request, res: Response) => {
-  await ProductService.deleteProduct(req.params.id);
+  await ProductService.deleteProduct(req.params.id as string);
 
   res.status(200).json({
     success: true,

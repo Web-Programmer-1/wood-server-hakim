@@ -572,7 +572,9 @@ const getMachineBySlugUncached = async (slug: string) => {
       bookedEmail: true,
       bookedNote: true,
 
-      
+      customerImages: true,
+      fileUploadLink: true,
+      videoYoutubeLink: true,
 
       images: {
         select: {
@@ -1095,6 +1097,20 @@ const createMachine = async (payload: any) => {
       bookedEmail: payload.bookedEmail ?? null,
       bookedNote: payload.bookedNote ?? null,
 
+      customerImages: Array.isArray(payload.customerImages)
+        ? payload.customerImages.filter(
+            (u: unknown): u is string => typeof u === "string" && u.length > 0,
+          )
+        : [],
+      fileUploadLink:
+        typeof payload.fileUploadLink === "string" && payload.fileUploadLink.trim()
+          ? payload.fileUploadLink.trim()
+          : null,
+      videoYoutubeLink:
+        typeof payload.videoYoutubeLink === "string" && payload.videoYoutubeLink.trim()
+          ? payload.videoYoutubeLink.trim()
+          : null,
+
       isFeatured: payload.isFeatured ?? false,
       isActive: payload.isActive ?? true,
     },
@@ -1119,11 +1135,30 @@ const updateMachine = async (id: string, payload: any) => {
   const stringFields = [
     "name", "slug", "shortDesc", "description", "brand", "model",
     "thumbnailImage", "bannerImage", "bookedName", "bookedPhone",
-    "bookedEmail", "bookedNote"
+    "bookedEmail", "bookedNote", "fileUploadLink", "videoYoutubeLink"
   ];
   stringFields.forEach((field) => {
-    if (payload[field] !== undefined) updateData[field] = payload[field];
+    if (payload[field] !== undefined) {
+      const value = payload[field];
+      if (
+        ["fileUploadLink", "videoYoutubeLink"].includes(field) &&
+        typeof value === "string"
+      ) {
+        const trimmed = value.trim();
+        updateData[field] = trimmed.length > 0 ? trimmed : null;
+      } else {
+        updateData[field] = value;
+      }
+    }
   });
+
+  if (payload.customerImages !== undefined) {
+    updateData.customerImages = Array.isArray(payload.customerImages)
+      ? payload.customerImages.filter(
+          (u: unknown): u is string => typeof u === "string" && u.length > 0,
+        )
+      : [];
+  }
 
   const jsonFields = ["features", "specifications", "workSections", "dynamicButtons"];
   jsonFields.forEach((field) => {
@@ -1216,6 +1251,9 @@ const updateMachine = async (id: string, payload: any) => {
       subCategoryId: true,
       brand: true,
       model: true,
+      customerImages: true,
+      fileUploadLink: true,
+      videoYoutubeLink: true,
       createdAt: true,
       updatedAt: true,
       category: { select: { id: true, name: true, slug: true } },
