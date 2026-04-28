@@ -5,7 +5,13 @@ import multer from "multer";
 import multerS3 from "multer-s3";
 import crypto from "crypto";
 import { s3 } from "../../config/aws.config";
-import { MACHINE_IMAGE_MAX_BYTES } from "../../config/machineUploadLimits";
+import {
+  MACHINE_FILE_ACCEPT_MIMES,
+  MACHINE_FILE_MAX_BYTES,
+  MACHINE_IMAGE_MAX_BYTES,
+} from "../../config/machineUploadLimits";
+
+const FILE_UPLOAD_FIELD = "fileUpload";
 
 export const uploadMachineCreate = multer({
   storage: multerS3({
@@ -15,11 +21,24 @@ export const uploadMachineCreate = multer({
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();
       const randomName = crypto.randomBytes(16).toString("hex");
-      cb(null, `machines/${randomName}.${ext}`);
+      const folder = file.fieldname === FILE_UPLOAD_FIELD ? "machines/files" : "machines";
+      cb(null, `${folder}/${randomName}.${ext}`);
     },
   }),
-  limits: { fileSize: MACHINE_IMAGE_MAX_BYTES },
+  limits: { fileSize: Math.max(MACHINE_IMAGE_MAX_BYTES, MACHINE_FILE_MAX_BYTES) },
   fileFilter: (req, file, cb) => {
+    if (file.fieldname === FILE_UPLOAD_FIELD) {
+      if (!MACHINE_FILE_ACCEPT_MIMES.includes(file.mimetype)) {
+        cb(new Error("Unsupported file type. Allowed: PDF, Word, Excel, PowerPoint, ZIP, TXT, CSV."));
+        return;
+      }
+      if (file.size && file.size > MACHINE_FILE_MAX_BYTES) {
+        cb(new Error(`File too large. Max ${MACHINE_FILE_MAX_BYTES / (1024 * 1024)} MB.`));
+        return;
+      }
+      cb(null, true);
+      return;
+    }
     if (!file.mimetype.startsWith("image/")) {
       cb(new Error("Only image files are allowed"));
     } else {
@@ -31,6 +50,7 @@ export const uploadMachineCreate = multer({
   { name: "banner", maxCount: 1 },
   { name: "featureImages", maxCount: 20 },
   { name: "customerImages", maxCount: 20 },
+  { name: FILE_UPLOAD_FIELD, maxCount: 1 },
 ]);
 
 
