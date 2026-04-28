@@ -142,6 +142,7 @@ const createMachine = async (req: Request, res: Response) => {
     banner?: Express.MulterS3.File[];
     featureImages?: Express.MulterS3.File[];
     customerImages?: Express.MulterS3.File[];
+    fileUpload?: Express.MulterS3.File[];
   };
 
   const featureImages = files?.featureImages || [];
@@ -162,12 +163,15 @@ const createMachine = async (req: Request, res: Response) => {
     : [];
   const customerImages = [...existingCustomerImages, ...newCustomerImageUrls];
 
+  const uploadedFileLocation = files?.fileUpload?.[0]?.location;
+
   const payload = {
     ...body,
     thumbnailImage: files?.thumbnail?.[0]?.location,
     bannerImage: files?.banner?.[0]?.location,
     features,
     customerImages,
+    fileUploadLink: uploadedFileLocation ?? body.fileUploadLink,
   };
 
   const result = await MachineService.createMachine(payload);
@@ -195,6 +199,7 @@ const updateMachine = async (req: Request, res: Response) => {
     banner?: Express.MulterS3.File[];
     featureImages?: Express.MulterS3.File[];
     customerImages?: Express.MulterS3.File[];
+    fileUpload?: Express.MulterS3.File[];
   };
 
   const payload: Record<string, any> = { ...body };
@@ -223,6 +228,11 @@ const updateMachine = async (req: Request, res: Response) => {
       ? body.customerImages.filter((u: unknown) => typeof u === "string")
       : [];
     payload.customerImages = [...existing, ...newCustomerImageUrls];
+  }
+
+  const uploadedFileLocation = files?.fileUpload?.[0]?.location;
+  if (uploadedFileLocation) {
+    payload.fileUploadLink = uploadedFileLocation;
   }
 
   const result = await MachineService.updateMachine(id, payload);
