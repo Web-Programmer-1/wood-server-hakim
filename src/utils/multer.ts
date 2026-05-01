@@ -3,13 +3,13 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
 import crypto from "crypto";
-import { s3 } from "../config/aws.config";
+import { BUCKET_NAME, s3 } from "../config/aws.config";
 import { Request } from "express";
 
 export const uploadCategoryImages = multer({
   storage: multerS3({
     s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+    bucket: BUCKET_NAME,
 
     contentType: multerS3.AUTO_CONTENT_TYPE, 
 

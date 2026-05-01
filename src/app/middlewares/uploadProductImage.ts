@@ -3,13 +3,13 @@ import multerS3 from "multer-s3";
 import crypto from "crypto";
 
 import { Request } from "express";
-import { s3 } from "../../config/aws.config";
+import { BUCKET_NAME, s3 } from "../../config/aws.config";
 import { PRODUCT_IMAGE_MAX_BYTES } from "../../config/productUploadLimits";
 
 export const uploadProductImages = multer({
   storage: multerS3({
     s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+    bucket: BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
 
     metadata: (req: Request, file, cb) => {

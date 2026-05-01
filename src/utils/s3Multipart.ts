@@ -6,10 +6,9 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from "crypto";
-import { s3 } from "../config/aws.config";
+import { BUCKET_NAME, publicUrlForKey, s3 } from "../config/aws.config";
 
-const BUCKET = process.env.AWS_BUCKET_NAME!;
-const REGION = process.env.AWS_REGION!;
+export { publicUrlForKey };
 
 export const buildMachineVideoKey = (originalName: string) => {
   const ext = (originalName.split(".").pop() || "mp4").toLowerCase();
@@ -17,16 +16,13 @@ export const buildMachineVideoKey = (originalName: string) => {
   return `machine-videos/${crypto.randomBytes(16).toString("hex")}.${safeExt}`;
 };
 
-export const publicUrlForKey = (key: string) =>
-  `https://s3.${REGION}.amazonaws.com/${BUCKET}/${key}`;
-
 export const initiateMultipart = async (params: {
   key: string;
   contentType: string;
 }) => {
   const out = await s3.send(
     new CreateMultipartUploadCommand({
-      Bucket: BUCKET,
+      Bucket: BUCKET_NAME,
       Key: params.key,
       ContentType: params.contentType,
     }),
@@ -42,7 +38,7 @@ export const signUploadPartUrl = async (params: {
   expiresIn?: number;
 }) => {
   const cmd = new UploadPartCommand({
-    Bucket: BUCKET,
+    Bucket: BUCKET_NAME,
     Key: params.key,
     UploadId: params.uploadId,
     PartNumber: params.partNumber,
@@ -60,7 +56,7 @@ export const completeMultipart = async (params: {
   const sorted = [...params.parts].sort((a, b) => a.PartNumber - b.PartNumber);
   await s3.send(
     new CompleteMultipartUploadCommand({
-      Bucket: BUCKET,
+      Bucket: BUCKET_NAME,
       Key: params.key,
       UploadId: params.uploadId,
       MultipartUpload: { Parts: sorted },
@@ -75,7 +71,7 @@ export const abortMultipart = async (params: {
 }) => {
   await s3.send(
     new AbortMultipartUploadCommand({
-      Bucket: BUCKET,
+      Bucket: BUCKET_NAME,
       Key: params.key,
       UploadId: params.uploadId,
     }),
