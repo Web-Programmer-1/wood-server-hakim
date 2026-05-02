@@ -636,7 +636,71 @@ export const AuthService = {
     });
 
     return { message: "User deleted successfully" };
-  }
+  },
+
+
+  async seedAdmin(body: { name?: string; email?: string; phone?: string; password?: string }) {
+    const name = body.name ?? process.env.ADMIN_SEED_NAME ?? "Super Admin";
+    const email = body.email ?? process.env.ADMIN_SEED_EMAIL;
+    const phone = body.phone ?? process.env.ADMIN_SEED_PHONE ?? null;
+    const password = body.password ?? process.env.ADMIN_SEED_PASSWORD;
+
+    if (!email) throw new Error("Admin email is required (body.email or ADMIN_SEED_EMAIL)");
+    if (!password) throw new Error("Admin password is required (body.password or ADMIN_SEED_PASSWORD)");
+    if (password.length < 6) throw new Error("Admin password must be at least 6 characters");
+
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ email }, ...(phone ? [{ phone }] : [])] },
+    });
+
+    if (existing) {
+      if (existing.role === UserRole.ADMIN) {
+        return {
+          message: "Admin already exists",
+          created: false,
+          user: { id: existing.id, name: existing.name, email: existing.email, phone: existing.phone, role: existing.role },
+        };
+      }
+
+      const upgraded = await prisma.user.update({
+        where: { id: existing.id },
+        data: { role: UserRole.ADMIN, status: "ACTIVE", emailVerified: true },
+      });
+
+      return {
+        message: "Existing user upgraded to admin",
+        created: false,
+        user: { id: upgraded.id, name: upgraded.name, email: upgraded.email, phone: upgraded.phone, role: upgraded.role },
+      };
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const created = await prisma.$transaction(async (tx: any) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          phone,
+          passwordHash,
+          role: UserRole.ADMIN,
+          status: "ACTIVE",
+          emailVerified: true,
+          phoneVerified: phone ? true : false,
+          profile: { create: { avatarUri: null, bio: null, gender: null } },
+        },
+      });
+
+      await tx.loginAttempt.create({ data: { userId: user.id } });
+      return user;
+    }, { timeout: 30000 });
+
+    return {
+      message: "Admin user seeded successfully",
+      created: true,
+      user: { id: created.id, name: created.name, email: created.email, phone: created.phone, role: created.role },
+    };
+  },
 
 
 };

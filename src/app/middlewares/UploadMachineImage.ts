@@ -4,7 +4,7 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
 import crypto from "crypto";
-import { s3 } from "../../config/aws.config";
+import { s3Storage } from "../../config/aws.config";
 import {
   MACHINE_FILE_ACCEPT_MIMES,
   MACHINE_FILE_MAX_BYTES,
@@ -14,9 +14,7 @@ import {
 const FILE_UPLOAD_FIELD = "fileUpload";
 
 export const uploadMachineCreate = multer({
-  storage: multerS3({
-    s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+  storage: s3Storage({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();
@@ -60,9 +58,7 @@ export const uploadMachineCreate = multer({
 
 
 export const uploadCategoryImage = multer({
-  storage: multerS3({
-    s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+  storage: s3Storage({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();
@@ -88,9 +84,7 @@ export const uploadCategoryImage = multer({
 
 
 export const uploadSubCategoryImage = multer({
-  storage: multerS3({
-    s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+  storage: s3Storage({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();

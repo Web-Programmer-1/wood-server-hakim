@@ -13,6 +13,10 @@ export const authRouter = express.Router();
 // REGISTER (sends OTP — same throttle as other auth actions)
 authRouter.post("/register", strictLimiter, AuthController.register);
 
+// SEED ADMIN — protected by `x-seed-token` header (must match env SEED_TOKEN).
+// Creates an ADMIN user, or upgrades an existing user with the same email/phone.
+authRouter.post("/seed-admin", strictLimiter, AuthController.seedAdmin);
+
 //  verify email
 authRouter.post("/verify-email", strictLimiter, AuthController.verifyEmail);
 

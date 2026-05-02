@@ -1,12 +1,10 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
 import crypto from "crypto";
-import { s3 } from "../../config/aws.config";
+import { s3Storage } from "../../config/aws.config";
 
 export const uploadServiceSectionBanner = multer({
-  storage: multerS3({
-    s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+  storage: s3Storage({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();
@@ -29,9 +27,7 @@ export const uploadServiceSectionBanner = multer({
 
 
 export const uploadTestimonialAssets = multer({
-  storage: multerS3({
-    s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+  storage: s3Storage({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();
@@ -62,9 +58,7 @@ export const uploadTestimonialAssets = multer({
 
 
 export const uploadConsultencyBanner = multer({
-  storage: multerS3({
-    s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+  storage: s3Storage({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();
@@ -90,9 +84,7 @@ export const uploadConsultencyBanner = multer({
 
 
 export const uploadFoundationStoryAssets = multer({
-  storage: multerS3({
-    s3: s3 as any,
-    bucket: process.env.AWS_BUCKET_NAME!,
+  storage: s3Storage({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const ext = file.originalname.split(".").pop();

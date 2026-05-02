@@ -3,7 +3,7 @@ name: Auto Deploy Backend
 on:
   push:
     branches:
-      - main  # আপনি যদি অন্য ব্রাঞ্চ ব্যবহার করেন তবে সেটি দিন
+      - main
 
 jobs:
   deploy:
@@ -22,12 +22,12 @@ jobs:
           script: |
             cd ~/wood-server-hakim
             git pull origin main
-            
-            # pnpm এবং node এর পাথ সেট করা (যাতে কমান্ড খুঁজে পায়)
+
             export PATH=$PATH:/root/.local/share/pnpm:/usr/local/bin
-            
+
             pnpm install
             pnpm build
-            
-            # PM2 দিয়ে রিস্টার্ট করা
+
+            pnpm prisma migrate deploy
+
             pm2 restart wood-server || pm2 start dist/server.js --name "wood-server"
