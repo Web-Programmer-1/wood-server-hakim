@@ -1,19 +1,17 @@
+// MUST be the very first import: every other module below reads
+// process.env at module-evaluation time (Prisma reads DATABASE_URL, redis
+// reads REDIS_URL, etc.). ES module imports are evaluated before top-level
+// statements run, so calling dotenv.config() later in this file is too late
+// — that's what was causing Prisma's P1001 ("can't reach database").
+import "./loadEnv";
+
 import { Server } from 'http';
 import app from './app';
 import config from './config';
-import dotenv from "dotenv";
 import { prisma, warmUpPrisma } from './app/shared/prisma';
 import { disconnectRedis } from './utils/redis';
 import { shutdownQueueLayer } from './queue/shutdownQueue';
 import { startQueueWorker } from './queue/queueWorker';
-
-
-const envFile =
-  process.env.NODE_ENV === "production"
-    ? ".env.production"
-    : ".env.local";
-
-dotenv.config({ path: envFile });
 
 let server: Server | undefined;
 

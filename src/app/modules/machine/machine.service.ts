@@ -1682,29 +1682,38 @@ const completeMachineVideoMultipart = async (params: {
   videoId?: string | null;
   key: string;
   uploadId: string;
-  parts: { PartNumber: number; ETag: string }[];
+  /**
+   * Optional. The browser cannot reliably read the ETag response header from
+   * S3 across CORS, so we treat this as a hint and always fall back to listing
+   * parts directly from S3 if anything is missing.
+   */
+  parts?: { PartNumber: number; ETag: string }[];
 }) => {
   const { machineId, videoId, key, uploadId, parts } = params;
 
   if (!key?.startsWith("machine-videos/") || !uploadId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid key or uploadId");
   }
-  if (!Array.isArray(parts) || parts.length === 0) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "parts array is required");
-  }
-  for (const p of parts) {
-    if (
-      !Number.isInteger(p.PartNumber) ||
-      p.PartNumber < 1 ||
-      p.PartNumber > MAX_PARTS ||
-      typeof p.ETag !== "string" ||
-      !p.ETag
-    ) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid part entry");
-    }
-  }
 
-  const { location } = await completeMultipart({ key, uploadId, parts });
+  // Parts are optional. When provided, validate; when not, completeMultipart
+  // will list the parts directly from S3.
+  const hasUsableParts =
+    Array.isArray(parts) &&
+    parts.length > 0 &&
+    parts.every(
+      (p) =>
+        Number.isInteger(p?.PartNumber) &&
+        p.PartNumber >= 1 &&
+        p.PartNumber <= MAX_PARTS &&
+        typeof p?.ETag === "string" &&
+        p.ETag.length > 0,
+    );
+
+  const { location } = await completeMultipart({
+    key,
+    uploadId,
+    parts: hasUsableParts ? parts : undefined,
+  });
 
   if (videoId) {
     const existing = await prisma.machineVideo.findUnique({

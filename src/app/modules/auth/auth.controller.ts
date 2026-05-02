@@ -159,6 +159,39 @@ export const AuthController = {
     }
   },
 
+  async seedAdmin(req: Request, res: Response) {
+    try {
+      // Headers can be string | string[] | undefined; also strip stray whitespace.
+      const rawHeader = req.headers["x-seed-token"];
+      const provided = (Array.isArray(rawHeader) ? rawHeader[0] : rawHeader)?.trim();
+      // Also accept ?token=... query for quick browser/curl debugging.
+      const queryToken = typeof req.query.token === "string" ? req.query.token.trim() : undefined;
+      const supplied = provided || queryToken;
+      const expected = process.env.SEED_TOKEN?.trim();
+
+      if (!expected) {
+        return res.status(500).json({ message: "SEED_TOKEN is not configured on the server" });
+      }
+      if (!supplied || supplied !== expected) {
+        return res.status(403).json({
+          message: "Forbidden: invalid seed token",
+          debug: {
+            providedHeaderPresent: Boolean(provided),
+            providedHeaderLength: provided?.length ?? 0,
+            providedHeaderPreview: provided ? `${provided.slice(0, 4)}...${provided.slice(-4)}` : null,
+            expectedLength: expected.length,
+            expectedPreview: `${expected.slice(0, 4)}...${expected.slice(-4)}`,
+          },
+        });
+      }
+
+      const data = await AuthService.seedAdmin(req.body ?? {});
+      res.status(data.created ? 201 : 200).json({ success: true, ...data });
+    } catch (err: any) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  },
+
   async uploadAvatar(req: Request, res: Response) {
     try {
       if (!req.file) {

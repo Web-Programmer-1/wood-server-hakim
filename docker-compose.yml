@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wood-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wood_dev
+      POSTGRES_PASSWORD: wood#90@serverdb
+      POSTGRES_DB: wood_database
+    ports:
+      # Bound to localhost only — the backend runs on the same VPS and
+      # connects via 127.0.0.1. Do NOT change this to 0.0.0.0 unless you
+      # also add a firewall rule and a strong password.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - wood_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wood_dev -d wood_database"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  wood_pgdata:
