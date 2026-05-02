@@ -49,10 +49,35 @@ async function bootstrap() {
 
         startQueueWorker();
 
+        // Silently absorb client-disconnect errors — not a server bug
+        server.on('clientError', (err: NodeJS.ErrnoException, socket) => {
+            if (err.code === 'ECONNRESET' || !socket.writable) {
+                socket.destroy();
+                return;
+            }
+            socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+        });
+
         process.on('SIGTERM', () => void gracefulShutdown('SIGTERM', 0));
         process.on('SIGINT', () => void gracefulShutdown('SIGINT', 0));
 
-        process.on('unhandledRejection', (error) => {
+        // Network errors (client disconnect mid-upload/response) are normal — don't crash
+        const transientNetworkCodes = new Set(['ECONNRESET', 'ECONNABORTED', 'EPIPE', 'ETIMEDOUT', 'ENOTCONN']);
+
+        process.on('uncaughtException', (error: NodeJS.ErrnoException) => {
+            if (transientNetworkCodes.has(error.code ?? '')) {
+                console.warn(`[network] uncaughtException ignored: ${error.code}`);
+                return;
+            }
+            console.error('Uncaught Exception — closing server...', error);
+            void gracefulShutdown('uncaughtException', 1);
+        });
+
+        process.on('unhandledRejection', (error: NodeJS.ErrnoException) => {
+            if (transientNetworkCodes.has(error?.code ?? '')) {
+                console.warn(`[network] unhandledRejection ignored: ${error?.code}`);
+                return;
+            }
             console.error('Unhandled Rejection — closing server...', error);
             void gracefulShutdown('unhandledRejection', 1);
         });
