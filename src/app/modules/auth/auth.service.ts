@@ -303,17 +303,25 @@ export const AuthService = {
     if (!token) throw new Error("Unauthorized");
 
     try {
-      // Verify refresh token
       const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as any;
 
-      // Create new access token
+      // Re-read the user so role/status reflect current state, not what
+      // was true when the refresh token was minted (handles role
+      // changes and account deactivation between refreshes).
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { id: true, role: true, status: true },
+      });
+      if (!user || user.status !== "ACTIVE") {
+        throw new Error("Invalid refresh token");
+      }
+
       const newAccessToken = jwt.sign(
-        { id: decoded.id },
+        { id: user.id, role: user.role },
         process.env.JWT_ACCESS_SECRET!,
-        { expiresIn: "1h" }
+        { expiresIn: "15m" }
       );
 
-      // Set it in cookies again
       res.cookie("accessToken", newAccessToken, {
         ...cookieOptions,
         maxAge: 15 * 60 * 1000,
@@ -321,11 +329,9 @@ export const AuthService = {
 
       return {
         message: "Token refreshed",
-        accessToken: newAccessToken
+        accessToken: newAccessToken,
       };
-
-    } catch (err) {
-      console.log("Refresh-token error =>", err);
+    } catch {
       throw new Error("Invalid refresh token");
     }
   },
@@ -364,15 +370,11 @@ export const AuthService = {
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_ACCESS_SECRET!,
-      { expiresIn: "90d" }
+      { expiresIn: "15m" }
     );
 
-    console.log(user.role, user.id)
-
-
-
     const refreshToken = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id },
       process.env.JWT_REFRESH_SECRET!,
       { expiresIn: "7d" }
     );
@@ -381,7 +383,7 @@ export const AuthService = {
     // Set Cookies
     res.cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
@@ -578,36 +580,40 @@ export const AuthService = {
 
   async updateUser(
     targetUserId: string,
-    body: any
+    body: any,
+    options: { isAdmin: boolean } = { isAdmin: false }
   ) {
+    // Whitelist self-serviceable fields. role/status are admin-only —
+    // silently dropping them for non-admins blocks the trivial
+    // `PATCH /users/:id { role: "ADMIN" }` escalation.
+    const data: any = {
+      name: body.name,
+      email: body.email,
+      phone: body.phone,
+    };
+
+    if (options.isAdmin) {
+      if (body.role) data.role = body.role as UserRole;
+      if (body.status) data.status = body.status;
+    }
+
+    if (body.profile) {
+      const profileFields = {
+        avatarUri: body.profile.avatarUri,
+        bio: body.profile.bio,
+        gender: body.profile.gender,
+      };
+      data.profile = {
+        upsert: {
+          create: profileFields,
+          update: profileFields,
+        },
+      };
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: targetUserId },
-      data: {
-        name: body.name,
-        email: body.email,
-        phone: body.phone,
-
-
-        ...(body.role ? { role: body.role as UserRole } : {}),
-
-        ...(body.status ? { status: body.status } : {}),
-
-        profile: body.profile
-          ? {
-            upsert: {
-              create: {
-                ...body.profile,
-
-              },
-              update: {
-                ...body.profile,
-
-              },
-            },
-          }
-          : undefined,
-      },
+      data,
       include: { profile: true },
     });
 

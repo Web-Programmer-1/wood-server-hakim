@@ -2,7 +2,7 @@
 
 import express from "express";
 import { AuthController, logout, updateUserCon } from "./auth.controller";
-import { strictLimiter } from "../../middlewares/strictFixTimeSecurity";
+import { loginLimiter, strictLimiter } from "../../middlewares/strictFixTimeSecurity";
 import { uploadUserAvatar } from "../../middlewares/uploadUserAvatar";
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
@@ -24,7 +24,7 @@ authRouter.post("/verify-email", strictLimiter, AuthController.verifyEmail);
 authRouter.post("/verify-phone", strictLimiter, AuthController.verifyPhone);
 
 // LOGIN
-authRouter.post("/login", AuthController.login);
+authRouter.post("/login", loginLimiter, AuthController.login);
 
 // REFRESH TOKEN
 authRouter.post("/refresh-token", strictLimiter, AuthController.refreshToken);
@@ -52,7 +52,12 @@ authRouter.get("/me", strictLimiter, AuthController.getMe);
 
 // USER CRUD
 authRouter.get("/users", strictLimiter, authGuard(UserRole.ADMIN), AuthController.getAllUsers);
-authRouter.get("/users/:id", strictLimiter, AuthController.getUserById);
+authRouter.get(
+  "/users/:id",
+  strictLimiter,
+  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  AuthController.getUserById
+);
 authRouter.patch("/users/:id/role", strictLimiter, authGuard(UserRole.ADMIN), AuthController.updateRoleUser);
 
 
@@ -68,6 +73,7 @@ authRouter.post(
 authRouter.patch(
   "/users/:id",
   strictLimiter,
+  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
   updateUserCon
 );
 
@@ -78,4 +84,9 @@ authRouter.patch(
 
 
 
-authRouter.delete("/users/:id", strictLimiter, AuthController.deleteUser);
+authRouter.delete(
+  "/users/:id",
+  strictLimiter,
+  authGuard(UserRole.ADMIN),
+  AuthController.deleteUser
+);

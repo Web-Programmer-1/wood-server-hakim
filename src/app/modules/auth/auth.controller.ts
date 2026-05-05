@@ -125,7 +125,15 @@ export const AuthController = {
 
   async getUserById(req: Request, res: Response) {
     try {
-      const data = await AuthService.getUserById(req.params.id as string);
+      const targetId = req.params.id as string;
+      const caller = req.user;
+      if (!caller) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      if (caller.role !== "ADMIN" && caller.id !== targetId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const data = await AuthService.getUserById(targetId);
       res.json(data);
     } catch (err: any) {
       res.status(404).json({ message: err.message });
@@ -239,10 +247,19 @@ export const logout = async (req: Request, res: Response) => {
 
 export const updateUserCon: RequestHandler = async (req, res) => {
   try {
-    const result = await AuthService.updateUser(
-      req.params.id as string,
-      req.body
-    );
+    const targetId = req.params.id as string;
+    const caller = req.user;
+    if (!caller) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const isAdmin = caller.role === "ADMIN";
+    if (!isAdmin && caller.id !== targetId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const result = await AuthService.updateUser(targetId, req.body, {
+      isAdmin,
+    });
 
     res.status(200).json({
       success: true,
