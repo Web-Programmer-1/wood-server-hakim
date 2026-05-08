@@ -1,4 +1,5 @@
 import axios from "axios";
+import crypto from "crypto";
 
 import qs from "qs";
 import { prisma } from "../../shared/prisma";
@@ -9,6 +10,52 @@ import {
   PaymentStatus,
 } from "@prisma/client";
 import { sslCommerzHttpsAgent } from "../../../utils/sandboxPermission";
+
+// SSLCommerz signs IPN/success bodies with MD5(verify_sign).
+// Algorithm (per SSLCommerz docs):
+//   1. Read field names from `verify_key` (comma-separated).
+//   2. Collect those fields' raw values from the body.
+//   3. Add `store_passwd = md5(STORE_PASSWORD)`.
+//   4. Sort the resulting pairs by key, ascending.
+//   5. Join as `k1=v1&k2=v2&...` and MD5-hash.
+//   6. Compare against `verify_sign` (constant-time).
+const verifySslCommerzSignature = (body: any): boolean => {
+  const verifySign = body?.verify_sign;
+  const verifyKey = body?.verify_key;
+  const storePassword = process.env.SSLCOMMERZ_STORE_PASSWORD;
+
+  if (
+    typeof verifySign !== "string" ||
+    typeof verifyKey !== "string" ||
+    !storePassword
+  ) {
+    return false;
+  }
+
+  const fields: Record<string, string> = {};
+  for (const key of verifyKey.split(",")) {
+    const trimmed = key.trim();
+    if (!trimmed) continue;
+    const value = body[trimmed];
+    fields[trimmed] = value === undefined || value === null ? "" : String(value);
+  }
+  fields.store_passwd = crypto
+    .createHash("md5")
+    .update(storePassword)
+    .digest("hex");
+
+  const hashString = Object.keys(fields)
+    .sort()
+    .map((k) => `${k}=${fields[k]}`)
+    .join("&");
+
+  const computed = crypto.createHash("md5").update(hashString).digest("hex");
+
+  const a = Buffer.from(computed, "utf8");
+  const b = Buffer.from(verifySign, "utf8");
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+};
 
 type SSLSessionInput = {
   orderId: string;
@@ -77,6 +124,10 @@ const createSession = async (input: SSLSessionInput) => {
 };
 
 const handleSuccess = async (body: any) => {
+  if (!verifySslCommerzSignature(body)) {
+    throw new Error("Invalid SSLCommerz signature");
+  }
+
   const { tran_id, val_id, amount } = body;
 
   const validationRes = await axios.get(
@@ -269,6 +320,10 @@ const handleCancel = async (body: any) => {
 };
 
 const handleIpn = async (body: any) => {
+  if (!verifySslCommerzSignature(body)) {
+    throw new Error("Invalid SSLCommerz signature");
+  }
+
   const { tran_id, val_id, amount } = body;
 
   if (!tran_id || !val_id) {
