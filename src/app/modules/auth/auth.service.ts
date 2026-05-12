@@ -14,6 +14,39 @@ import { cookieOptions } from "../../../jwt_token_accessbility/cookieOptions";
 import { UserRole } from "../../constants/UserRole";
 
 
+// ============================================================
+//  PHONE NORMALIZATION (Bangladesh)
+//  Canonical form: `880` + 10-digit local number (no leading 0).
+//  Examples that all map to `8801712345678`:
+//    01712345678       (local, 11 digits with leading 0)
+//    1712345678        (local, 10 digits without leading 0)
+//    8801712345678     (already canonical)
+//    +8801712345678    (E.164)
+//    881712345678      (legacy / buggy form — recovered)
+//  Strategy: peel off any country prefix, drop the leading 0,
+//  then prepend `880` exactly once. Calling this twice is safe.
+// ============================================================
+export function normalizePhone(input: string | null | undefined): string | null {
+  if (input === null || input === undefined) return null;
+  let p = String(input).trim().replace(/[\s\-()+]/g, "");
+  if (!p) return null;
+  if (!/^[0-9]+$/.test(p)) return p; // leave non-digit garbage to validation
+
+  if (p.startsWith("880")) p = p.slice(3);
+  else if (p.startsWith("88")) p = p.slice(2);
+
+  while (p.startsWith("0")) p = p.slice(1);
+
+  return "880" + p;
+}
+
+function isEmail(value: string): boolean {
+  return value.includes("@");
+}
+
+function normalizeIdentifier(input: string): string {
+  return isEmail(input) ? input.trim().toLowerCase() : (normalizePhone(input) ?? input);
+}
 
 
 export const AuthService = {
@@ -51,6 +84,23 @@ export const AuthService = {
     if (!otp || otp.expiresAt < new Date()) return null;
 
     return otp.code;
+  },
+
+  // Invalidate an OTP after a successful verify or password reset so it
+  // cannot be replayed. Works for both Redis and DB-backed storage.
+  async clearOTP(key: string, target: { email?: string | null; phone?: string | null }) {
+    if (redis) {
+      try { await redis.del(key); } catch { /* ignore */ }
+      return;
+    }
+    await prisma.oTP.deleteMany({
+      where: {
+        OR: [
+          target.email ? { email: target.email } : undefined,
+          target.phone ? { phone: target.phone } : undefined,
+        ].filter(Boolean) as any,
+      },
+    });
   },
 
   /* ==========================
@@ -149,8 +199,11 @@ export const AuthService = {
 
 
   async register(body: IRegister) {
-    const { name, email, phone, password } = body;
+    const { name, password } = body;
+    const email = body.email ? body.email.trim().toLowerCase() : null;
+    const phone = normalizePhone(body.phone);
 
+    if (!email && !phone) throw new Error("Email or phone is required");
 
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -203,58 +256,71 @@ export const AuthService = {
       timeout: 30000, // 30 seconds timeout
     });
 
-    // Send OTPs outside the transaction to avoid timeout
-    // These are external API calls that can take time
-    // Wrap in try-catch so OTP failures don't fail registration
-    try {
-      if (email) await this.sendEmailOTP(email);
-    } catch (error: any) {
-      console.error("Failed to send email OTP:", error.message);
-      // Don't throw - user is already created, OTP can be resent later
+    // Send OTPs outside the transaction to avoid timeout. We deliberately
+    // swallow failures here (the user row already exists, the OTP can be
+    // resent) but we surface the reason back to the client so the UI can
+    // explain why no code arrived.
+    const otpWarnings: string[] = [];
+
+    if (email) {
+      try {
+        await this.sendEmailOTP(email);
+      } catch (error: any) {
+        console.error("Failed to send email OTP:", error.message);
+        otpWarnings.push(`Email OTP failed: ${error.message}`);
+      }
     }
 
-    try {
-      if (phone) await this.sendPhoneOTP(phone);
-    } catch (error: any) {
-      console.error("Failed to send phone OTP:", error.message);
-      // Don't throw - user is already created, OTP can be resent later
+    if (phone) {
+      try {
+        await this.sendPhoneOTP(phone);
+      } catch (error: any) {
+        console.error("Failed to send phone OTP:", error.message);
+        otpWarnings.push(`Phone OTP failed: ${error.message}`);
+      }
     }
 
-    return result;
+    return {
+      ...result,
+      message:
+        otpWarnings.length > 0
+          ? `Account created, but OTP delivery failed. ${otpWarnings.join(" | ")} You can request a new code from the OTP screen.`
+          : result.message,
+      otpDelivered: otpWarnings.length === 0,
+      otpWarnings,
+    };
   },
 
 
-  async verifyEmail(body: IEmailVerify) {
-    const { email, otp } = body;
+  async verifyEmail(body: IEmailVerify & { verifyOnly?: boolean }) {
+    const email = body.email ? body.email.trim().toLowerCase() : "";
+    const { otp } = body;
+    // `verifyOnly` lets the password-reset flow check the OTP without
+    // consuming it — the /reset-password endpoint that runs next needs
+    // the same OTP to still be in storage.
+    const verifyOnly = body.verifyOnly === true;
+    if (!email) throw new Error("Email is required");
 
     const key = `OTP:EMAIL:${email}`;
     const stored = await this.getOTP(key);
 
-    if (stored !== otp) throw new Error("Invalid OTP");
+    if (!stored || stored !== otp) throw new Error("Invalid or expired OTP");
 
-    // STEP 1 → find user by email (email is NOT unique)
     const user = await prisma.user.findFirst({
       where: { email },
     });
 
     if (!user) throw new Error("User not found with this email");
 
-    // STEP 2 → update using unique id
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { emailVerified: true },
-    });
+    if (!verifyOnly) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true },
+      });
+      await this.clearOTP(key, { email });
+    }
 
-
-    await prisma.userProfile.update({
-      where: { userId: user.id },
-      data: {
-
-      },
-    });
-
-
-    return { message: "Email verified successfully." };
+    return { message: verifyOnly ? "OTP is valid." : "Email verified successfully." };
   },
 
 
@@ -265,12 +331,15 @@ export const AuthService = {
 
 
   async verifyPhone(body: any) {
-    const { phone, otp } = body;
+    const phone = normalizePhone(body.phone);
+    const { otp } = body;
+    const verifyOnly = body?.verifyOnly === true;
+    if (!phone) throw new Error("Phone is required");
 
     const key = `OTP:PHONE:${phone}`;
     const stored = await this.getOTP(key);
 
-    if (stored !== otp) throw new Error("Invalid OTP");
+    if (!stored || stored !== otp) throw new Error("Invalid or expired OTP");
 
     const user = await prisma.user.findFirst({
       where: { phone },
@@ -278,20 +347,15 @@ export const AuthService = {
 
     if (!user) throw new Error("User not found with this phone number");
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { phoneVerified: true },
-    });
+    if (!verifyOnly) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { phoneVerified: true },
+      });
+      await this.clearOTP(key, { phone });
+    }
 
-    //   await prisma.userProfile.update({
-    //   where: { userId: user.id },
-    //   data: {
-    //   user:user,
-    //   },
-    // });
-
-
-    return { message: "Phone verified." };
+    return { message: verifyOnly ? "OTP is valid." : "Phone verified." };
   },
 
 
@@ -351,9 +415,23 @@ export const AuthService = {
 
 
   async login(body: any, res: Response) {
-    const { email, password } = body;
+    const { password } = body;
 
-    const user = await prisma.user.findFirst({ where: { email } });
+    // Accept any of: `identifier` (preferred — email or phone), `email`, or
+    // `phone`. The UI uses a single field for the user but older clients
+    // may still send `email`-only payloads; preserve that path.
+    const rawIdentifier: string | undefined =
+      body.identifier ?? body.email ?? body.phone;
+
+    if (!rawIdentifier) throw new Error("Email or phone is required");
+    if (!password) throw new Error("Password is required");
+
+    const identifier = normalizeIdentifier(String(rawIdentifier));
+    const looksLikeEmail = isEmail(identifier);
+
+    const user = await prisma.user.findFirst({
+      where: looksLikeEmail ? { email: identifier } : { phone: identifier },
+    });
     if (!user) throw new Error("Invalid credentials");
 
     await this.validateLoginAttempt(user.id);
@@ -410,26 +488,20 @@ export const AuthService = {
 
 
   async forgotPassword(body: { identifier: string }) {
-    const { identifier } = body;
+    if (!body?.identifier) throw new Error("Email or phone is required");
 
-    if (!identifier) throw new Error("Email or phone is required");
+    const identifier = normalizeIdentifier(String(body.identifier));
+    const looksLikeEmail = isEmail(identifier);
 
-    // Find user by email OR phone
     const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: identifier },
-          { phone: identifier },
-        ]
-      }
+      where: looksLikeEmail ? { email: identifier } : { phone: identifier },
     });
 
     if (!user) {
       throw new Error("No user found with this email or phone");
     }
 
-    // Send OTP to email or phone
-    if (identifier.includes("@")) {
+    if (looksLikeEmail) {
       await this.sendEmailOTP(identifier);
     } else {
       await this.sendPhoneOTP(identifier);
@@ -437,7 +509,7 @@ export const AuthService = {
 
     return {
       message: "OTP sent for password reset",
-      identifier
+      identifier,
     };
   },
 
@@ -447,30 +519,24 @@ export const AuthService = {
   //  Send single OTP using forgot password and reset password
 
   async sendOTP(body: { identifier: string }) {
-    const { identifier } = body;
+    if (!body?.identifier) throw new Error("Email or phone is required");
 
-    if (!identifier) throw new Error("Email or phone is required");
+    const identifier = normalizeIdentifier(String(body.identifier));
+    const looksLikeEmail = isEmail(identifier);
 
-    // Check user exists
     const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: identifier },
-          { phone: identifier }
-        ]
-      }
+      where: looksLikeEmail ? { email: identifier } : { phone: identifier },
     });
 
     if (!user) throw new Error("No user found with this email/phone");
 
-    // Send OTP
-    if (identifier.includes("@")) {
+    if (looksLikeEmail) {
       await this.sendEmailOTP(identifier);
     } else {
       await this.sendPhoneOTP(identifier);
     }
 
-    return { message: "OTP sent successfully" };
+    return { message: "OTP sent successfully", identifier };
   },
 
 
@@ -482,39 +548,47 @@ export const AuthService = {
 
 
 
-  async resetPassword(identifier: string, otp: string, newPassword: string) {
+  async resetPassword(rawIdentifier: string, otp: string, newPassword: string) {
+    if (!rawIdentifier) throw new Error("Email or phone is required");
+    if (!otp) throw new Error("OTP is required");
+    if (!newPassword || newPassword.length < 8) {
+      throw new Error("Password must be at least 8 characters");
+    }
+    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      throw new Error("Password must contain both letters and numbers");
+    }
+
+    const identifier = normalizeIdentifier(String(rawIdentifier));
+    const looksLikeEmail = isEmail(identifier);
+
     const user = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: identifier }, { phone: identifier }]
-      }
+      where: looksLikeEmail ? { email: identifier } : { phone: identifier },
     });
 
     if (!user) throw new Error("User not found");
 
-    // Find OTP
-    const savedOTP = await prisma.oTP.findFirst({
-      where: {
-        OR: [
-          { email: user.email ?? undefined },
-          { phone: user.phone ?? undefined }
-        ]
-      },
-      orderBy: { createdAt: "desc" }
-    });
+    // Read the OTP through the same helper used to write it — this is what
+    // actually fixes "I can't set new password" in deployments with Redis.
+    // Previously this method only checked the DB, so when Redis was the
+    // configured store the OTP was unreachable and every reset failed.
+    const key = looksLikeEmail ? `OTP:EMAIL:${identifier}` : `OTP:PHONE:${identifier}`;
+    const stored = await this.getOTP(key);
 
-    if (!savedOTP || savedOTP.code !== otp) {
-      throw new Error("Invalid OTP");
+    if (!stored || stored !== otp) {
+      throw new Error("Invalid or expired OTP");
     }
 
-    // Update password
     const hashed = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
       where: { id: user.id },
-      data: {
-        passwordHash: hashed
-      }
+      data: { passwordHash: hashed },
     });
+
+    // Burn the OTP and clear any failed-login lockout so the user can sign
+    // in immediately with the new password.
+    await this.clearOTP(key, looksLikeEmail ? { email: identifier } : { phone: identifier });
+    try { await this.resetLoginAttempt(user.id); } catch { /* no attempt row yet */ }
 
     return { message: "Password reset successful" };
   },
@@ -636,12 +710,38 @@ export const AuthService = {
 
 
 
-  async deleteUser(id: string) {
-    await prisma.user.delete({
-      where: { id }
-    });
+  async deleteUser(targetId: string, callerId: string) {
+    if (!targetId) throw new Error("Target user id is required");
+    if (targetId === callerId) {
+      // Stops an admin from accidentally locking themselves out, and
+      // avoids the "ghost admin" footgun where the current session lives
+      // on past a row that no longer exists.
+      throw new Error("You cannot delete your own account from the admin panel");
+    }
 
-    return { message: "User deleted successfully" };
+    const target = await prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true, role: true, name: true, email: true, phone: true },
+    });
+    if (!target) throw new Error("User not found");
+
+    // Protect against deleting the last remaining admin — without this an
+    // operator can hard-lock themselves out of the dashboard.
+    if (target.role === UserRole.ADMIN) {
+      const adminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } });
+      if (adminCount <= 1) {
+        throw new Error(
+          "Cannot delete the last remaining admin. Promote another user to admin first."
+        );
+      }
+    }
+
+    await prisma.user.delete({ where: { id: targetId } });
+
+    return {
+      message: "User deleted successfully",
+      deletedUser: { id: target.id, name: target.name, email: target.email, phone: target.phone },
+    };
   },
 
 
