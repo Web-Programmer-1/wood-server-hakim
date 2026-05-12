@@ -9,13 +9,13 @@ const router = Router();
 
 router.get(
   "/analytics",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   getDashboardAnalyticsController
 );  
 
 router.post(
   "/",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadContentImage.single("bannerImage"),
   createEventController
 );
@@ -30,7 +30,7 @@ router.get("/:slug", getEventBySlugController);
 
 router.patch(
   "/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadContentImage.single("bannerImage"),
   updateEventController
 );
@@ -38,7 +38,7 @@ router.patch(
 
 router.delete(
   "/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   deleteEventController
 )
 

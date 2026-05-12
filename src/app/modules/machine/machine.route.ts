@@ -9,6 +9,13 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
+// Machine management is part of the OPS scope: SUPER_ADMIN / ADMIN / MANAGER.
+const opsGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.MANAGER
+);
+
 
 router.get('/', MachineController.getMachines);
 
@@ -30,6 +37,7 @@ router.get("/:slug/related", MachineController.getRelatedMachines);
 
 router.post(
   "/admin",
+  opsGuard,
   uploadMachineCreate,
   MachineController.createMachine
 );
@@ -40,7 +48,7 @@ router.post(
 
 router.patch(
   "/admin/:id",
-  authGuard(UserRole.ADMIN),
+  opsGuard,
   uploadMachineCreate,
   MachineController.updateMachine
 );
@@ -48,7 +56,7 @@ router.patch(
 
 router.patch(
   "/admin/:id/status",
-  authGuard(UserRole.ADMIN),
+  opsGuard,
   MachineController.updateMachineStatus
 );
 
@@ -60,7 +68,7 @@ router.patch(
 
 router.delete(
   "/admin/:id",
-//   authGuard(UserRole.ADMIN),
+  opsGuard,
   MachineController.deleteMachine
 );
 
@@ -70,7 +78,7 @@ router.delete(
 
 router.post(
   "/admin/:id/images",
-//   authGuard(UserRole.ADMIN),
+  opsGuard,
   uploadMachineGalleryImages.array("images", 10),
   MachineController.uploadMachineImages
 );
@@ -78,6 +86,7 @@ router.post(
 
 router.patch(
   "/machine-images/:id",
+  opsGuard,
   uploadMachineGalleryImages.single("image"),
   MachineController.updateMachineImage
 );
@@ -85,13 +94,9 @@ router.patch(
 
 
 
-
-
-
-
 router.delete(
   "/machine-images/:id",
-  // authGuard(UserRole.ADMIN),
+  opsGuard,
   MachineController.deleteMachineImage
 );
 
@@ -104,7 +109,7 @@ router.delete(
 
 router.post(
   "/admin/:id/video",
-//   authGuard(UserRole.ADMIN),
+  opsGuard,
   uploadMachineVideo,
   MachineController.uploadMachineVideo
 );
@@ -113,21 +118,25 @@ router.post(
 // Multipart (direct-to-S3) upload — used for large videos
 router.post(
   "/admin/:id/video/multipart/initiate",
+  opsGuard,
   MachineController.initiateMachineVideoMultipart
 );
 
 router.post(
   "/admin/:id/video/multipart/sign-part",
+  opsGuard,
   MachineController.signMachineVideoPart
 );
 
 router.post(
   "/admin/:id/video/multipart/complete",
+  opsGuard,
   MachineController.completeMachineVideoMultipart
 );
 
 router.post(
   "/admin/:id/video/multipart/abort",
+  opsGuard,
   MachineController.abortMachineVideoMultipart
 );
 
@@ -143,6 +152,7 @@ router.get(
 
 router.patch(
   "/images/videos/:id",
+  opsGuard,
   uploadMachineVideo,
   MachineController.updateMachineVideo
 );
@@ -151,6 +161,7 @@ router.patch(
 
 router.delete(
   "/images/videos/:id",
+  opsGuard,
   MachineController.deleteMachineVideo
 );
 

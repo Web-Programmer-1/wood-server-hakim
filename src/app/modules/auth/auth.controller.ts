@@ -130,7 +130,9 @@ export const AuthController = {
       if (!caller) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      if (caller.role !== "ADMIN" && caller.id !== targetId) {
+      const staffRoles = ["SUPER_ADMIN", "ADMIN", "MANAGER", "SOCIAL_MANAGER"];
+      const isStaff = staffRoles.includes(caller.role);
+      if (!isStaff && caller.id !== targetId) {
         return res.status(403).json({ message: "Forbidden" });
       }
       const data = await AuthService.getUserById(targetId);
@@ -142,10 +144,27 @@ export const AuthController = {
 
   async updateRoleUser(req: Request, res: Response) {
     try {
-      const data = await AuthService.updateRoleUser(req.params.id as string, req.body.role);
+      const caller = req.user;
+      if (!caller) return res.status(401).json({ message: "Unauthorized" });
+      const data = await AuthService.updateRoleUser(
+        req.params.id as string,
+        req.body.role,
+        { id: caller.id, role: caller.role as any }
+      );
       res.json({ success: true, data });
     } catch (err: any) {
       res.status(400).json({ message: err.message });
+    }
+  },
+
+  async createStaffUser(req: Request, res: Response) {
+    try {
+      const caller = req.user;
+      if (!caller) return res.status(401).json({ message: "Unauthorized" });
+      const data = await AuthService.createStaffUser(caller.role as any, req.body);
+      res.status(201).json({ success: true, ...data });
+    } catch (err: any) {
+      res.status(400).json({ success: false, message: err.message });
     }
   },
 
@@ -162,7 +181,11 @@ export const AuthController = {
     try {
       const caller = req.user;
       if (!caller) return res.status(401).json({ message: "Unauthorized" });
-      const data = await AuthService.deleteUser(req.params.id as string, caller.id);
+      const data = await AuthService.deleteUser(
+        req.params.id as string,
+        caller.id,
+        caller.role as any
+      );
       res.json(data);
     } catch (err: any) {
       const msg = err?.message || "Failed to delete user";
@@ -256,9 +279,21 @@ export const updateUserCon: RequestHandler = async (req, res) => {
     if (!caller) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const isAdmin = caller.role === "ADMIN";
+    const isAdmin = caller.role === "ADMIN" || caller.role === "SUPER_ADMIN";
     if (!isAdmin && caller.id !== targetId) {
       return res.status(403).json({ message: "Forbidden" });
+    }
+
+    // Only SUPER_ADMIN can change roles directly through PATCH /users/:id.
+    // ADMIN promotions/demotions go through PATCH /users/:id/role which has
+    // its own caller-role rules.
+    if (
+      isAdmin &&
+      caller.role !== "SUPER_ADMIN" &&
+      req.body &&
+      "role" in req.body
+    ) {
+      delete (req.body as any).role;
     }
 
     const result = await AuthService.updateUser(targetId, req.body, {

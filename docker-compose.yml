@@ -8,9 +8,6 @@ services:
       POSTGRES_PASSWORD: wood#90@serverdb
       POSTGRES_DB: wood_database
     ports:
-      # Bound to localhost only — the backend runs on the same VPS and
-      # connects via 127.0.0.1. Do NOT change this to 0.0.0.0 unless you
-      # also add a firewall rule and a strong password.
       - "127.0.0.1:5433:5432"
     volumes:
       - wood_pgdata:/var/lib/postgresql/data

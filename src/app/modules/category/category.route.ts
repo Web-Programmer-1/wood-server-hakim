@@ -8,6 +8,13 @@ import { uploadCategoryImage } from "../../middlewares/UploadMachineImage";
 
 const router = Router();
 
+// Category management is part of the OPS scope (Manage Machine/Products).
+const opsGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.MANAGER
+);
+
 router.get(
   "/",
   CategoryController.getCategories
@@ -25,20 +32,20 @@ router.get(
 
 router.post(
   "/admin",
-  authGuard(UserRole.ADMIN),
-uploadCategoryImage,
+  opsGuard,
+  uploadCategoryImage,
   CategoryController.createCategory
 );
 
 router.patch(
   "/admin/:id",
-  // authGuard(UserRole.ADMIN),
+  opsGuard,
   CategoryController.updateCategory
 );
 
 router.delete(
   "/admin/:id",
-  // authGuard(UserRole.ADMIN),
+  opsGuard,
   CategoryController.deleteCategory
 );
 

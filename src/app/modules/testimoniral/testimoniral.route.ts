@@ -6,36 +6,32 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// CREATE
-router.post("/",
-    authGuard(UserRole.ADMIN),
-    uploadTestimonialAssets, TestimonialController.create);
+// Testimonials are part of site CONTENT (settings).
+const contentGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.SOCIAL_MANAGER
+);
 
-// GET ALL
-router.get("/",
+// Read-only routes need to be reachable by all staff + customers viewing the
+// public site. Public testimonials are served via the read endpoints below;
+// we keep them open for now to preserve existing public-page behavior.
 
-       authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
-     TestimonialController.getAll);
+router.post("/", contentGuard, uploadTestimonialAssets, TestimonialController.create);
 
-router.get("/:id",
-       authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
-    TestimonialController.getById);
+router.get("/", TestimonialController.getAll);
+
+router.get("/:id", TestimonialController.getById);
 
 router.patch(
   "/:id",
-     authGuard(UserRole.ADMIN),
+  contentGuard,
   uploadTestimonialAssets,
   TestimonialController.update
 );
 
 
-router.delete("/:id",
-       authGuard(UserRole.ADMIN),
-    TestimonialController.delete);
-
-
-
-
+router.delete("/:id", contentGuard, TestimonialController.delete);
 
 
 export const TestimonialRoutes = router;

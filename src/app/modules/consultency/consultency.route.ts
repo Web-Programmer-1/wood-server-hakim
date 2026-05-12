@@ -7,17 +7,17 @@ import { UserRole } from "@prisma/client";
 const router = Router();
 
 router.post("/",
-    authGuard(UserRole.ADMIN),
+    authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
     uploadConsultencyBanner, ConsultencyBannerController.create);
 router.get("/", ConsultencyBannerController.getAll);
 router.get("/:id",
-       authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+       authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
     ConsultencyBannerController.getById);
 router.patch("/:id", 
-       authGuard(UserRole.ADMIN),
+       authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
     uploadConsultencyBanner, ConsultencyBannerController.update);
 router.delete("/:id",
-       authGuard(UserRole.ADMIN),
+       authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
     ConsultencyBannerController.delete);
 
 export const ConsultencyBannerRoutes = router;

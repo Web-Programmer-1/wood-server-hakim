@@ -6,27 +6,34 @@ import { UserRole } from "../../constants/UserRole";
 
 const router = Router();
 
+// Inquiry is part of the OPS scope: SUPER_ADMIN / ADMIN / MANAGER.
+const opsGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.MANAGER
+);
+
 
 router.post("/", createInquiry);
 
 
-router.get("/", getInquiries);
+router.get("/", opsGuard, getInquiries);
 
-router.get("/:id", getInquiryById);
+router.get("/:id", opsGuard, getInquiryById);
 
-router.patch("/:id", updateInquiryStatus);
+router.patch("/:id", opsGuard, updateInquiryStatus);
 
 
 router.post(
   "/:id/send-quotation",
-   authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  opsGuard,
   sendQuotationEmail
 );
 
 
 router.delete(
   "/:id",
-  authGuard(UserRole.ADMIN),
+  opsGuard,
   deleteInquiry
 );
 

@@ -33,7 +33,7 @@ authRouter.post("/refresh-token", strictLimiter, AuthController.refreshToken);
 authRouter.post("/send-otp", strictLimiter, AuthController.sendOTP);
 
 
-// logOut 
+// logOut
 authRouter.post("/logout", logout);
 
 
@@ -50,22 +50,62 @@ authRouter.post("/reset-password", strictLimiter, AuthController.resetPassword);
 // GET CURRENT USER
 authRouter.get("/me", strictLimiter, AuthController.getMe);
 
-// USER CRUD
-authRouter.get("/users", strictLimiter, authGuard(UserRole.ADMIN), AuthController.getAllUsers);
+// USER LIST — any staff role can view (filtered access enforced in UI).
+authRouter.get(
+  "/users",
+  strictLimiter,
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SOCIAL_MANAGER
+  ),
+  AuthController.getAllUsers
+);
+
+// CREATE STAFF USER (admin user management) — server-side role rules in
+// the service decide what role the caller may actually create.
+authRouter.post(
+  "/users/staff",
+  strictLimiter,
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  AuthController.createStaffUser
+);
+
 authRouter.get(
   "/users/:id",
   strictLimiter,
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SOCIAL_MANAGER,
+    UserRole.CUSTOMER
+  ),
   AuthController.getUserById
 );
-authRouter.patch("/users/:id/role", strictLimiter, authGuard(UserRole.ADMIN), AuthController.updateRoleUser);
+
+// ROLE CHANGES — admin-only routes; service enforces caller-role rules
+// (ADMIN can't promote to ADMIN/SUPER_ADMIN, etc.).
+authRouter.patch(
+  "/users/:id/role",
+  strictLimiter,
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  AuthController.updateRoleUser
+);
 
 
 // UPLOAD AVATAR (requires login — client sends Bearer token)
 authRouter.post(
   "/upload-avatar",
   strictLimiter,
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SOCIAL_MANAGER,
+    UserRole.CUSTOMER
+  ),
   uploadUserAvatar.single("file"),
   AuthController.uploadAvatar
 );
@@ -73,20 +113,20 @@ authRouter.post(
 authRouter.patch(
   "/users/:id",
   strictLimiter,
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SOCIAL_MANAGER,
+    UserRole.CUSTOMER
+  ),
   updateUserCon
 );
-
-
-
-
-
-
 
 
 authRouter.delete(
   "/users/:id",
   strictLimiter,
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AuthController.deleteUser
 );

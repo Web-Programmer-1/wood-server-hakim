@@ -13,7 +13,7 @@ const router = Router();
 // Create SubCategory
 router.post(
   "/",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   uploadSubCategoryImage,
   SubCategoryController.createSubCategory
 );
@@ -32,7 +32,7 @@ router.get(
 // Update SubCategory
 router.patch(
   "/admin/:id",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   uploadSubCategoryImage,
   SubCategoryController.updateSubCategory
 );
@@ -40,7 +40,7 @@ router.patch(
 // Delete SubCategory
 router.delete(
   "/admin/:id",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   SubCategoryController.deleteSubCategory
 );
 

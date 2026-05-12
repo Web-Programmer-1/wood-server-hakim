@@ -23,7 +23,7 @@ router.post("/ssl/ipn", PaymentController.sslIpn);
 
 router.get(
   "/my",
-  authGuard(UserRole.CUSTOMER),
+  authGuard(UserRole.CUSTOMER, UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   PaymentController.getMyPayments
 );
 
@@ -31,14 +31,14 @@ router.get(
 
 router.get(
   "/order/:orderId",
-  authGuard(UserRole.CUSTOMER),
+  authGuard(UserRole.CUSTOMER, UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   PaymentController.getPaymentByOrder
 );
 
 
 router.post(
   "/retry/:orderId",
-  authGuard(UserRole.CUSTOMER),
+  authGuard(UserRole.CUSTOMER, UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   PaymentController.retryPayment
 );
 
@@ -46,7 +46,7 @@ router.post(
 
 router.patch(
   "/:paymentId/status",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   PaymentController.updatePaymentStatus
 );
 

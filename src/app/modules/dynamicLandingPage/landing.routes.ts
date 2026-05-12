@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post(
   "/hero",
-  authGuard(UserRole.ADMIN), 
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER), 
   
 
   uploadHeroMedia.fields([
@@ -22,7 +22,7 @@ router.post(
 );
 
 router.get("/hero", LandingController.getHeroSlides);
-router.delete("/hero/:id", authGuard(UserRole.ADMIN), LandingController.deleteHeroSlide);
+router.delete("/hero/:id", authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER), LandingController.deleteHeroSlide);
 
 
 
@@ -32,7 +32,7 @@ router.delete("/hero/:id", authGuard(UserRole.ADMIN), LandingController.deleteHe
 
 router.post(
   "/company-logo",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadCompanyLogo.single("image"), 
   LandingController.createCompanyLogo
 );
@@ -40,7 +40,7 @@ router.post(
 router.get("/company-logo", LandingController.getAllCompanyLogos);
 
 
-router.delete("/company-logo/:id", authGuard(UserRole.ADMIN), LandingController.deleteCompanyLogo);
+router.delete("/company-logo/:id", authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER), LandingController.deleteCompanyLogo);
 
 
 
@@ -90,14 +90,14 @@ router.get(
 
 router.post(
   "/mega-offer",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadLandingSlider.single("image"),
   LandingController.createMegaOffer
 );
 
 router.patch(
   "/mega-offer/:id",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadLandingSlider.single("image"),
   LandingController.updateMegaOffer
 );
@@ -106,7 +106,7 @@ router.patch(
 
 router.delete(
   "/mega-offer/:id",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   LandingController.deleteMegaOffer
 );
 
@@ -119,7 +119,7 @@ router.delete(
 
 router.post(
   "/gallery",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadGalleryImages.array("image", 12), // max 12 images
   LandingController.createGalleryImages
 );
@@ -131,7 +131,7 @@ router.get(
 
 router.delete(
   "/gallery/:id",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   LandingController.deleteGalleryImage
 );
 
@@ -149,7 +149,7 @@ router.delete(
  */
 router.post(
   "/landing-video",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadLandingVideo.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "video", maxCount: 1 },
@@ -171,7 +171,7 @@ router.get(
  */
 router.patch(
   "/landing-video/:id",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   uploadLandingVideo.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "video", maxCount: 1 },
@@ -182,7 +182,7 @@ router.patch(
 
 router.delete(
   "/landing-video/:id",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER),
   LandingController.deleteLandingVideo
 );
 

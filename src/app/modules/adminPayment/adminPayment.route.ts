@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.get(
   "/payments/summary",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   AdminPaymentController.getPaymentsSummary
 );
 
@@ -18,7 +18,7 @@ router.get(
 
 router.get(
   "/payments",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   AdminPaymentController.getPayments
 );
 
@@ -27,7 +27,7 @@ router.get(
 
 router.get(
   "/payments/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   AdminPaymentController.getPaymentDetailsAdmin
 );
 
@@ -35,7 +35,7 @@ router.get(
 
 router.get(
   "/payments/audit/:id",
-  authGuard(UserRole.ADMIN,UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   AdminPaymentController.getPaymentAudit
 );
 
@@ -43,7 +43,7 @@ router.get(
 
 router.get(
   "/payments/orders/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   AdminPaymentController.getOrderPaymentsAdmin
 );
 
@@ -52,7 +52,7 @@ router.get(
 
 router.patch(
   "/payments/mark-failed/:id",
-  authGuard(UserRole.ADMIN,UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   AdminPaymentController.markPaymentFailed
 );
 
@@ -62,7 +62,7 @@ router.patch(
 
 router.patch(
   "/payments/mark-paid/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
   AdminPaymentController.markPaymentPaid
 );
 

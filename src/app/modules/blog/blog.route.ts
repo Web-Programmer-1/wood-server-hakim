@@ -8,9 +8,16 @@ import { UserRole } from "../../constants/UserRole";
 
 const router = Router();
 
+// Blogs belong to the CONTENT scope: SUPER_ADMIN / ADMIN / SOCIAL_MANAGER.
+const contentGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.SOCIAL_MANAGER
+);
+
 router.post(
   "/",
-  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+  contentGuard,
   uploadContentImage.single("coverImage"),
   createBlogController
 );
@@ -23,18 +30,18 @@ router.get("/:slug", getBlogBySlugController);
 
 router.patch(
   "/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  contentGuard,
   uploadContentImage.single("coverImage"),
   updateBlogController
 );
-  
+
 
 
 router.delete(
   "/:id",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  contentGuard,
   deleteBlogController
-);  
+);
 
 
 
