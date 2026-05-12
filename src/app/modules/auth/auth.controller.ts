@@ -160,10 +160,14 @@ export const AuthController = {
 
   async deleteUser(req: Request, res: Response) {
     try {
-      const data = await AuthService.deleteUser(req.params.id as string);
+      const caller = req.user;
+      if (!caller) return res.status(401).json({ message: "Unauthorized" });
+      const data = await AuthService.deleteUser(req.params.id as string, caller.id);
       res.json(data);
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      const msg = err?.message || "Failed to delete user";
+      const status = msg.includes("not found") ? 404 : 400;
+      res.status(status).json({ message: msg });
     }
   },
 

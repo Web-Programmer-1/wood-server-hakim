@@ -15,9 +15,9 @@ export const registerSchema = z.object({
 
   phone: z
     .string()
-    .regex(/^[0-9]+$/, "Phone must contain only digits")
+    .regex(/^[0-9+\-\s()]+$/, "Phone must contain only digits")
     .min(8, "Phone must be at least 8 digits")
-    .max(11, "Phone must be at most 11 digits")
+    .max(15, "Phone must be at most 15 digits")
     .optional()
     .nullable(),
 
