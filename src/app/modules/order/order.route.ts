@@ -6,19 +6,38 @@ import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 
+// Order management is part of the OPS scope: SUPER_ADMIN / ADMIN / MANAGER.
+const opsGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.MANAGER
+);
 
-// only for admin 
+// SOCIAL_MANAGER also has customer-like access to /my and checkout because
+// the spec says SOCIAL_MANAGER "also has CUSTOMER access".
+const customerLikeGuard = authGuard(
+  UserRole.CUSTOMER,
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.SOCIAL_MANAGER
+);
+
+
+// only for admin / ops
 
 router.get("/admin",
-  authGuard(UserRole.ADMIN),
+  opsGuard,
   OrderController.getAllOrdersAdmin);
 
-router.get("/admin/:orderId",    OrderController.getOrderDetailsAdmin);
+router.get("/admin/:orderId",
+  opsGuard,
+  OrderController.getOrderDetailsAdmin);
 
 
-// ADMIN
+// ADMIN / OPS
 router.patch(
   "/admin/:orderId/status",
+  opsGuard,
   OrderController.updateOrderStatus
 );
 
@@ -30,22 +49,22 @@ router.patch(
 router.get("/top-selling-products", OrderController.getTopSellingProducts);
 
 
-router.get("/my", authGuard(UserRole.CUSTOMER, UserRole.ADMIN), OrderController.getMyOrders);
+router.get("/my", customerLikeGuard, OrderController.getMyOrders);
 
 router.get(
   "/my/:orderId/tracking",
-  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+  customerLikeGuard,
   OrderController.getMyOrderTracking
 );
 
 
-router.post("/checkout", authGuard(UserRole.CUSTOMER, UserRole.ADMIN) , OrderController.checkout);
+router.post("/checkout", customerLikeGuard, OrderController.checkout);
 
 
-router.get("/:orderId", authGuard(UserRole.CUSTOMER), OrderController.getOrderDetails);
+router.get("/:orderId", customerLikeGuard, OrderController.getOrderDetails);
 
 
-router.patch("/:orderId/cancel",authGuard(UserRole.CUSTOMER), OrderController.cancelOrder);
+router.patch("/:orderId/cancel", customerLikeGuard, OrderController.cancelOrder);
 
 
 
@@ -54,24 +73,14 @@ router.patch("/:orderId/cancel",authGuard(UserRole.CUSTOMER), OrderController.ca
 
 router.get(
   "/:orderId/tracking",
-  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+  customerLikeGuard,
   OrderController.trackOrder
 );
 
 
-
-
-
-// -------------------------- ONLY for ADMIN ----------------------------
-
-
-router.get("/admin",authGuard(UserRole.CUSTOMER), OrderController.getAllOrdersAdmin);
-
-
-
 router.delete(
   "/admin/:id",
-  authGuard(UserRole.ADMIN),
+  opsGuard,
   OrderController.deleteOrder
 );
 

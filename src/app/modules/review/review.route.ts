@@ -16,26 +16,41 @@ router.get(
 
 router.post(
   "/",
-  authGuard(UserRole.ADMIN, UserRole.CUSTOMER),
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.SOCIAL_MANAGER,
+    UserRole.CUSTOMER
+  ),
   createReviewHandler
 );
 
 
 
-//  review  Contoll for Admin -------------------------------------------------
+//  review Control for Admin -------------------------------------------------
 
 
 
 
 router.get(
   "/admin/reviews",
-  authGuard(UserRole.CUSTOMER,UserRole.ADMIN),
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SOCIAL_MANAGER
+  ),
   getAllReviewsAdminHandler
 );
 
 router.delete(
   "/admin/reviews/:reviewId",
-  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SOCIAL_MANAGER
+  ),
   deleteReviewAdminHandler
 );
 

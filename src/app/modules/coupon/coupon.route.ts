@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.post(
   "/",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AdminCouponController.createCoupon
 );
 
@@ -19,14 +19,14 @@ router.post(
 // coupon.route.ts
 router.get(
   "/usages",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AdminCouponController.getCouponUsages
 );
 
 
 router.get(
   "/available",
-  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+  authGuard(UserRole.CUSTOMER, UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER, UserRole.MANAGER),
 getAvailableCoupons
 );
 
@@ -37,7 +37,7 @@ getAvailableCoupons
 
 router.get(
   "/",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AdminCouponController.getCoupons
 );
 
@@ -47,19 +47,19 @@ router.get(
 
 router.patch(
   "/:couponId",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AdminCouponController.updateCoupon
 );
 
 router.patch(
   "/:couponId/status",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AdminCouponController.toggleCouponStatus
 );
 
 router.delete(
   "/:couponId",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AdminCouponController.deleteCoupon
 );
 
@@ -69,7 +69,7 @@ router.delete(
 
 router.post(
   "/apply",
-  authGuard(UserRole.CUSTOMER, UserRole.ADMIN),
+  authGuard(UserRole.CUSTOMER, UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.SOCIAL_MANAGER, UserRole.MANAGER),
   applyCouponPreview
 );
 
@@ -77,7 +77,7 @@ router.post(
 
 router.get(
   "/analytics",
-  authGuard(UserRole.ADMIN),
+  authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   AdminCouponController.getCouponAnalytics
 )
 
@@ -85,7 +85,7 @@ router.get(
 
 router.get(
   "/:couponId",
-  // authGuard(UserRole.ADMIN),
+  // authGuard(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   getCouponByIdController
 );
 

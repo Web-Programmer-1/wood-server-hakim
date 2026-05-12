@@ -7,9 +7,16 @@ import { uploadShadhinotaVideo } from "../../middlewares/uploadShadhinotaVideo";
 
 const router = Router();
 
+// Settings content — CONTENT scope.
+const contentGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.SOCIAL_MANAGER
+);
+
 router.post(
   "/",
-  authGuard(UserRole.ADMIN),
+  contentGuard,
   uploadShadhinotaImages.array("images", 20),
   ShadhinotaController.create
 );
@@ -18,33 +25,33 @@ router.get("/", ShadhinotaController.getAll);
 router.get("/video", ShadhinotaController.getVideo);
 router.get("/:id", ShadhinotaController.getById);
 
-router.patch("/:id", authGuard(UserRole.ADMIN), ShadhinotaController.update);
+router.patch("/:id", contentGuard, ShadhinotaController.update);
 
-router.delete("/:id", authGuard(UserRole.ADMIN), ShadhinotaController.delete);
+router.delete("/:id", contentGuard, ShadhinotaController.delete);
 
 router.post(
   "/:id/images",
-  authGuard(UserRole.ADMIN),
+  contentGuard,
   uploadShadhinotaImages.array("images", 20),
   ShadhinotaController.addImages
 );
 
 router.delete(
   "/images/:imageId",
-  authGuard(UserRole.ADMIN),
+  contentGuard,
   ShadhinotaController.deleteImage
 );
 
 router.post(
   "/video",
-  authGuard(UserRole.ADMIN),
+  contentGuard,
   uploadShadhinotaVideo,
   ShadhinotaController.uploadVideo
 );
 
 router.delete(
   "/video",
-  authGuard(UserRole.ADMIN),
+  contentGuard,
   ShadhinotaController.deleteVideo
 );
 

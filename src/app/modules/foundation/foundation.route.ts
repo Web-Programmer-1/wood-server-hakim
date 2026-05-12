@@ -8,32 +8,37 @@ import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 
+// Foundation lives under settings — CONTENT scope.
+const contentGuard = authGuard(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.SOCIAL_MANAGER
+);
+
 router.post(
   "/",
-  authGuard(UserRole.ADMIN),
+  contentGuard,
   uploadFoundationStoryAssets,
   FoundationStoryController.create
 );
 
 
-router.get("/", 
+router.get("/", FoundationStoryController.getAll);
 
-    FoundationStoryController.getAll);
+router.get("/:id", FoundationStoryController.getById);
 
-router.get("/:id",
-    
-    FoundationStoryController.getById);
-
-    router.patch(    
+router.patch(
   "/:id",
-   authGuard(UserRole.ADMIN),
+  contentGuard,
   uploadFoundationStoryAssets,
   FoundationStoryController.update
 );
 
-router.delete("/:id",
-    authGuard(UserRole.ADMIN),
-    FoundationStoryController.delete);
+router.delete(
+  "/:id",
+  contentGuard,
+  FoundationStoryController.delete
+);
 
 
 export const FoundationStoryRoutes = router;

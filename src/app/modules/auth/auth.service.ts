@@ -11,7 +11,11 @@ import { IEmailVerify, IRegister, RegisterBody } from "./auth.interface";
 import { Request, Response } from "express";
 
 import { cookieOptions } from "../../../jwt_token_accessbility/cookieOptions";
-import { UserRole } from "../../constants/UserRole";
+import { ROLE_GROUPS, UserRole } from "../../constants/UserRole";
+import {
+  generateTempPassword,
+  sendStaffCredentialsEmail,
+} from "../../../utils/staffCredentialsEmail";
 
 
 // ============================================================
@@ -694,10 +698,70 @@ export const AuthService = {
     return updatedUser;
   },
 
-  async updateRoleUser(targetUserId: string, role: string) {
+  async updateRoleUser(
+    targetUserId: string,
+    role: string,
+    caller?: { id: string; role: UserRole }
+  ) {
+    // Validate the requested role against our enum.
+    const requested = role as UserRole;
+    if (!Object.values(UserRole).includes(requested)) {
+      throw new Error("Invalid role");
+    }
+
+    // Caller-role rules:
+    //  - SUPER_ADMIN can promote/demote anyone (incl. demoting themselves
+    //    only if there is another SUPER_ADMIN — enforced below).
+    //  - ADMIN cannot create SUPER_ADMIN/ADMIN accounts and cannot edit
+    //    SUPER_ADMIN/ADMIN users.
+    //  - Other roles cannot reach this method (route guard rejects).
+    const target = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, role: true },
+    });
+    if (!target) throw new Error("User not found");
+
+    // Treat the DB-side enum as a string for comparison — the local enum
+    // values match the Prisma-generated values 1:1 but TypeScript sees
+    // them as distinct nominal types.
+    const targetRole = target.role as unknown as UserRole;
+
+    if (caller) {
+      if (caller.role === UserRole.ADMIN) {
+        if (
+          targetRole === UserRole.SUPER_ADMIN ||
+          targetRole === UserRole.ADMIN
+        ) {
+          throw new Error("ADMIN cannot modify SUPER_ADMIN or ADMIN accounts");
+        }
+        if (
+          requested === UserRole.SUPER_ADMIN ||
+          requested === UserRole.ADMIN
+        ) {
+          throw new Error("ADMIN cannot assign SUPER_ADMIN or ADMIN role");
+        }
+      }
+
+      // Guard against the last SUPER_ADMIN demoting themselves.
+      if (
+        caller.id === targetUserId &&
+        targetRole === UserRole.SUPER_ADMIN &&
+        requested !== UserRole.SUPER_ADMIN
+      ) {
+        const superAdminCount = await prisma.user.count({
+          where: { role: UserRole.SUPER_ADMIN as any },
+        });
+        if (superAdminCount <= 1) {
+          throw new Error(
+            "Cannot demote the last SUPER_ADMIN. Promote another user first."
+          );
+        }
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: targetUserId },
-      data: { role: role as UserRole },
+      data: { role: requested as any },
       include: { profile: true },
     });
 
@@ -710,7 +774,7 @@ export const AuthService = {
 
 
 
-  async deleteUser(targetId: string, callerId: string) {
+  async deleteUser(targetId: string, callerId: string, callerRole?: UserRole) {
     if (!targetId) throw new Error("Target user id is required");
     if (targetId === callerId) {
       // Stops an admin from accidentally locking themselves out, and
@@ -725,13 +789,35 @@ export const AuthService = {
     });
     if (!target) throw new Error("User not found");
 
-    // Protect against deleting the last remaining admin — without this an
-    // operator can hard-lock themselves out of the dashboard.
-    if (target.role === UserRole.ADMIN) {
-      const adminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } });
-      if (adminCount <= 1) {
+    const targetRole = target.role as unknown as UserRole;
+
+    // ADMIN cannot delete SUPER_ADMIN or other ADMIN accounts.
+    // MANAGER and SOCIAL_MANAGER cannot reach this endpoint at all (route
+    // guard rejects), but guard defensively in case the guard list changes.
+    if (callerRole === UserRole.ADMIN) {
+      if (
+        targetRole === UserRole.SUPER_ADMIN ||
+        targetRole === UserRole.ADMIN
+      ) {
+        throw new Error("ADMIN cannot delete SUPER_ADMIN or ADMIN accounts");
+      }
+    }
+    if (
+      callerRole &&
+      callerRole !== UserRole.SUPER_ADMIN &&
+      callerRole !== UserRole.ADMIN
+    ) {
+      throw new Error("You are not allowed to delete users");
+    }
+
+    // Protect against deleting the last remaining SUPER_ADMIN.
+    if (targetRole === UserRole.SUPER_ADMIN) {
+      const superAdminCount = await prisma.user.count({
+        where: { role: UserRole.SUPER_ADMIN as any },
+      });
+      if (superAdminCount <= 1) {
         throw new Error(
-          "Cannot delete the last remaining admin. Promote another user to admin first."
+          "Cannot delete the last remaining SUPER_ADMIN. Promote another user first."
         );
       }
     }
@@ -744,6 +830,111 @@ export const AuthService = {
     };
   },
 
+
+  /**
+   * Create a staff (back-office) user with auto-generated password.
+   *
+   * Caller role determines what they may create:
+   *   - SUPER_ADMIN can create any role including SUPER_ADMIN.
+   *   - ADMIN can create MANAGER and SOCIAL_MANAGER only.
+   *   - Other roles cannot reach this method (route guard rejects).
+   *
+   * The password is generated server-side and emailed to the recipient.
+   * The hash is the only persisted form — there is no API surface that
+   * returns the plaintext to the creator.
+   */
+  async createStaffUser(
+    callerRole: UserRole,
+    body: { name: string; email: string; role: UserRole }
+  ) {
+    const name = body.name?.trim();
+    const email = body.email?.trim().toLowerCase();
+    const role = body.role;
+
+    if (!name) throw new Error("Name is required");
+    if (!email) throw new Error("Email is required");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      throw new Error("A valid email address is required");
+    }
+    if (!role) throw new Error("Role is required");
+
+    const assignableByCaller: Record<UserRole, UserRole[]> = {
+      [UserRole.SUPER_ADMIN]: [
+        UserRole.SUPER_ADMIN,
+        UserRole.ADMIN,
+        UserRole.MANAGER,
+        UserRole.SOCIAL_MANAGER,
+        UserRole.CUSTOMER,
+      ],
+      [UserRole.ADMIN]: [UserRole.MANAGER, UserRole.SOCIAL_MANAGER, UserRole.CUSTOMER],
+      [UserRole.MANAGER]: [],
+      [UserRole.SOCIAL_MANAGER]: [],
+      [UserRole.CUSTOMER]: [],
+    };
+
+    const allowed = assignableByCaller[callerRole] ?? [];
+    if (!allowed.includes(role)) {
+      throw new Error(
+        `Your role (${callerRole}) is not allowed to create a ${role} account`
+      );
+    }
+
+    const existing = await prisma.user.findFirst({ where: { email } });
+    if (existing) {
+      throw new Error("A user with this email already exists");
+    }
+
+    const tempPassword = generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    // Create the row first; only email the password if the row exists.
+    // If the mailer fails afterwards, we delete the row and surface the
+    // error so the admin can retry without leaving an unreachable
+    // account behind.
+    const created = await prisma.$transaction(async (tx: any) => {
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          passwordHash,
+          role,
+          status: "ACTIVE",
+          emailVerified: true,
+          profile: { create: { avatarUri: null, bio: null, gender: null } },
+        },
+      });
+      await tx.loginAttempt.create({ data: { userId: user.id } });
+      return user;
+    }, { timeout: 30000 });
+
+    try {
+      await sendStaffCredentialsEmail({
+        to: email,
+        name,
+        role,
+        tempPassword,
+      });
+    } catch (err: any) {
+      // Roll back so the admin can retry instead of being stuck with
+      // a created-but-unreachable account.
+      await prisma.user.delete({ where: { id: created.id } }).catch(() => {});
+      throw new Error(
+        `Account creation failed: could not send credentials email (${err?.message ?? "unknown error"}). Please try again.`
+      );
+    }
+
+    return {
+      message: "Staff user created. Credentials emailed to the user.",
+      user: {
+        id: created.id,
+        name: created.name,
+        email: created.email,
+        role: created.role,
+        status: created.status,
+        createdAt: created.createdAt,
+      },
+    };
+  },
 
   async seedAdmin(body: { name?: string; email?: string; phone?: string; password?: string }) {
     const name = body.name ?? process.env.ADMIN_SEED_NAME ?? "Super Admin";

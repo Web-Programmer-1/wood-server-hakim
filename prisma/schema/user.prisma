@@ -66,6 +66,9 @@ model OTP {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
+  MANAGER
+  SOCIAL_MANAGER
   CUSTOMER
 }

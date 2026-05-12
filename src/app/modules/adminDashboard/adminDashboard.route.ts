@@ -9,7 +9,12 @@ const router = express.Router();
 // admin overview
 router.get(
   "/overview",
-  authGuard(UserRole.ADMIN),
+  authGuard(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.SOCIAL_MANAGER
+  ),
   getAdminDashboardOverviewController
 );
 
