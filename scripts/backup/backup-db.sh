@@ -73,8 +73,8 @@ SIZE_BYTES="$(stat -c %s "$LOCAL_PATH" 2>/dev/null || stat -f %z "$LOCAL_PATH")"
 SIZE_HUMAN="$(numfmt --to=iec --suffix=B "$SIZE_BYTES" 2>/dev/null || echo "${SIZE_BYTES} bytes")"
 log "Dump complete: ${LOCAL_PATH} (${SIZE_HUMAN})"
 
-if [[ "$SIZE_BYTES" -lt 1024 ]]; then
-  log "FATAL: dump is suspiciously small (<1KB) — aborting upload"
+if [[ "$SIZE_BYTES" -lt 50 ]]; then
+  log "FATAL: dump is empty or corrupt (<50 bytes) — aborting upload"
   exit 1
 fi
 
