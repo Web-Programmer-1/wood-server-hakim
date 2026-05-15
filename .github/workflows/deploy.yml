@@ -81,6 +81,19 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy compose file to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "docker-compose.deploy.yml"
+          target: ${{ secrets.DEPLOY_DIR || '/root/wood-server-hakim' }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
