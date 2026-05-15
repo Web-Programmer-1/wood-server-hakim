@@ -246,3 +246,4 @@ To deploy manually right now for a sanity check:
     docker compose -f docker-compose.deploy.yml ps
 
 MSG
+
