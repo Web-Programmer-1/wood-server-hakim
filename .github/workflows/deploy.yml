@@ -126,6 +126,10 @@ jobs:
 
             export IMAGE="$SHA_TAG"
 
+            # Load .env.production into shell so docker compose can interpolate
+            # variables like POSTGRES_PASSWORD for the postgres service.
+            set -a; source .env.production; set +a
+
             echo "[deploy] pulling image..."
             docker compose -f docker-compose.deploy.yml pull
 
