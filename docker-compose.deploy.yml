@@ -1,21 +1,4 @@
-# Production stack run on the VPS. Pulls the API image from GHCR — does
-# NOT build anything locally, so the VPS only needs Docker (no node, no
-# pnpm, no git pull, no build).
-#
-# CI/CD flow:
-#   1. push to main on GitHub
-#   2. .github/workflows/deploy.yml builds the image and pushes to ghcr.io
-#   3. The same workflow SSHes into the VPS and runs:
-#         docker compose -f docker-compose.deploy.yml pull
-#         docker compose -f docker-compose.deploy.yml up -d --remove-orphans
-#
-# The VPS holds two files:
-#   - docker-compose.deploy.yml (this file)
-#   - .env.production (real secrets, never in git)
-#
-# IMAGE is injected by the deploy workflow as an env var. Default points at
-# `:latest` so you can also `docker compose -f docker-compose.deploy.yml up`
-# manually for a sanity check.
+
 
 services:
   postgres:
