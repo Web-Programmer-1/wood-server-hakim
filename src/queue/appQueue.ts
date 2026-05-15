@@ -8,7 +8,14 @@ let queueInstance: Queue | null = null;
 export function getAppQueue(): Queue | null {
   if (!process.env.REDIS_URL) return null;
   if (!queueInstance) {
-    queueInstance = new Queue(APP_QUEUE_NAME, { connection: { url: process.env.REDIS_URL } });
+    // Share the hardened ioredis connection (error listener + retry strategy)
+    // instead of letting BullMQ build a default one from a raw URL.
+    queueInstance = new Queue(APP_QUEUE_NAME, {
+      connection: createBullMQConnection() as any,
+    });
+    queueInstance.on("error", (err) => {
+      console.error("[queue] queue error:", err?.message ?? err);
+    });
   }
   return queueInstance;
 }
@@ -28,6 +35,8 @@ export async function addJob(
   return q.add(name, data, {
     attempts: opts?.attempts ?? 3,
     backoff: { type: "exponential", delay: 2000 },
+    removeOnComplete: { count: 1000, age: 24 * 3600 },
+    removeOnFail: { count: 5000, age: 7 * 24 * 3600 },
     ...(opts?.delay != null ? { delay: opts.delay } : {}),
   });
 }

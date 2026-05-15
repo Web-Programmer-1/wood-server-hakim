@@ -1,23 +1,4 @@
-/**
- * One-shot migration: rewrite legacy AWS S3 URLs in the database.
- *
- * Why this exists:
- *   Records uploaded before the Backblaze B2 cutover still have URLs like
- *   https://wood-file-test.s3.eu-north-1.amazonaws.com/<key>. Those URLs no
- *   longer resolve. This script walks every URL column in the schema and:
- *     - DRY RUN  : prints how many AWS URLs would be touched per column.
- *     - REWRITE  : rewrites them to ${BB_CDN_BASE_URL}/<key>. Use only if you
- *                  have already copied the original objects into the B2 bucket
- *                  with the same keys.
- *     - NULL     : sets them to null (or removes them from string arrays). Use
- *                  if the old files are gone — the frontend already renders a
- *                  fallback when these fields are empty.
- *
- * Usage:
- *   npx ts-node scripts/fixLegacyAwsUrls.ts                # dry run (default)
- *   MODE=rewrite npx ts-node scripts/fixLegacyAwsUrls.ts   # rewrite AWS -> CDN
- *   MODE=null    npx ts-node scripts/fixLegacyAwsUrls.ts   # null them out
- */
+
 
 import "../src/loadEnv";
 import { PrismaClient } from "@prisma/client";

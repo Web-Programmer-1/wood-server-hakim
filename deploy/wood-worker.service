@@ -1,0 +1,52 @@
+; systemd unit for the dedicated queue worker.
+; Run alongside wood-api.service when you want the worker on a separate process.
+;
+; Install:
+;   sudo cp deploy/wood-worker.service /etc/systemd/system/wood-worker.service
+;   sudo systemctl daemon-reload
+;   sudo systemctl enable --now wood-worker
+[Unit]
+Description=Wood API Queue Worker
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/wood-server-hakim
+EnvironmentFile=/home/ubuntu/wood-server-hakim/.env.production
+
+Environment=NODE_ENV=production
+Environment=RUN_QUEUE_WORKER=true
+Environment=NODE_OPTIONS=--max-old-space-size=300
+
+ExecStart=/usr/bin/node dist/workerOnly.js
+
+KillSignal=SIGTERM
+TimeoutStopSec=25
+KillMode=mixed
+
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=10
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=wood-worker
+
+LimitNOFILE=65535
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

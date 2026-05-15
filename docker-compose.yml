@@ -17,5 +17,23 @@ services:
       timeout: 5s
       retries: 5
 
+  # Local Redis for dev. In production you can either keep this or point
+  # REDIS_URL at Upstash and remove this service.
+  redis:
+    image: redis:7-alpine
+    container_name: wood-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - wood_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   wood_pgdata:
+  wood_redisdata:

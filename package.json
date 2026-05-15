@@ -10,8 +10,18 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "worker": "node dist/workerOnly.js",
+    "start": "node --max-old-space-size=400 dist/server.js",
+    "worker": "node --max-old-space-size=300 dist/workerOnly.js",
+    "prod:pm2": "pm2 start ecosystem.config.js --env production",
+    "prod:pm2:reload": "pm2 reload ecosystem.config.js --env production",
+    "prod:pm2:logs": "pm2 logs wood-api",
+    "prod:pm2:stop": "pm2 stop ecosystem.config.js",
+    "prod:docker:up": "docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build",
+    "prod:docker:down": "docker compose -f docker-compose.yml -f docker-compose.prod.yml down",
+    "prod:docker:logs": "docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f api",
+    "prisma:deploy": "prisma migrate deploy",
+    "deploy": "./deploy/deploy.sh",
+    "healthcheck": "./deploy/healthcheck.sh",
     "postinstall": "prisma generate"
   },
   "dependencies": {

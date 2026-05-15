@@ -1,33 +1,139 @@
-name: Auto Deploy Backend
+name: Build & Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch: {}
+
+# Cancel any in-progress run for the same branch — only the latest commit
+# on main needs to ship.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  # Image name = ghcr.io/<owner>/<repo>, lowercased.
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  deploy:
+  # ---- 1. Build the Docker image and push it to GHCR ----
+  build:
+    name: Build & push image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+      sha_tag: ${{ steps.tag.outputs.sha_tag }}
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Executing remote ssh commands
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tag
+        run: |
+          IMAGE_LC="$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "image_lc=$IMAGE_LC" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=$IMAGE_LC:sha-$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=$IMAGE_LC:latest" >> "$GITHUB_OUTPUT"
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.tag.outputs.image_lc }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # linux/amd64 is the typical VPS arch. Add arm64 if your VPS is arm.
+          platforms: linux/amd64
+
+  # ---- 2. SSH into the VPS, pull the new image, restart ----
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          # Pass the exact image tag we just pushed so the deploy is
+          # deterministic (no race with another concurrent push).
+          envs: SHA_TAG,DEPLOY_DIR
+          script_stop: true
           script: |
-            cd ~/wood-server-hakim
-            git pull origin main
+            set -euo pipefail
+            export SHA_TAG="${{ needs.build.outputs.sha_tag }}"
+            export DEPLOY_DIR="${{ secrets.DEPLOY_DIR || '/home/ubuntu/wood-server-hakim' }}"
+            echo "[deploy] image=$SHA_TAG"
+            echo "[deploy] dir=$DEPLOY_DIR"
 
-            export PATH=$PATH:/root/.local/share/pnpm:/usr/local/bin
+            cd "$DEPLOY_DIR"
 
-            pnpm install
-            pnpm build
+            # Sanity: required files must exist on the VPS.
+            test -f docker-compose.deploy.yml || { echo "missing docker-compose.deploy.yml"; exit 1; }
+            test -f .env.production           || { echo "missing .env.production"; exit 1; }
 
-            pnpm prisma migrate deploy
+            # Authenticate to GHCR using a long-lived PAT stored on the VPS.
+            # (GITHUB_TOKEN from this action can't reach the VPS.)
+            if [ -f ~/.ghcr_token ]; then
+              cat ~/.ghcr_token | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            fi
 
-            pm2 restart wood-server || pm2 start dist/server.js --name "wood-server"
+            export IMAGE="$SHA_TAG"
+
+            echo "[deploy] pulling image..."
+            docker compose -f docker-compose.deploy.yml pull
+
+            echo "[deploy] running migrations + starting stack..."
+            docker compose -f docker-compose.deploy.yml up -d --remove-orphans
+
+            echo "[deploy] waiting for health..."
+            for i in $(seq 1 20); do
+              if curl -fsS --max-time 3 http://127.0.0.1:4000/health/live >/dev/null; then
+                echo "[deploy] healthy after ${i}s"
+                break
+              fi
+              sleep 1
+              if [ "$i" = "20" ]; then
+                echo "[deploy] api never became healthy — printing last 100 log lines:"
+                docker compose -f docker-compose.deploy.yml logs --tail=100 api
+                exit 1
+              fi
+            done
+
+            echo "[deploy] pruning dangling images..."
+            docker image prune -f >/dev/null
+
+            echo "[deploy] done."
