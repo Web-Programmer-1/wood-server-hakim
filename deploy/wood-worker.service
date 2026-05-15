@@ -15,8 +15,8 @@ Type=simple
 
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/wood-server-hakim
-EnvironmentFile=/home/ubuntu/wood-server-hakim/.env.production
+WorkingDirectory=/home/wood-server-hakim
+EnvironmentFile=/home/wood-server-hakim/.env.production
 
 Environment=NODE_ENV=production
 Environment=RUN_QUEUE_WORKER=true

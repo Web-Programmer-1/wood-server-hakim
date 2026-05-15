@@ -95,7 +95,7 @@ jobs:
           script: |
             set -euo pipefail
             export SHA_TAG="${{ needs.build.outputs.sha_tag }}"
-            export DEPLOY_DIR="${{ secrets.DEPLOY_DIR || '/home/ubuntu/wood-server-hakim' }}"
+            export DEPLOY_DIR="${{ secrets.DEPLOY_DIR || '/home/wood-server-hakim' }}"
             echo "[deploy] image=$SHA_TAG"
             echo "[deploy] dir=$DEPLOY_DIR"
 

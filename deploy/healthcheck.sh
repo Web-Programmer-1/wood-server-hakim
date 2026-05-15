@@ -4,8 +4,8 @@
 # alerting that triggers on exit code.
 #
 # Example cron (every minute):
-#   * * * * * /home/ubuntu/wood-server-hakim/deploy/healthcheck.sh || \
-#       /home/ubuntu/wood-server-hakim/deploy/restart.sh
+#   * * * * * /home/wood-server-hakim/deploy/healthcheck.sh || \
+#       /home/wood-server-hakim/deploy/restart.sh
 set -euo pipefail
 
 URL="${HEALTH_URL:-http://127.0.0.1:4000/health/live}"
