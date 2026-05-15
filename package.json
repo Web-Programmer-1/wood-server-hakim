@@ -4,6 +4,10 @@
   "main": "server.js",
   "author": "shafayat",
   "license": "MIT",
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=20.18.0"
+  },
   "prisma": {
     "schema": "./prisma/schema"
   },
