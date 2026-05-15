@@ -69,7 +69,7 @@ services:
         condition: service_completed_successfully
     ports:
       # Bind to localhost only — nginx on the host fronts the public traffic.
-      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:4001:4000"
     deploy:
       resources:
         limits:
