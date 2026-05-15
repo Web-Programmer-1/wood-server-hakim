@@ -44,8 +44,6 @@ services:
     restart: "no"
     env_file:
       - .env.production
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-wood_dev}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-wood_database}?schema=public
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,7 +58,6 @@ services:
     env_file:
       - .env.production
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-wood_dev}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-wood_database}?schema=public
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       PORT: "4000"
     depends_on:
@@ -93,7 +90,6 @@ services:
     env_file:
       - .env.production
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-wood_dev}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-wood_database}?schema=public
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       RUN_QUEUE_WORKER: "true"
     depends_on:
