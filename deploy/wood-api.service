@@ -26,8 +26,8 @@ Type=simple
 ; --- Edit these for your VPS ---
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/wood-server-hakim
-EnvironmentFile=/home/wood-server-hakim/.env.production
+WorkingDirectory=/root/wood-server-hakim
+EnvironmentFile=/root/wood-server-hakim/.env.production
 ; -------------------------------
 
 Environment=NODE_ENV=production
