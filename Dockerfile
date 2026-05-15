@@ -7,14 +7,10 @@ WORKDIR /app
 # openssl is required by the Prisma engine on alpine.
 RUN apk add --no-cache openssl
 
-# Pin the pnpm version to match `packageManager` in package.json. Without
-# this pin, `corepack enable` would download the latest pnpm (currently
-# v11.x), which uses Node 22+ builtins and crashes on this image with
-# ERR_UNKNOWN_BUILTIN_MODULE.
-# COREPACK_ENABLE_DOWNLOAD_PROMPT=0 silences the "is it OK to download?"
-# prompt that otherwise hangs non-interactive CI builds.
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+# Install pnpm directly (skip corepack — its signature verification has
+# been flaky on alpine, and silently falls back to a too-new pnpm version).
+# Version must match `packageManager` in package.json.
+RUN npm install -g pnpm@10.15.0
 
 # Copy lockfiles + prisma schema first so layer cache survives code-only changes.
 COPY package.json pnpm-lock.yaml ./
@@ -27,7 +23,7 @@ COPY src ./src
 RUN pnpm build
 
 # Trim to production deps for the runtime image (keeps prisma + @prisma/client).
-RUN pnpm prune --prod
+RUN pnpm prune --prod --ignore-scripts
 
 
 # ---------- runtime: minimal image, non-root ----------
