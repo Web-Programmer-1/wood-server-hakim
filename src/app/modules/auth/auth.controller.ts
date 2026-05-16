@@ -114,6 +114,11 @@ export const AuthController = {
     }
   },
 
+  async isLoggedIn(req: Request, res: Response) {
+    const data = await AuthService.isLoggedIn(req);
+    res.json(data);
+  },
+
   async getAllUsers(req: Request, res: Response) {
     try {
       const data = await AuthService.getAllUsers();

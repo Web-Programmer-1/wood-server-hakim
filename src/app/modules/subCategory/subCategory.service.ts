@@ -115,8 +115,13 @@ const getSingleSubCategory = async (slug: string) => {
           name: true,
           slug: true,
           thumbnailImage: true,
-          
+          model: true,
         },
+        // Oldest-added first, newest-added last (matches category list).
+        orderBy: [
+          { createdAt: "asc" },
+          { id: "asc" },
+        ],
       },
     },
   });

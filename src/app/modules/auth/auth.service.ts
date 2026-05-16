@@ -628,6 +628,40 @@ export const AuthService = {
   },
 
 
+  // Lightweight auth probe used by the storefront before gated actions
+  // (Add to Cart, Buy Now). Returns a boolean instead of throwing so the
+  // axios response interceptor doesn't kick off a refresh dance for
+  // anonymous visitors browsing product pages.
+  async isLoggedIn(req: Request) {
+    let token: string | undefined;
+
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    if (!token && req.cookies?.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
+    if (!token) return { isLoggedIn: false };
+
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_ACCESS_SECRET!
+      ) as { id: string; role?: string };
+
+      return {
+        isLoggedIn: true,
+        user: { id: decoded.id, role: decoded.role },
+      };
+    } catch {
+      return { isLoggedIn: false };
+    }
+  },
+
+
   //      ----------- Get All Users -------------
 
   async getAllUsers() {

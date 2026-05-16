@@ -28,11 +28,23 @@ import { MPaymentStatus, PaymentProvider } from "@prisma/client";
 
 
 
+// SSLCommerz redirects the user's browser here via POST after checkout.
+// The redirect to the storefront must always happen — if signature
+// verification or the DB update throws, send the user to the FAIL page
+// instead of letting the request 500 (which would strand them on a blank
+// error screen with no way back to the storefront).
 const sslSuccess = async (req: Request, res: Response) => {
-  await SSLCommerzService.handleSuccess(req.body);
+  const tranId = req.body?.tran_id ?? "";
+  const successUrl = `${process.env.SSLCOMMERZ_FRONTEND_SUCCESS}?tran_id=${encodeURIComponent(tranId)}`;
+  const failUrl = `${process.env.SSLCOMMERZ_FRONTEND_FAIL}?tran_id=${encodeURIComponent(tranId)}`;
 
-  const tranId = req.body?.tran_id;
-  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_SUCCESS}?tran_id=${tranId}`);
+  try {
+    await SSLCommerzService.handleSuccess(req.body);
+    return res.redirect(successUrl);
+  } catch (err) {
+    console.error("SSL success handler failed:", err);
+    return res.redirect(failUrl);
+  }
 };
 
 
@@ -55,15 +67,23 @@ const getSslReceipt = async (req: Request, res: Response) => {
 };
 
 const sslFail = async (req: Request, res: Response) => {
-  await SSLCommerzService.handleFail(req.body);
-  const tranId = req.body?.tran_id;
-  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_FAIL}?tran_id=${tranId}`);
+  const tranId = req.body?.tran_id ?? "";
+  try {
+    await SSLCommerzService.handleFail(req.body);
+  } catch (err) {
+    console.error("SSL fail handler failed:", err);
+  }
+  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_FAIL}?tran_id=${encodeURIComponent(tranId)}`);
 };
 
 const sslCancel = async (req: Request, res: Response) => {
-  await SSLCommerzService.handleCancel(req.body);
-  const tranId = req.body?.tran_id;
-  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_CANCEL}?tran_id=${tranId}`);
+  const tranId = req.body?.tran_id ?? "";
+  try {
+    await SSLCommerzService.handleCancel(req.body);
+  } catch (err) {
+    console.error("SSL cancel handler failed:", err);
+  }
+  return res.redirect(`${process.env.SSLCOMMERZ_FRONTEND_CANCEL}?tran_id=${encodeURIComponent(tranId)}`);
 };
 
 

@@ -30,9 +30,14 @@ app.use(cors({
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      return callback(new Error("CORS not allowed"));
     }
+
+    // Unknown origin: don't throw — that 500s the request and breaks
+    // top-level navigations like the SSLCommerz post-payment redirect
+    // (Origin: https://sandbox.sslcommerz.com). Omitting ACAO headers
+    // still blocks cross-origin XHR/fetch at the browser, which is what
+    // CORS is actually meant to defend.
+    return callback(null, false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

@@ -142,10 +142,15 @@ const getMachinesByCategoryUncached = async (
         slug: true,
         description: true,
         thumbnailImage: true,
+        model: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      // Oldest-added first, newest-added last. Tie-break on `id` so
+      // pagination stays deterministic when two machines share the
+      // exact same `createdAt` timestamp.
+      orderBy: [
+        { createdAt: "asc" },
+        { id: "asc" },
+      ],
     }),
     prisma.machine.count({
       where: whereClause,

@@ -50,6 +50,11 @@ authRouter.post("/reset-password", strictLimiter, AuthController.resetPassword);
 // GET CURRENT USER
 authRouter.get("/me", strictLimiter, AuthController.getMe);
 
+// LOGIN STATUS PROBE — used by storefront before Add to Cart / Buy Now.
+// Always 200 with { isLoggedIn: boolean } so anonymous browsing doesn't
+// trigger the axios refresh-token interceptor.
+authRouter.get("/is-logged-in", AuthController.isLoggedIn);
+
 // USER LIST — any staff role can view (filtered access enforced in UI).
 authRouter.get(
   "/users",
