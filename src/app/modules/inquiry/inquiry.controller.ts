@@ -69,7 +69,9 @@ export const createInquiry = async (req: Request, res: Response) => {
         businessEmail,
         `New Inquiry: ${inquiry.code}`,
         `New inquiry received from ${inquiry.name}`,
-        html
+        html,
+        // Let staff reply straight to the customer from the notification.
+        { replyTo: inquiry.email }
       ).catch((err) => console.error("Business email failed:", err));
     }
 
@@ -259,10 +261,19 @@ export const sendQuotationEmail = async (
     const adminId = req.user?.id;
     const { subject, message } = req.body;
 
+    // Files arrive via the `uploadInquiryAttachments` middleware (memory
+    // storage), so each one carries an in-memory Buffer we hand to nodemailer.
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const attachments = files.map((file) => ({
+      filename: file.originalname,
+      content: file.buffer,
+      contentType: file.mimetype,
+    }));
+
     const result = await sendQuotationEmailService(
       id,
       adminId!,
-      { subject, message }
+      { subject, message, attachments }
     );
 
     return res.status(200).json({

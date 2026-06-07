@@ -3,6 +3,7 @@ import { Router } from "express";
 import { createInquiry, deleteInquiry, getInquiries, getInquiryById, sendQuotationEmail, updateInquiryStatus } from "./inquiry.controller";
 import { authGuard } from "../../middlewares/auth";
 import { UserRole } from "../../constants/UserRole";
+import { uploadInquiryAttachments } from "../../middlewares/uploadInquiryAttachments";
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.patch("/:id", opsGuard, updateInquiryStatus);
 router.post(
   "/:id/send-quotation",
   opsGuard,
+  uploadInquiryAttachments,
   sendQuotationEmail
 );
 

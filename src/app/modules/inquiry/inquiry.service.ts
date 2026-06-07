@@ -1,4 +1,4 @@
-import { sendEmail } from "../../../utils/nodeMailer";
+import { sendEmail, EmailAttachment } from "../../../utils/nodeMailer";
 import { prisma } from "../../shared/prisma";
 import { CreateInquiryPayload } from "../review/review.interface";
 
@@ -361,6 +361,7 @@ export const updateInquiryStatusService = async (
 type SendQuotationPayload = {
   subject: string;
   message: string;
+  attachments?: EmailAttachment[];
 };
 
 export const sendQuotationEmailService = async (
@@ -392,11 +393,19 @@ export const sendQuotationEmailService = async (
   }
 
 
+  const attachments = payload.attachments ?? [];
+
+  const attachmentNote = attachments.length
+    ? `<p style="color:#555;">${attachments.length} file(s) attached.</p>`
+    : "";
+
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
       <p>Dear ${inquiry.name},</p>
 
       <p>${payload.message.replace(/\n/g, "<br/>")}</p>
+
+      ${attachmentNote}
 
       <br/>
       <p>
@@ -413,10 +422,15 @@ export const sendQuotationEmailService = async (
 
 
   await sendEmail(
-    inquiry.email,        
-    payload.subject,      
-    payload.message,      
-    html                  
+    inquiry.email,        // to: the customer
+    payload.subject,
+    payload.message,
+    html,
+    {
+      attachments,
+      // Replies from the customer should land in the company inbox.
+      replyTo: process.env.BUSINESS_EMAIL || "info@woodtechsolutionbd.com",
+    }
   );
 
 

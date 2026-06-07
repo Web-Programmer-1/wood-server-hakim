@@ -11,19 +11,49 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Business identity. We authenticate with the working Gmail account
+// (EMAIL_USER/EMAIL_PASS) but present the company address everywhere.
+//
+// NOTE: Gmail's SMTP rewrites the From address to the authenticated account
+// unless info@ is added as a verified "Send mail as" alias. To make sure all
+// replies still land in the company inbox regardless, we ALWAYS set Reply-To
+// to the business address. EMAIL_FROM is honoured first so that switching to a
+// real info@ mailbox later requires only an env change.
+const FROM_NAME = process.env.EMAIL_FROM_NAME || "WoodTech Solution BD";
+const FROM_ADDRESS =
+  process.env.EMAIL_FROM || process.env.EMAIL_USER || "info@woodtechsolutionbd.com";
+const DEFAULT_REPLY_TO =
+  process.env.EMAIL_REPLY_TO ||
+  process.env.BUSINESS_EMAIL ||
+  "info@woodtechsolutionbd.com";
+
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+};
+
+export type SendEmailOptions = {
+  attachments?: EmailAttachment[];
+  replyTo?: string;
+};
+
 export async function sendEmail(
   to: string,
   subject: string,
   text: string,
-  html?: string
+  html?: string,
+  options?: SendEmailOptions
 ) {
   try {
     const info = await transporter.sendMail({
-      from: `"Your App Name" <${process.env.EMAIL_USER}>`,
+      from: `"${FROM_NAME}" <${FROM_ADDRESS}>`,
+      replyTo: options?.replyTo || DEFAULT_REPLY_TO,
       to,
       subject,
       text,
       html: html || `<p>${text}</p>`,
+      attachments: options?.attachments,
     });
 
     console.log("Email sent:", info.messageId);
