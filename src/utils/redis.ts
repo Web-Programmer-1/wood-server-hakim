@@ -7,7 +7,7 @@ import { createClient, RedisClientType } from "redis";
  * - `error` listener is mandatory. Without it the client emits an unhandled
  *   error on any TCP drop and the process exits.
  * - Reconnect strategy uses exponential backoff capped at 5s so transient
- *   Upstash drops don't turn into a hot reconnect loop.
+ *   connection drops don't turn into a hot reconnect loop.
  * - All call sites must handle `null` (REDIS_URL unset) — keep that contract.
  */
 

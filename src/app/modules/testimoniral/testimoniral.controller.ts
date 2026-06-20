@@ -108,8 +108,13 @@ update: async (req: Request, res: Response) => {
     };
 
     if (avatarUrl) payload.avatarUrl = avatarUrl;
+
+    // A new file wins; otherwise an explicit empty string clears the saved media.
     if (cardBgImageUrl) payload.cardBgImageUrl = cardBgImageUrl;
+    else if (req.body?.cardBgImageUrl === "") payload.cardBgImageUrl = null;
+
     if (videoUrl) payload.videoUrl = videoUrl;
+    else if (req.body?.videoUrl === "") payload.videoUrl = null;
 
     const result = await TestimonialService.update(id, payload);
 

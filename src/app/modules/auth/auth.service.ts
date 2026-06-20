@@ -55,26 +55,30 @@ function normalizeIdentifier(input: string): string {
 
 export const AuthService = {
 
-  async saveOTP(key: string, otp: string) {
-    if (redis) {
-      await redis.setEx(key, 300, otp);
-    } else {
-      await prisma.oTP.create({
-        data: {
-          code: otp,
-          email: key.includes("EMAIL") ? key.split(":")[2] : null,
-          phone: key.includes("PHONE") ? key.split(":")[2] : null,
-          expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-        },
-      });
-    }
+  // ---------------------------------------------------------------------------
+  // OTP storage. Prefers Redis (fast, native TTL) but ALWAYS keeps a Postgres
+  // fallback. The fallback triggers in two cases:
+  //   1. Redis is not configured (redis === null), and
+  //   2. a Redis call throws at runtime — connection loss, or an OOM write
+  //      rejection under maxmemory-policy=noeviction.
+  // Case (2) matters: the exported client is non-null whenever REDIS_URL is set,
+  // so the old `if (redis)` branch never fell back on a runtime error and a
+  // full/down Redis made OTP issue + password reset fail outright. getOTP also
+  // checks the DB when Redis has no key, so a code written to the DB during a
+  // Redis outage stays verifiable.
+  // ---------------------------------------------------------------------------
+  async _saveOTPToDB(key: string, otp: string) {
+    await prisma.oTP.create({
+      data: {
+        code: otp,
+        email: key.includes("EMAIL") ? key.split(":")[2] : null,
+        phone: key.includes("PHONE") ? key.split(":")[2] : null,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
+    });
   },
 
-  async getOTP(key: string) {
-    if (redis) {
-      return await redis.get(key);
-    }
-
+  async _getOTPFromDB(key: string) {
     const otp = await prisma.oTP.findFirst({
       where: {
         OR: [
@@ -90,21 +94,49 @@ export const AuthService = {
     return otp.code;
   },
 
-  // Invalidate an OTP after a successful verify or password reset so it
-  // cannot be replayed. Works for both Redis and DB-backed storage.
+  async saveOTP(key: string, otp: string) {
+    if (redis) {
+      try {
+        await redis.setEx(key, 300, otp);
+        return;
+      } catch (e) {
+        console.warn("[otp] redis setEx failed, falling back to DB:", (e as Error)?.message ?? e);
+      }
+    }
+    await this._saveOTPToDB(key, otp);
+  },
+
+  async getOTP(key: string) {
+    if (redis) {
+      try {
+        const value = await redis.get(key);
+        if (value) return value;
+        // Redis reachable but key absent — it may have been written to the DB
+        // during a previous Redis outage, so fall through and check the DB.
+      } catch (e) {
+        console.warn("[otp] redis get failed, falling back to DB:", (e as Error)?.message ?? e);
+      }
+    }
+    return this._getOTPFromDB(key);
+  },
+
+  // Invalidate an OTP after a successful verify or password reset so it cannot
+  // be replayed. Clears BOTH stores so a fallback-written code in the DB can't
+  // outlive a Redis delete.
   async clearOTP(key: string, target: { email?: string | null; phone?: string | null }) {
     if (redis) {
       try { await redis.del(key); } catch { /* ignore */ }
-      return;
     }
-    await prisma.oTP.deleteMany({
-      where: {
-        OR: [
-          target.email ? { email: target.email } : undefined,
-          target.phone ? { phone: target.phone } : undefined,
-        ].filter(Boolean) as any,
-      },
-    });
+    try {
+      await prisma.oTP.deleteMany({
+        where: {
+          OR: [
+            target.email ? { email: target.email } : undefined,
+            target.phone ? { phone: target.phone } : undefined,
+          ].filter(Boolean) as any,
+        },
+      });
+    } catch { /* ignore */ }
   },
 
   /* ==========================
