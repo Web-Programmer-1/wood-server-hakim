@@ -589,7 +589,16 @@ const getMachineBySlugUncached = async (slug: string) => {
           url: true,
         },
       },
+      categoryId: true,
+      subCategoryId: true,
       category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      subCategory: {
         select: {
           id: true,
           name: true,
