@@ -114,11 +114,19 @@ update: async (id: string, payload: any) => {
     throw new Error('videoType must be "YOUTUBE" or "UPLOAD"');
   }
 
-  if (vt === "YOUTUBE" && (!payload.youtubeUrl || payload.youtubeUrl.trim().length === 0)) {
+  if (
+    vt === "YOUTUBE" &&
+    (!payload.youtubeUrl || payload.youtubeUrl.trim().length === 0) &&
+    !isExist.youtubeUrl
+  ) {
     throw new Error("youtubeUrl is required when videoType is YOUTUBE");
   }
 
-  if (vt === "UPLOAD" && (!payload.videoUrl || payload.videoUrl.trim().length === 0)) {
+  if (
+    vt === "UPLOAD" &&
+    (!payload.videoUrl || payload.videoUrl.trim().length === 0) &&
+    !isExist.videoUrl
+  ) {
     throw new Error("videoUrl is required when videoType is UPLOAD");
   }
 

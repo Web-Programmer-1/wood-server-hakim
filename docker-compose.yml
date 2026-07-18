@@ -17,13 +17,20 @@ services:
       timeout: 5s
       retries: 5
 
-  # Local Redis for dev. In production you can either keep this or point
-  # REDIS_URL at Upstash and remove this service.
+  # Self-hosted Redis (OTP store, HTTP read-cache, BullMQ queue). Same image
+  # is used in production — point REDIS_URL at this service (redis://redis:6379).
+  #
+  # maxmemory-policy MUST be `noeviction`: BullMQ requires it, otherwise the
+  # server can silently drop queue keys (and lose jobs) under memory pressure.
+  # Trade-off: the HTTP read-cache is then bounded by maxmemory (cache keys are
+  # derived from arbitrary query params, so per-key TTLs cap each key's lifetime
+  # but not the total count). Writers degrade gracefully on OOM (httpCache and
+  # saveOTP fall back), so an over-full cache never wedges the app.
   redis:
     image: redis:7-alpine
     container_name: wood-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
     ports:
       - "127.0.0.1:6379:6379"
     volumes:

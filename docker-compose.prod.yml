@@ -53,7 +53,10 @@ services:
       REDIS_URL: redis://redis:6379
       RUN_QUEUE_WORKER: "true"
     depends_on:
-      - api
+      api:
+        condition: service_started
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:

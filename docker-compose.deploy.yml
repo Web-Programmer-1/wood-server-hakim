@@ -22,11 +22,23 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  # maxmemory-policy MUST be `noeviction`: BullMQ requires it (an eviction
+  # policy like allkeys-lru can silently drop queue keys and lose jobs).
+  # Trade-off: the shared HTTP read-cache is then bounded by maxmemory, not just
+  # by per-key TTLs (cache keys come from arbitrary query params, so their count
+  # is effectively unbounded). All writers degrade gracefully on OOM (httpCache
+  # and saveOTP fall back), so a full cache never takes the app down; if cache
+  # traffic grows, give it a separate Redis with allkeys-lru.
   redis:
     image: redis:7-alpine
     container_name: wood-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    # Publish on loopback so a host-side PM2/systemd app (redis://127.0.0.1:6379)
+    # can reach this container. Containerized api/worker use the `redis` service
+    # name on the compose network and ignore this mapping.
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - wood_redisdata:/data
     healthcheck:
@@ -44,6 +56,11 @@ services:
     restart: "no"
     env_file:
       - .env.production
+    environment:
+      # Reach Postgres by compose service name. The .env.production DATABASE_URL
+      # targets the host loopback (127.0.0.1:5433) for PM2/systemd and would not
+      # resolve inside this container.
+      DATABASE_URL: postgresql://wood_dev:wood%2390%40serverdb@postgres:5432/wood_database?schema=public
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,7 +75,10 @@ services:
     env_file:
       - .env.production
     environment:
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Hardcoded to the compose service names so the host-loopback values in
+      # .env.production (used by PM2/systemd) cannot leak into the container.
+      DATABASE_URL: postgresql://wood_dev:wood%2390%40serverdb@postgres:5432/wood_database?schema=public
+      REDIS_URL: redis://redis:6379
       PORT: "4000"
     depends_on:
       postgres:
@@ -90,7 +110,8 @@ services:
     env_file:
       - .env.production
     environment:
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DATABASE_URL: postgresql://wood_dev:wood%2390%40serverdb@postgres:5432/wood_database?schema=public
+      REDIS_URL: redis://redis:6379
       RUN_QUEUE_WORKER: "true"
     depends_on:
       api:

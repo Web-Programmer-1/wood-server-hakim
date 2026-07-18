@@ -28,10 +28,9 @@ export default {
   },
   salt_round: process.env.SALT_ROUND,
   reset_pass_link: process.env.RESET_PASS_LINK,
-
-  REDIS_HOST: process.env.REDIS_HOST,
-  REDIS_PORT: process.env.REDIS_PORT,
-  REDIS_PASS: process.env.REDIS_PASS,
+  // Redis is configured entirely through REDIS_URL (see src/utils/redis.ts and
+  // src/queue/bullmqConnection.ts). The old discrete REDIS_HOST/PORT/PASS vars
+  // were never read, so they are intentionally not exposed here.
 };
 
 
