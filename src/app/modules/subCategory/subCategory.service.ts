@@ -61,9 +61,13 @@ const getSubCategories = async () => {
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    // Serial order: first-created first, last-created last (matches the
+    // category list so every surface — mega-menu, homepage, catalogue —
+    // shows subcategories in the same, stable order).
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
   });
 
   return result;
@@ -80,9 +84,11 @@ const getSubCategoriesByCategory = async (categorySlug: string) => {
 
   const result = await prisma.subCategory.findMany({
     where: { categoryId: category.id },
-    orderBy: {
-      name: "asc",
-    },
+    // Serial order (oldest subcategory first) to match the flat list.
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
     include: {
       category: {
         select: {

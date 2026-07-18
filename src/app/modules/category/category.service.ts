@@ -21,12 +21,12 @@ const getCategoriesUncached = async () => {
     where: {
       parentId: null,
     },
-
-
-    
-    orderBy: {
-      createdAt: "desc",
-    },
+    // Serial order: first-created first, last-created last. `id` tie-break
+    // keeps the order deterministic when two rows share the same timestamp.
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
   });
 };
 
@@ -66,14 +66,18 @@ const getCategoryTreeUncached = async () => {
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
+        // Serial order (oldest child first) to match the flat category list.
+        orderBy: [
+          { createdAt: "asc" },
+          { id: "asc" },
+        ],
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    // Serial order (oldest category first).
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
   });
 };
 
