@@ -19,8 +19,8 @@ app.set('trust proxy', 1);
 
 const allowedOrigins = [
   "http://localhost:3000", 
-  "https://woodtechsolutionbd.com",
-  "https://www.woodtechsolutionbd.com"
+  "https://confixtech.com",
+  "https://www.confixtech.com"
 ];
 
 app.use(cors({
